@@ -42,14 +42,17 @@ function renderScreener(fmpKeySet = false) {
   )
 }
 
-// ── I-07: All 10 demo stocks rendered ─────────────────────────────────────────
+// ── I-07: Stock screener renders stocks ───────────────────────────────────────
 
 describe('I-07: ScreenerScreen renders all demo stocks', () => {
-  it(`renders all ${STOCKS.length} stocks`, () => {
+  it(`renders first-page stocks and shows total count`, () => {
     renderScreener()
-    STOCKS.forEach((s) => {
-      expect(screen.getByText(s.ticker)).toBeInTheDocument()
-    })
+    // Always-visible top stocks
+    expect(screen.getByText('AAPL')).toBeInTheDocument()
+    expect(screen.getByText('MSFT')).toBeInTheDocument()
+    expect(screen.getByText('NVDA')).toBeInTheDocument()
+    // Footer shows total stock count
+    expect(screen.getByText(new RegExp(`${STOCKS.length}`))).toBeInTheDocument()
   })
 })
 

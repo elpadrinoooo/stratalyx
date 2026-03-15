@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { C, R } from '../constants/colors'
 import { INVESTORS, INV } from '../constants/investors'
-import { STOCKS } from '../constants/stocks'
 import { useApp } from '../state/context'
 import { useWatchlist } from '../hooks/useWatchlist'
 import { useWindowWidth } from '../hooks/useWindowWidth'
+import { useStockList } from '../hooks/useStockList'
 import { Tag } from '../components/Tag'
 import { WLBtn } from '../components/WLBtn'
 import { pegColor, scColor } from '../engine/utils'
@@ -18,9 +18,12 @@ interface Props {
 export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
   const { state, dispatch } = useApp()
   const { inWatchlist, toggle } = useWatchlist()
+  const { stocks: allStocks, loading: stocksLoading, total: stocksTotal } = useStockList()
   const [search, setSearch] = useState('')
   const [sectorFilter, setSectorFilter] = useState('All')
   const [sortBy, setSortBy] = useState<'default' | 'score' | 'ticker'>('default')
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 100
   const [welcomeDismissed, setWelcomeDismissed] = useState(() =>
     localStorage.getItem('stratalyx_welcomed') === '1'
   )
@@ -42,15 +45,15 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
 
   const inv = INV[state.investor] ?? INVESTORS[0]
 
-  const sectors = ['All', ...Array.from(new Set(STOCKS.map((s) => s.sector))).sort()]
+  const sectors = ['All', ...Array.from(new Set(allStocks.map((s) => s.sector).filter(Boolean))).sort()]
 
-  const filtered: Stock[] = STOCKS
+  const filtered: Stock[] = allStocks
     .filter((s) => {
       const q = search.toLowerCase()
       const matchesSearch = (
         s.ticker.toLowerCase().includes(q) ||
         s.name.toLowerCase().includes(q) ||
-        s.sector.toLowerCase().includes(q)
+        (s.sector && s.sector.toLowerCase().includes(q))
       )
       const matchesSector = sectorFilter === 'All' || s.sector === sectorFilter
       return matchesSearch && matchesSector
@@ -66,6 +69,12 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
       }
       return 0
     })
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setPage(1) }, [search, sectorFilter, sortBy])
+
+  const paginated = filtered.slice(0, page * PAGE_SIZE)
+  const hasMore = paginated.length < filtered.length
 
   const openAnalyzer = (ticker: string) => {
     dispatch({ type: 'OPEN_MODAL', payload: ticker })
@@ -302,7 +311,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
         {isMobile ? (
           /* ── Mobile card list ── */
           <div>
-            {filtered.map((stock) => {
+            {paginated.map((stock) => {
               const key = `${stock.ticker}:${state.investor}`
               const result = state.analyses[key]
               return (
@@ -374,7 +383,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((stock) => {
+                {paginated.map((stock) => {
                   const key = `${stock.ticker}:${state.investor}`
                   const result = state.analyses[key]
                   return (
@@ -419,11 +428,25 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
           </div>
         )}
 
+        {/* Load more */}
+        {hasMore && (
+          <div style={{ padding: '10px 14px', borderTop: `1px solid ${C.border}`, textAlign: 'center' }}>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t2, fontSize: 13, fontWeight: 600, padding: '7px 20px', cursor: 'pointer' }}
+            >
+              Load more ({filtered.length - paginated.length} remaining)
+            </button>
+          </div>
+        )}
+
         {/* Footer */}
-        <div style={{ padding: '7px 14px', borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4 }}>
+        <div style={{ padding: '7px 14px', borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
           <span style={{ color: C.t3, fontSize: 12 }}>
-            {filtered.length} stock{filtered.length !== 1 ? 's' : ''}
-            {search ? ` matching "${search}"` : ''}
+            {stocksLoading && <span style={{ color: C.accent }}>Loading full market… </span>}
+            Showing {paginated.length} of {filtered.length}
+            {filtered.length !== stocksTotal ? ` filtered` : ''} · {stocksTotal.toLocaleString()} stocks total
+            {search ? ` · matching "${search}"` : ''}
             {sectorFilter !== 'All' ? ` · ${sectorFilter}` : ''}
           </span>
           <span style={{ color: C.t4, fontSize: 11 }}>Educational only · Not financial advice</span>
