@@ -139,7 +139,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
 
   const labelStyle: React.CSSProperties = {
     color: C.t3,
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: 600,
     textTransform: 'uppercase',
     letterSpacing: '.07em',
@@ -189,9 +189,9 @@ export function AnalyzerModal({ fmpKey }: Props) {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 700, fontSize: 14, color: C.t1 }}>Strategy Analyzer</span>
+            <span style={{ fontWeight: 700, fontSize: 16, color: C.t1 }}>Strategy Analyzer</span>
             {!isMobile && (
-              <span style={{ color: C.t3, fontSize: 11 }}>
+              <span style={{ color: C.t3, fontSize: 13 }}>
                 {inv.name} · {prov?.shortName ?? ''} · {state.model}
               </span>
             )}
@@ -206,7 +206,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
               borderRadius: R.r6,
               color: C.t2,
               padding: '5px 10px',
-              fontSize: 12,
+              fontSize: 14,
               cursor: 'pointer',
             }}
           >
@@ -230,7 +230,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
             <div style={labelStyle}>Analysis settings</div>
 
             {/* Investor row */}
-            <div style={{ color: C.t3, fontSize: 10, marginBottom: 6 }}>Investor strategy</div>
+            <div style={{ color: C.t3, fontSize: 12, marginBottom: 6 }}>Investor strategy</div>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
               {INVESTORS.map((i) => {
                 const active = i.id === state.investor
@@ -244,7 +244,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
                       border: `1px solid ${active ? i.color + '44' : C.border}`,
                       borderRadius: R.r8,
                       padding: '4px 10px',
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: 600,
                       cursor: 'pointer',
                     }}
@@ -257,7 +257,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
 
             {/* Provider/Model row */}
             <div style={{ marginTop: 10 }}>
-              <div style={{ color: C.t3, fontSize: 10, marginBottom: 6 }}>Model</div>
+              <div style={{ color: C.t3, fontSize: 12, marginBottom: 6 }}>Model</div>
               <ProviderModelBar />
             </div>
           </div>
@@ -278,7 +278,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
                 border: `1px solid ${C.border}`,
                 borderRadius: R.r8,
                 padding: '8px 12px',
-                fontSize: 13,
+                fontSize: 15,
                 outline: 'none',
                 fontFamily: C.sans,
               }}
@@ -293,7 +293,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
                 borderRadius: R.r8,
                 padding: '8px 18px',
                 fontWeight: 600,
-                fontSize: 13,
+                fontSize: 15,
                 cursor: phase === 'running' || !ticker.trim() ? 'not-allowed' : 'pointer',
                 opacity: phase === 'running' || !ticker.trim() ? 0.5 : 1,
               }}
@@ -311,7 +311,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
                 borderRadius: R.r8,
                 padding: '8px 14px',
                 marginBottom: 14,
-                fontSize: 12,
+                fontSize: 14,
                 color: C.accent,
                 display: 'flex',
                 alignItems: 'center',
@@ -333,7 +333,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
                 borderRadius: R.r8,
                 padding: '9px 14px',
                 marginBottom: 14,
-                fontSize: 12,
+                fontSize: 14,
               }}
             >
               {error}
@@ -401,7 +401,7 @@ function ResultSection({
 
   const labelStyle: React.CSSProperties = {
     color: C.t3,
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: 600,
     textTransform: 'uppercase',
     letterSpacing: '.07em',
@@ -452,11 +452,11 @@ function ResultSection({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 7, height: 7, borderRadius: '50%', background: C.gain }} />
-              <span style={{ color: C.gain, fontWeight: 700, fontSize: 12 }}>
+              <span style={{ color: C.gain, fontWeight: 700, fontSize: 14 }}>
                 Live Financial Data — {result.companyName}
               </span>
             </div>
-            <span style={{ color: C.t3, fontSize: 10 }}>
+            <span style={{ color: C.t3, fontSize: 12 }}>
               FMP · {new Date(result.timestamp).toLocaleDateString()} · {showLiveData ? 'Hide' : 'Show'} details ▾
             </span>
           </button>
@@ -474,13 +474,13 @@ function ResultSection({
                   key={label}
                   style={{ background: C.bg2, borderRadius: R.r6, padding: '7px 10px' }}
                 >
-                  <div style={{ color: C.t3, fontSize: 9, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 2 }}>
+                  <div style={{ color: C.t3, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 2 }}>
                     {label}
                   </div>
-                  <div style={{ color: C.t1, fontWeight: 600, fontSize: 13, fontFamily: C.mono }}>
+                  <div style={{ color: C.t1, fontWeight: 600, fontSize: 15, fontFamily: C.mono }}>
                     {value}
                   </div>
-                  <div style={{ color: C.t4, fontSize: 9, marginTop: 2 }}>{desc}</div>
+                  <div style={{ color: C.t4, fontSize: 11, marginTop: 2 }}>{desc}</div>
                 </div>
               ))}
             </div>
@@ -509,18 +509,18 @@ function ResultSection({
             <span style={{ color: C.accent, fontWeight: 800, fontSize: 20, fontFamily: C.mono }}>
               {result.ticker}
             </span>
-            <span style={{ color: C.t1, fontSize: 13 }}>{result.companyName}</span>
+            <span style={{ color: C.t1, fontSize: 15 }}>{result.companyName}</span>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
             {result.sector && <Tag color={C.t2} small>{result.sector}</Tag>}
             <LiveBadge live={result.isLive} />
           </div>
           {result.description && (
-            <p style={{ color: C.t3, fontSize: 11, margin: '0 0 8px' }}>{result.description}</p>
+            <p style={{ color: C.t3, fontSize: 13, margin: '0 0 8px' }}>{result.description}</p>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ color: C.t3, fontSize: 10, fontWeight: 600, textTransform: 'uppercase' }}>Strategy score</span>
-            <span style={{ color: C.t2, fontSize: 10, fontFamily: C.mono }}>{result.strategyScore}/10</span>
+            <span style={{ color: C.t3, fontSize: 12, fontWeight: 600, textTransform: 'uppercase' }}>Strategy score</span>
+            <span style={{ color: C.t2, fontSize: 12, fontFamily: C.mono }}>{result.strategyScore}/10</span>
           </div>
           <ScoreBar score={result.strategyScore} color={scColor(result.strategyScore)} />
         </div>
@@ -535,7 +535,7 @@ function ResultSection({
               padding: '6px 18px',
             }}
           >
-            <span style={{ color: vColor(result.verdict), fontWeight: 800, fontSize: 15 }}>
+            <span style={{ color: vColor(result.verdict), fontWeight: 800, fontSize: 17 }}>
               {result.verdict}
             </span>
           </div>
@@ -545,7 +545,7 @@ function ResultSection({
             </span>
           )}
           {result.intrinsicValueLow > 0 && (
-            <span style={{ color: C.t3, fontSize: 10, textAlign: 'right' }}>
+            <span style={{ color: C.t3, fontSize: 12, textAlign: 'right' }}>
               IV: ${fmtN(result.intrinsicValueLow, 0)}–${fmtN(result.intrinsicValueHigh, 0)}
             </span>
           )}
@@ -554,7 +554,7 @@ function ResultSection({
               MoS: {result.marginOfSafety > 0 ? '+' : ''}{fmtN(result.marginOfSafety, 0)}%
             </Tag>
           )}
-          <p style={{ color: C.t3, fontSize: 10, textAlign: 'right', maxWidth: 200, margin: 0 }}>
+          <p style={{ color: C.t3, fontSize: 12, textAlign: 'right', maxWidth: 200, margin: 0 }}>
             {result.verdictReason}
           </p>
         </div>
@@ -594,11 +594,11 @@ function ResultSection({
                 borderBottom: i < result.screenResults.length - 1 ? `1px solid ${C.border}` : 'none',
               }}
             >
-              <span style={{ color: sr.pass ? C.gain : C.loss, fontSize: 12, flexShrink: 0 }}>
+              <span style={{ color: sr.pass ? C.gain : C.loss, fontSize: 14, flexShrink: 0 }}>
                 {sr.pass ? '✓' : '✗'}
               </span>
-              <span style={{ color: C.t1, fontSize: 12, fontWeight: 500, minWidth: 70 }}>{sr.rule}</span>
-              <span style={{ color: C.t3, fontSize: 11, flex: 1 }}>{sr.note}</span>
+              <span style={{ color: C.t1, fontSize: 14, fontWeight: 500, minWidth: 70 }}>{sr.rule}</span>
+              <span style={{ color: C.t3, fontSize: 13, flex: 1 }}>{sr.note}</span>
             </div>
           ))}
         </div>
@@ -628,7 +628,7 @@ function ResultSection({
           }}
         >
           <div style={labelStyle}>Moat assessment</div>
-          <p style={{ color: C.t1, fontSize: 12, lineHeight: 1.65, margin: '0 0 8px' }}>{result.moat}</p>
+          <p style={{ color: C.t1, fontSize: 14, lineHeight: 1.65, margin: '0 0 8px' }}>{result.moat}</p>
           <ScoreBar score={result.moatScore} color={C.accent} />
         </div>
       )}
@@ -649,8 +649,8 @@ function ResultSection({
                   borderBottom: i < result.strengths.length - 1 ? `1px solid ${C.border}` : 'none',
                 }}
               >
-                <span style={{ color: C.gain, fontSize: 11, flexShrink: 0 }}>›</span>
-                <span style={{ color: C.t2, fontSize: 11, lineHeight: 1.5 }}>{s}</span>
+                <span style={{ color: C.gain, fontSize: 13, flexShrink: 0 }}>›</span>
+                <span style={{ color: C.t2, fontSize: 13, lineHeight: 1.5 }}>{s}</span>
               </div>
             ))}
           </div>
@@ -668,8 +668,8 @@ function ResultSection({
                   borderBottom: i < result.risks.length - 1 ? `1px solid ${C.border}` : 'none',
                 }}
               >
-                <span style={{ color: C.loss, fontSize: 11, flexShrink: 0 }}>›</span>
-                <span style={{ color: C.t2, fontSize: 11, lineHeight: 1.5 }}>{r}</span>
+                <span style={{ color: C.loss, fontSize: 13, flexShrink: 0 }}>›</span>
+                <span style={{ color: C.t2, fontSize: 13, lineHeight: 1.5 }}>{r}</span>
               </div>
             ))}
           </div>
@@ -690,7 +690,7 @@ function ResultSection({
           <div style={{ ...labelStyle, color: inv.color }}>
             {inv.name} thesis · {result.isLive ? 'Based on live financial data' : 'AI estimated'}
           </div>
-          <p style={{ color: C.t2, fontSize: 12, lineHeight: 1.7, fontStyle: 'italic', margin: 0 }}>
+          <p style={{ color: C.t2, fontSize: 14, lineHeight: 1.7, fontStyle: 'italic', margin: 0 }}>
             "{result.thesis}"
           </p>
         </div>
@@ -710,7 +710,7 @@ function ResultSection({
         {compPhase === 'idle' && (
           <>
             {compError && (
-              <div style={{ color: C.loss, fontSize: 11, marginBottom: 8 }}>{compError}</div>
+              <div style={{ color: C.loss, fontSize: 13, marginBottom: 8 }}>{compError}</div>
             )}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {altInvestors.map((alt) => (
@@ -722,7 +722,7 @@ function ResultSection({
                     border: `1px solid ${alt.color}33`,
                     borderRadius: R.r8,
                     color: alt.color,
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: 600,
                     padding: '4px 12px',
                     cursor: 'pointer',
@@ -736,7 +736,7 @@ function ResultSection({
         )}
 
         {compPhase === 'running' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: C.accent, fontSize: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: C.accent, fontSize: 14 }}>
             <Spinner size={14} />
             Running comparison…
           </div>
@@ -747,19 +747,19 @@ function ResultSection({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
               {/* Current investor */}
               <div style={{ background: inv.color + '18', border: `1px solid ${inv.color}33`, borderRadius: R.r8, padding: 12 }}>
-                <div style={{ color: inv.color, fontWeight: 700, fontSize: 12, marginBottom: 6 }}>{inv.name}</div>
+                <div style={{ color: inv.color, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{inv.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ color: vColor(result.verdict), fontWeight: 700, fontSize: 13 }}>{result.verdict}</span>
-                  <span style={{ color: C.t2, fontSize: 12, fontFamily: C.mono }}>{result.strategyScore}/10</span>
+                  <span style={{ color: vColor(result.verdict), fontWeight: 700, fontSize: 15 }}>{result.verdict}</span>
+                  <span style={{ color: C.t2, fontSize: 14, fontFamily: C.mono }}>{result.strategyScore}/10</span>
                 </div>
                 <ScoreBar score={result.strategyScore} color={scColor(result.strategyScore)} />
               </div>
               {/* Alt investor */}
               <div style={{ background: compInv.color + '18', border: `1px solid ${compInv.color}33`, borderRadius: R.r8, padding: 12 }}>
-                <div style={{ color: compInv.color, fontWeight: 700, fontSize: 12, marginBottom: 6 }}>{compInv.name}</div>
+                <div style={{ color: compInv.color, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{compInv.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ color: vColor(compResult.verdict), fontWeight: 700, fontSize: 13 }}>{compResult.verdict}</span>
-                  <span style={{ color: C.t2, fontSize: 12, fontFamily: C.mono }}>{compResult.strategyScore}/10</span>
+                  <span style={{ color: vColor(compResult.verdict), fontWeight: 700, fontSize: 15 }}>{compResult.verdict}</span>
+                  <span style={{ color: C.t2, fontSize: 14, fontFamily: C.mono }}>{compResult.strategyScore}/10</span>
                 </div>
                 <ScoreBar score={compResult.strategyScore} color={scColor(compResult.strategyScore)} />
               </div>
@@ -769,12 +769,12 @@ function ResultSection({
               const scoreDiff = result.strategyScore - compResult.strategyScore
               const absScoreDiff = Math.abs(scoreDiff)
               return (
-                <div style={{ textAlign: 'center', fontSize: 11, color: C.t3 }}>
+                <div style={{ textAlign: 'center', fontSize: 13, color: C.t3 }}>
                   Score delta: <span style={{ fontFamily: C.mono, color: absScoreDiff > 3 ? C.warn : C.t2, fontWeight: 700 }}>
                     {scoreDiff > 0 ? '+' : ''}{scoreDiff.toFixed(0)}
                   </span>
                   {absScoreDiff > 3 && (
-                    <span style={{ color: C.warn, fontSize: 10, marginLeft: 6 }}>
+                    <span style={{ color: C.warn, fontSize: 12, marginLeft: 6 }}>
                       ⚠ Significant divergence
                     </span>
                   )}
@@ -789,7 +789,7 @@ function ResultSection({
                   background: 'none',
                   border: 'none',
                   color: C.accent,
-                  fontSize: 11,
+                  fontSize: 13,
                   cursor: 'pointer',
                   padding: 0,
                 }}
@@ -802,7 +802,7 @@ function ResultSection({
       </div>
 
       {/* FOOTER */}
-      <div style={{ color: C.t4, fontSize: 9, textAlign: 'right', marginTop: 10 }}>
+      <div style={{ color: C.t4, fontSize: 11, textAlign: 'right', marginTop: 10 }}>
         Educational only · Not financial advice · Data source: {result.dataSource}
       </div>
     </div>

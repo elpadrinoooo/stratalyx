@@ -34,10 +34,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
             textAlign: 'center',
           }}
         >
-          <div style={{ color: C.loss, fontWeight: 700, fontSize: 14, marginBottom: 8 }}>
+          <div style={{ color: C.loss, fontWeight: 700, fontSize: 16, marginBottom: 8 }}>
             Something went wrong
           </div>
-          <div style={{ color: C.t3, fontSize: 12, fontFamily: C.mono, marginBottom: 12 }}>
+          <div style={{ color: C.t3, fontSize: 14, fontFamily: C.mono, marginBottom: 12 }}>
             {this.state.error.message}
           </div>
           <button
@@ -47,7 +47,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
               border: `1px solid ${C.border}`,
               borderRadius: R.r8,
               color: C.t2,
-              fontSize: 11,
+              fontSize: 13,
               padding: '6px 14px',
               cursor: 'pointer',
             }}

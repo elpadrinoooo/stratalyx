@@ -22,7 +22,7 @@ function StatPill({ label, value, color }: { label: string; value: string; color
       <div
         style={{
           color: C.t3,
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 600,
           textTransform: 'uppercase',
           letterSpacing: '.08em',
@@ -35,7 +35,7 @@ function StatPill({ label, value, color }: { label: string; value: string; color
         style={{
           color: color ?? C.t1,
           fontWeight: 700,
-          fontSize: 11,
+          fontSize: 13,
           fontFamily: C.mono,
         }}
       >
@@ -82,16 +82,16 @@ function InvestorCard({
             flexShrink: 0,
           }}
         >
-          <span style={{ color: inv.color, fontWeight: 700, fontSize: 12 }}>{inv.avatar}</span>
+          <span style={{ color: inv.color, fontWeight: 700, fontSize: 14 }}>{inv.avatar}</span>
         </div>
         <div>
-          <div style={{ color: active ? inv.color : C.t1, fontWeight: 700, fontSize: 12 }}>
+          <div style={{ color: active ? inv.color : C.t1, fontWeight: 700, fontSize: 14 }}>
             {inv.name}
           </div>
-          <div style={{ color: C.t3, fontSize: 10 }}>{inv.era}</div>
+          <div style={{ color: C.t3, fontSize: 12 }}>{inv.era}</div>
         </div>
       </div>
-      <div style={{ color: C.t2, fontSize: 11, marginBottom: 6 }}>{inv.style}</div>
+      <div style={{ color: C.t2, fontSize: 13, marginBottom: 6 }}>{inv.style}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
         {inv.rules.slice(0, 3).map((r) => (
           <Tag key={r.id} color={inv.color} small>{r.label}</Tag>
@@ -113,13 +113,13 @@ export function StrategiesScreen() {
   return (
     <div style={{ padding: 18, maxWidth: 1440, margin: '0 auto' }}>
       {/* Page header */}
-      <div style={{ color: C.accent, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em' }}>
+      <div style={{ color: C.accent, fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em' }}>
         Research Library
       </div>
       <h2 style={{ margin: '0 0 4px', color: C.t1, fontSize: 20, fontWeight: 800 }}>
         Investor Frameworks
       </h2>
-      <p style={{ margin: '0 0 16px', color: C.t2, fontSize: 12, lineHeight: 1.6 }}>
+      <p style={{ margin: '0 0 16px', color: C.t2, fontSize: 14, lineHeight: 1.6 }}>
         Explore the documented investment philosophies of legendary investors. Select a framework to
         apply it to your stock analysis.
       </p>
@@ -140,7 +140,7 @@ export function StrategiesScreen() {
                     border: `1px solid ${active ? i.color + '55' : C.border}`,
                     borderRadius: R.r8,
                     padding: '5px 12px',
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: 600,
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
@@ -162,7 +162,7 @@ export function StrategiesScreen() {
           <div
             style={{
               color: C.t3,
-              fontSize: 9,
+              fontSize: 11,
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: '.1em',
@@ -224,9 +224,9 @@ export function StrategiesScreen() {
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 4 }}>
                   <span style={{ color: inv.color, fontWeight: 800, fontSize: 17 }}>{inv.name}</span>
-                  <span style={{ color: C.t3, fontSize: 11 }}>{inv.era}</span>
+                  <span style={{ color: C.t3, fontSize: 13 }}>{inv.era}</span>
                 </div>
-                <div style={{ color: C.t2, fontSize: 12, marginBottom: 8 }}>{inv.style}</div>
+                <div style={{ color: C.t2, fontSize: 14, marginBottom: 8 }}>{inv.style}</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
                   <Tag color={inv.color} small>Value</Tag>
                   <Tag color={inv.color} small>{inv.rules.length} Rules</Tag>
@@ -253,7 +253,7 @@ export function StrategiesScreen() {
                   borderRadius: R.r8,
                   padding: '8px 16px',
                   fontWeight: 700,
-                  fontSize: 12,
+                  fontSize: 14,
                   flexShrink: 0,
                   cursor: 'pointer',
                 }}
@@ -271,7 +271,7 @@ export function StrategiesScreen() {
               background: C.bg2,
               fontStyle: 'italic',
               color: C.t2,
-              fontSize: 12,
+              fontSize: 14,
               lineHeight: 1.7,
             }}
           >
@@ -293,7 +293,7 @@ export function StrategiesScreen() {
                   color: tab === t ? inv.color : C.t3,
                   fontWeight: tab === t ? 600 : 400,
                   padding: '10px 20px',
-                  fontSize: 12,
+                  fontSize: 14,
                   cursor: 'pointer',
                 }}
               >
@@ -310,7 +310,7 @@ export function StrategiesScreen() {
                 <div
                   style={{
                     color: inv.color,
-                    fontSize: 9,
+                    fontSize: 11,
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     letterSpacing: '.09em',
@@ -319,7 +319,7 @@ export function StrategiesScreen() {
                 >
                   Investment Philosophy
                 </div>
-                <p style={{ color: C.t2, fontSize: 12, lineHeight: 1.8, margin: '0 0 16px' }}>
+                <p style={{ color: C.t2, fontSize: 14, lineHeight: 1.8, margin: '0 0 16px' }}>
                   {inv.ctx.slice(0, 500)}
                   {inv.ctx.length > 500 ? '…' : ''}
                 </p>
@@ -327,13 +327,13 @@ export function StrategiesScreen() {
                 {/* 2-column grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 16 }}>
                   <div style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r10, padding: '13px 15px' }}>
-                    <div style={{ color: inv.color, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.09em', marginBottom: 6 }}>
+                    <div style={{ color: inv.color, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.09em', marginBottom: 6 }}>
                       Core Style
                     </div>
-                    <p style={{ color: C.t2, fontSize: 12, lineHeight: 1.75, margin: 0 }}>{inv.style}</p>
+                    <p style={{ color: C.t2, fontSize: 14, lineHeight: 1.75, margin: 0 }}>{inv.style}</p>
                   </div>
                   <div style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r10, padding: '13px 15px' }}>
-                    <div style={{ color: inv.color, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.09em', marginBottom: 6 }}>
+                    <div style={{ color: inv.color, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.09em', marginBottom: 6 }}>
                       Key Criteria
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -359,10 +359,10 @@ export function StrategiesScreen() {
                       cursor: 'pointer',
                     }}
                   >
-                    <span style={{ color: C.t2, fontSize: 12, fontWeight: 600 }}>
+                    <span style={{ color: C.t2, fontSize: 14, fontWeight: 600 }}>
                       📚 Full context prompt
                     </span>
-                    <span style={{ color: C.t3, fontSize: 12 }}>{expanded ? '▲' : '▼'}</span>
+                    <span style={{ color: C.t3, fontSize: 14 }}>{expanded ? '▲' : '▼'}</span>
                   </button>
                   {expanded && (
                     <div
@@ -371,7 +371,7 @@ export function StrategiesScreen() {
                         borderTop: `1px solid ${C.border}`,
                         paddingTop: 10,
                         color: C.t3,
-                        fontSize: 11,
+                        fontSize: 13,
                         lineHeight: 1.8,
                       }}
                     >
@@ -384,7 +384,7 @@ export function StrategiesScreen() {
 
             {tab === 'Rules' && (
               <div>
-                <div style={{ color: C.t3, fontSize: 11, marginBottom: 12 }}>
+                <div style={{ color: C.t3, fontSize: 13, marginBottom: 12 }}>
                   {inv.rules.length} screening rule{inv.rules.length !== 1 ? 's' : ''} applied during analysis
                 </div>
                 {inv.rules.map((rule, i) => (
@@ -409,12 +409,12 @@ export function StrategiesScreen() {
                       }}
                     />
                     <div style={{ flex: '0 0 160px', minWidth: 0 }}>
-                      <div style={{ color: C.t1, fontSize: 12, fontWeight: 600 }}>{rule.label}</div>
-                      <div style={{ color: inv.color, fontSize: 11, fontFamily: C.mono, marginTop: 2 }}>
+                      <div style={{ color: C.t1, fontSize: 14, fontWeight: 600 }}>{rule.label}</div>
+                      <div style={{ color: inv.color, fontSize: 13, fontFamily: C.mono, marginTop: 2 }}>
                         {rule.id}
                       </div>
                     </div>
-                    <div style={{ color: C.t3, fontSize: 11, lineHeight: 1.65, flex: 1 }}>
+                    <div style={{ color: C.t3, fontSize: 13, lineHeight: 1.65, flex: 1 }}>
                       {rule.description}
                     </div>
                   </div>
@@ -424,7 +424,7 @@ export function StrategiesScreen() {
 
             {tab === 'Formulas' && (
               <div>
-                <div style={{ color: C.t3, fontSize: 11, marginBottom: 12 }}>
+                <div style={{ color: C.t3, fontSize: 13, marginBottom: 12 }}>
                   Valuation formulas used by {inv.shortName}
                 </div>
                 {inv.equations.map((eq) => (
@@ -441,7 +441,7 @@ export function StrategiesScreen() {
                     <div
                       style={{
                         color: C.accent,
-                        fontSize: 10,
+                        fontSize: 12,
                         fontWeight: 700,
                         textTransform: 'uppercase',
                         letterSpacing: '.07em',
@@ -456,7 +456,7 @@ export function StrategiesScreen() {
                         borderRadius: R.r6,
                         padding: '7px 12px',
                         fontFamily: C.mono,
-                        fontSize: 12,
+                        fontSize: 14,
                         color: C.warn,
                         marginBottom: 8,
                         wordBreak: 'break-word',

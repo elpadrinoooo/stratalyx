@@ -16,8 +16,8 @@ export function ComparisonsScreen() {
           Strategy Comparisons
         </h2>
         <div style={{ textAlign: 'center', padding: '60px 0' }}>
-          <div style={{ fontSize: 14, color: C.t2, marginBottom: 6 }}>No comparisons yet</div>
-          <div style={{ fontSize: 12, color: C.t3 }}>
+          <div style={{ fontSize: 16, color: C.t2, marginBottom: 6 }}>No comparisons yet</div>
+          <div style={{ fontSize: 14, color: C.t3 }}>
             Use the "vs" feature in the Analyzer to compare investor frameworks.
           </div>
         </div>
@@ -36,7 +36,7 @@ export function ComparisonsScreen() {
             border: `1px solid ${C.border}`,
             borderRadius: R.r8,
             color: C.t3,
-            fontSize: 11,
+            fontSize: 13,
             padding: '4px 10px',
             cursor: 'pointer',
           }}
@@ -79,10 +79,10 @@ export function ComparisonsScreen() {
                 }}
               >
                 <div>
-                  <span style={{ color: C.accent, fontWeight: 700, fontSize: 14, fontFamily: C.mono }}>
+                  <span style={{ color: C.accent, fontWeight: 700, fontSize: 16, fontFamily: C.mono }}>
                     {comp.ticker}
                   </span>
-                  <span style={{ color: C.t3, fontSize: 11, marginLeft: 8 }}>
+                  <span style={{ color: C.t3, fontSize: 13, marginLeft: 8 }}>
                     {a.companyName}
                   </span>
                 </div>
@@ -91,7 +91,7 @@ export function ComparisonsScreen() {
                     color: absDiff > 3 ? C.warn : C.t2,
                     fontFamily: C.mono,
                     fontWeight: 600,
-                    fontSize: 12,
+                    fontSize: 14,
                   }}
                 >
                   Score delta: {diff > 0 ? '+' : ''}{diff.toFixed(0)}
@@ -113,7 +113,7 @@ export function ComparisonsScreen() {
                         padding: 12,
                       }}
                     >
-                      <div style={{ color: inv.color, fontWeight: 700, fontSize: 12, marginBottom: 6 }}>
+                      <div style={{ color: inv.color, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
                         {inv.name}
                       </div>
                       <div
@@ -124,15 +124,15 @@ export function ComparisonsScreen() {
                           marginBottom: 8,
                         }}
                       >
-                        <span style={{ color: vColor(r.verdict), fontWeight: 700, fontSize: 13 }}>
+                        <span style={{ color: vColor(r.verdict), fontWeight: 700, fontSize: 15 }}>
                           {r.verdict}
                         </span>
-                        <span style={{ color: C.t2, fontSize: 12, fontFamily: C.mono }}>
+                        <span style={{ color: C.t2, fontSize: 14, fontFamily: C.mono }}>
                           {r.strategyScore}/10
                         </span>
                       </div>
                       <ScoreBar score={r.strategyScore} color={scColor(r.strategyScore)} />
-                      <div style={{ color: C.t3, fontSize: 10, marginTop: 6 }}>
+                      <div style={{ color: C.t3, fontSize: 12, marginTop: 6 }}>
                         {r.verdictReason}
                       </div>
                     </div>

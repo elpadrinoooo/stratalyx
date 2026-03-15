@@ -52,10 +52,10 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
           }}
         >
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: C.t1, marginBottom: 3 }}>
+            <div style={{ fontWeight: 700, fontSize: 17, color: C.t1, marginBottom: 3 }}>
               🔑 Financial Modeling Prep API Key
             </div>
-            <div style={{ color: C.t3, fontSize: 11 }}>
+            <div style={{ color: C.t3, fontSize: 13 }}>
               Free tier · 250 API calls/day · Real-time stock data
             </div>
           </div>
@@ -69,7 +69,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
               color: C.t2,
               padding: '5px 9px',
               cursor: 'pointer',
-              fontSize: 12,
+              fontSize: 14,
             }}
           >
             ✕
@@ -84,7 +84,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
             borderRadius: R.r8,
             padding: '10px 13px',
             marginBottom: 14,
-            fontSize: 11,
+            fontSize: 13,
             color: C.t2,
             lineHeight: 1.7,
           }}
@@ -98,7 +98,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
         </div>
 
         {/* Link */}
-        <div style={{ color: C.t3, fontSize: 10, marginBottom: 6 }}>
+        <div style={{ color: C.t3, fontSize: 12, marginBottom: 6 }}>
           Get a free key at{' '}
           <a
             href="https://financialmodelingprep.com/register"
@@ -123,7 +123,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
             border: `1px solid ${C.border}`,
             borderRadius: R.r8,
             padding: '9px 12px',
-            fontSize: 13,
+            fontSize: 15,
             fontFamily: C.mono,
             outline: 'none',
             boxSizing: 'border-box',
@@ -142,7 +142,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
               borderRadius: R.r8,
               padding: '9px 0',
               fontWeight: 700,
-              fontSize: 13,
+              fontSize: 15,
               cursor: 'pointer',
             }}
           >
@@ -156,7 +156,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
               borderRadius: R.r8,
               color: C.t2,
               padding: '9px 16px',
-              fontSize: 12,
+              fontSize: 14,
               cursor: 'pointer',
             }}
           >
@@ -165,7 +165,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
         </div>
 
         {/* Disclaimer */}
-        <div style={{ color: C.t4, fontSize: 9, marginTop: 10, textAlign: 'center' }}>
+        <div style={{ color: C.t4, fontSize: 11, marginTop: 10, textAlign: 'center' }}>
           Key stored in memory only — never sent anywhere except FMP's API directly from your browser.
         </div>
       </div>

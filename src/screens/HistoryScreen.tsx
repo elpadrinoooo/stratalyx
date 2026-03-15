@@ -18,8 +18,8 @@ export function HistoryScreen() {
           Analysis History
         </h2>
         <div style={{ textAlign: 'center', padding: '60px 0' }}>
-          <div style={{ fontSize: 14, color: C.t2, marginBottom: 6 }}>No analyses yet</div>
-          <div style={{ fontSize: 12, color: C.t3 }}>
+          <div style={{ fontSize: 16, color: C.t2, marginBottom: 6 }}>No analyses yet</div>
+          <div style={{ fontSize: 14, color: C.t3 }}>
             Run your first analysis from the Screener or the Analyze button.
           </div>
         </div>
@@ -60,10 +60,10 @@ export function HistoryScreen() {
               {/* Top row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                 <div>
-                  <div style={{ color: C.accent, fontWeight: 700, fontSize: 14, fontFamily: C.mono }}>
+                  <div style={{ color: C.accent, fontWeight: 700, fontSize: 16, fontFamily: C.mono }}>
                     {result.ticker}
                   </div>
-                  <div style={{ color: C.t3, fontSize: 10, marginTop: 2 }}>{result.companyName}</div>
+                  <div style={{ color: C.t3, fontSize: 12, marginTop: 2 }}>{result.companyName}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                   <Tag color={vColor(result.verdict)} small>{result.verdict}</Tag>
@@ -81,8 +81,8 @@ export function HistoryScreen() {
 
               {/* Bottom row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-                <span style={{ color: C.t3, fontSize: 10 }}>Score {result.strategyScore}/10</span>
-                <span style={{ color: C.t4, fontSize: 9 }}>{date}</span>
+                <span style={{ color: C.t3, fontSize: 12 }}>Score {result.strategyScore}/10</span>
+                <span style={{ color: C.t4, fontSize: 11 }}>{date}</span>
               </div>
             </div>
           )

@@ -30,7 +30,7 @@ export function LiveBadge({ live }: Props) {
       <span
         style={{
           color: live ? C.gain : C.warn,
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: 600,
           whiteSpace: 'nowrap',
         }}

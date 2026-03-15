@@ -30,7 +30,7 @@ export function ProviderModelBar() {
     border: `1px solid ${C.border}`,
     borderRadius: R.r8,
     padding: '6px 10px',
-    fontSize: 11,
+    fontSize: 13,
     outline: 'none',
     cursor: 'pointer',
   }
@@ -55,7 +55,7 @@ export function ProviderModelBar() {
           border: `1px solid ${prov.color}33`,
           borderRadius: R.r8,
           padding: '6px 10px',
-          fontSize: 11,
+          fontSize: 13,
           color: prov.color,
           fontWeight: 600,
           display: 'flex',

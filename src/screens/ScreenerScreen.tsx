@@ -40,7 +40,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
 
   const labelStyle: React.CSSProperties = {
     color: C.t3,
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: 600,
     textTransform: 'uppercase',
     letterSpacing: '.07em',
@@ -65,10 +65,10 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
             flexWrap: 'wrap',
           }}
         >
-          <span style={{ fontSize: 14 }}>⚡</span>
+          <span style={{ fontSize: 16 }}>⚡</span>
           <div style={{ flex: 1 }}>
-            <span style={{ color: C.warn, fontWeight: 700, fontSize: 12 }}>Enable Live Data — </span>
-            <span style={{ color: C.t2, fontSize: 11 }}>
+            <span style={{ color: C.warn, fontWeight: 700, fontSize: 14 }}>Enable Live Data — </span>
+            <span style={{ color: C.t2, fontSize: 13 }}>
               Add a free Financial Modeling Prep key to inject real-time financials into every analysis.
             </span>
           </div>
@@ -81,7 +81,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
               borderRadius: R.r8,
               padding: '5px 12px',
               fontWeight: 700,
-              fontSize: 11,
+              fontSize: 13,
               cursor: 'pointer',
             }}
           >
@@ -102,8 +102,8 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
           }}
         >
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: C.gain }} />
-          <span style={{ color: C.gain, fontWeight: 700, fontSize: 11 }}>Live data active</span>
-          <span style={{ color: C.t2, fontSize: 11 }}>
+          <span style={{ color: C.gain, fontWeight: 700, fontSize: 13 }}>Live data active</span>
+          <span style={{ color: C.t2, fontSize: 13 }}>
             — Real-time FMP financials will be injected into every analysis.
           </span>
         </div>
@@ -124,7 +124,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
                 border: `1px solid ${active ? i.color + '44' : C.border}`,
                 borderRadius: R.r8,
                 padding: '4px 10px',
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: 600,
                 cursor: 'pointer',
               }}
@@ -148,10 +148,10 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
           <div style={{ flex: 1 }}>
             <div style={{ marginBottom: 4 }}>
-              <span style={{ color: inv.color, fontWeight: 700, fontSize: 13 }}>{inv.name}</span>
-              <span style={{ color: C.t3, fontWeight: 400, fontSize: 11, marginLeft: 8 }}>{inv.era}</span>
+              <span style={{ color: inv.color, fontWeight: 700, fontSize: 15 }}>{inv.name}</span>
+              <span style={{ color: C.t3, fontWeight: 400, fontSize: 13, marginLeft: 8 }}>{inv.era}</span>
             </div>
-            <div style={{ color: C.t2, fontSize: 11, lineHeight: 1.6, fontStyle: 'italic', marginBottom: 8 }}>
+            <div style={{ color: C.t2, fontSize: 13, lineHeight: 1.6, fontStyle: 'italic', marginBottom: 8 }}>
               "{inv.tagline}"
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -177,7 +177,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
             border: `1px solid ${C.border}`,
             borderRadius: R.r8,
             padding: '7px 12px',
-            fontSize: 12,
+            fontSize: 14,
             outline: 'none',
             fontFamily: C.sans,
           }}
@@ -194,7 +194,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
             borderRadius: R.r8,
             padding: '7px 13px',
             fontWeight: 600,
-            fontSize: 11,
+            fontSize: 13,
             cursor: 'pointer',
           }}
         >
@@ -225,14 +225,14 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <WLBtn ticker={stock.ticker} inWatchlist={inWatchlist(stock.ticker)} onToggle={toggle} />
-                      <span style={{ color: C.accent, fontWeight: 700, fontSize: 13, fontFamily: C.mono }}>{stock.ticker}</span>
-                      <span style={{ color: C.t2, fontSize: 11 }}>{stock.name}</span>
+                      <span style={{ color: C.accent, fontWeight: 700, fontSize: 15, fontFamily: C.mono }}>{stock.ticker}</span>
+                      <span style={{ color: C.t2, fontSize: 13 }}>{stock.name}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {result && <Tag color={pegColor(result.peg)} small>{result.strategyScore}/10</Tag>}
                       <button
                         onClick={() => openAnalyzer(stock.ticker)}
-                        style={{ background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r6, color: C.accent, fontSize: 10, fontWeight: 600, padding: '3px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        style={{ background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r6, color: C.accent, fontSize: 12, fontWeight: 600, padding: '3px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}
                       >
                         {result ? 'Re-analyze' : 'Analyze'}
                       </button>
@@ -240,7 +240,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Tag color={C.t2} small>{stock.sector}</Tag>
-                    <span style={{ color: C.t3, fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.description}</span>
+                    <span style={{ color: C.t3, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.description}</span>
                   </div>
                 </div>
               )
@@ -260,7 +260,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
                         padding: '8px 10px',
                         textAlign: 'left',
                         fontWeight: 600,
-                        fontSize: 9,
+                        fontSize: 11,
                         letterSpacing: '.08em',
                         textTransform: 'uppercase',
                         borderBottom: `1px solid ${C.border}`,
@@ -283,22 +283,22 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
                         <WLBtn ticker={stock.ticker} inWatchlist={inWatchlist(stock.ticker)} onToggle={toggle} />
                       </td>
                       <td style={{ padding: '8px 10px' }}>
-                        <span style={{ color: C.accent, fontWeight: 700, fontSize: 12, fontFamily: C.mono }}>{stock.ticker}</span>
+                        <span style={{ color: C.accent, fontWeight: 700, fontSize: 14, fontFamily: C.mono }}>{stock.ticker}</span>
                       </td>
                       <td style={{ padding: '8px 10px' }}>
-                        <span style={{ color: C.t1, fontSize: 11 }}>{stock.name}</span>
+                        <span style={{ color: C.t1, fontSize: 13 }}>{stock.name}</span>
                       </td>
                       <td style={{ padding: '8px 10px' }}>
                         <Tag color={C.t2} small>{stock.sector}</Tag>
                       </td>
                       <td style={{ padding: '8px 10px', maxWidth: 300 }}>
-                        <span style={{ color: C.t3, fontSize: 11 }}>{stock.description}</span>
+                        <span style={{ color: C.t3, fontSize: 13 }}>{stock.description}</span>
                       </td>
                       <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
                         {result && <Tag color={pegColor(result.peg)} small>{result.strategyScore}/10</Tag>}
                         <button
                           onClick={() => openAnalyzer(stock.ticker)}
-                          style={{ marginLeft: result ? 6 : 0, background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r6, color: C.accent, fontSize: 10, fontWeight: 600, padding: '3px 10px', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                          style={{ marginLeft: result ? 6 : 0, background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r6, color: C.accent, fontSize: 12, fontWeight: 600, padding: '3px 10px', whiteSpace: 'nowrap', cursor: 'pointer' }}
                         >
                           {result ? 'Re-analyze' : 'Analyze'}
                         </button>
@@ -313,10 +313,10 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
 
         {/* Footer */}
         <div style={{ padding: '7px 14px', borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4 }}>
-          <span style={{ color: C.t3, fontSize: 10 }}>
+          <span style={{ color: C.t3, fontSize: 12 }}>
             {filtered.length} stock{filtered.length !== 1 ? 's' : ''}{search ? ` matching "${search}"` : ''}
           </span>
-          <span style={{ color: C.t4, fontSize: 9 }}>Educational only · Not financial advice</span>
+          <span style={{ color: C.t4, fontSize: 11 }}>Educational only · Not financial advice</span>
         </div>
       </div>
     </div>

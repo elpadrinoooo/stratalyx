@@ -30,14 +30,14 @@ export function WatchlistScreen() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
           <div>
             <h2 style={{ margin: '0 0 2px', color: C.t1, fontSize: 18, fontWeight: 700 }}>Watchlist</h2>
-            <div style={{ color: C.t3, fontSize: 12 }}>Track your favourite stocks</div>
+            <div style={{ color: C.t3, fontSize: 14 }}>Track your favourite stocks</div>
           </div>
           <ProviderModelBar />
         </div>
         <div style={{ textAlign: 'center', padding: '60px 0' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>☆</div>
-          <div style={{ fontSize: 14, color: C.t2, marginBottom: 6 }}>Your watchlist is empty</div>
-          <div style={{ fontSize: 12, color: C.t3, marginBottom: 20 }}>
+          <div style={{ fontSize: 16, color: C.t2, marginBottom: 6 }}>Your watchlist is empty</div>
+          <div style={{ fontSize: 14, color: C.t3, marginBottom: 20 }}>
             Star any stock in the Screener to add it here.
           </div>
           <button
@@ -49,7 +49,7 @@ export function WatchlistScreen() {
               borderRadius: R.r8,
               padding: '8px 16px',
               fontWeight: 600,
-              fontSize: 12,
+              fontSize: 14,
               cursor: 'pointer',
             }}
           >
@@ -62,7 +62,7 @@ export function WatchlistScreen() {
 
   const labelStyle: React.CSSProperties = {
     color: C.t3,
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: 600,
     textTransform: 'uppercase',
     letterSpacing: '.07em',
@@ -74,7 +74,7 @@ export function WatchlistScreen() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h2 style={{ margin: '0 0 2px', color: C.t1, fontSize: 18, fontWeight: 700 }}>Watchlist</h2>
-          <div style={{ color: C.t3, fontSize: 12 }}>{watchlist.length} stock{watchlist.length !== 1 ? 's' : ''} tracked</div>
+          <div style={{ color: C.t3, fontSize: 14 }}>{watchlist.length} stock{watchlist.length !== 1 ? 's' : ''} tracked</div>
         </div>
         <ProviderModelBar />
       </div>
@@ -93,7 +93,7 @@ export function WatchlistScreen() {
                 border: `1px solid ${active ? i.color + '44' : C.border}`,
                 borderRadius: R.r8,
                 padding: '4px 10px',
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: 600,
                 cursor: 'pointer',
               }}
@@ -122,7 +122,7 @@ export function WatchlistScreen() {
               {/* Card header */}
               <div style={{ padding: '12px 14px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <span style={{ color: C.accent, fontWeight: 700, fontSize: 15, fontFamily: C.mono }}>
+                  <span style={{ color: C.accent, fontWeight: 700, fontSize: 17, fontFamily: C.mono }}>
                     {stock.ticker}
                   </span>
                   {result?.moat && (
@@ -130,8 +130,8 @@ export function WatchlistScreen() {
                       <Tag color={C.gain} small>{result.moat}</Tag>
                     </span>
                   )}
-                  <div style={{ color: C.t2, fontSize: 11, marginTop: 2 }}>{stock.name}</div>
-                  {stock.sector && <div style={{ color: C.t3, fontSize: 10, marginTop: 1 }}>{stock.sector}</div>}
+                  <div style={{ color: C.t2, fontSize: 13, marginTop: 2 }}>{stock.name}</div>
+                  {stock.sector && <div style={{ color: C.t3, fontSize: 12, marginTop: 1 }}>{stock.sector}</div>}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                   <WLBtn ticker={stock.ticker} inWatchlist={true} onToggle={toggle} />
@@ -155,7 +155,7 @@ export function WatchlistScreen() {
                     }}
                   >
                     <div style={{ ...labelStyle, marginBottom: 2 }}>{label}</div>
-                    <div style={{ color, fontSize: 11, fontFamily: C.mono, fontWeight: 600 }}>{value}</div>
+                    <div style={{ color, fontSize: 13, fontFamily: C.mono, fontWeight: 600 }}>{value}</div>
                   </div>
                 ))}
               </div>
@@ -165,11 +165,11 @@ export function WatchlistScreen() {
                 <div style={{ padding: '12px 14px' }}>
                   {result.isLive && <div style={{ marginBottom: 8 }}><LiveBadge live={true} /></div>}
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <span style={{ color: C.t3, fontSize: 10, fontWeight: 600 }}>Strategy score</span>
-                    <span style={{ color: C.t2, fontSize: 10, fontFamily: C.mono }}>{result.strategyScore}/10</span>
+                    <span style={{ color: C.t3, fontSize: 12, fontWeight: 600 }}>Strategy score</span>
+                    <span style={{ color: C.t2, fontSize: 12, fontFamily: C.mono }}>{result.strategyScore}/10</span>
                   </div>
                   <ScoreBar score={result.strategyScore} color={scColor(result.strategyScore)} />
-                  <div style={{ color: C.t3, fontSize: 10, marginTop: 8, lineHeight: 1.5 }}>
+                  <div style={{ color: C.t3, fontSize: 12, marginTop: 8, lineHeight: 1.5 }}>
                     {result.verdictReason}
                   </div>
                   <button
@@ -181,7 +181,7 @@ export function WatchlistScreen() {
                       border: `1px solid ${C.accentB}`,
                       borderRadius: R.r8,
                       color: C.accent,
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: 600,
                       padding: '6px 0',
                       cursor: 'pointer',
@@ -192,7 +192,7 @@ export function WatchlistScreen() {
                 </div>
               ) : (
                 <div style={{ padding: '12px 14px', textAlign: 'center' }}>
-                  <div style={{ color: C.t3, fontSize: 11, marginBottom: 10 }}>
+                  <div style={{ color: C.t3, fontSize: 13, marginBottom: 10 }}>
                     Not yet analyzed with {inv.shortName}
                   </div>
                   <button
@@ -203,7 +203,7 @@ export function WatchlistScreen() {
                       color: '#fff',
                       border: 'none',
                       borderRadius: R.r8,
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: 600,
                       padding: '7px 0',
                       cursor: 'pointer',

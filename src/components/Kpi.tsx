@@ -20,7 +20,7 @@ export function Kpi({ label, value, color }: Props) {
       <div
         style={{
           color: C.t3,
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 600,
           textTransform: 'uppercase',
           letterSpacing: '.07em',
@@ -33,7 +33,7 @@ export function Kpi({ label, value, color }: Props) {
         style={{
           color: color ?? C.t1,
           fontWeight: 600,
-          fontSize: 13,
+          fontSize: 15,
           fontFamily: C.mono,
         }}
       >

@@ -50,7 +50,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
           fontWeight: active ? 600 : 400,
           borderRadius: R.r8,
           padding: '4px 11px',
-          fontSize: 11,
+          fontSize: 13,
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -63,7 +63,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
             style={{
               background: C.accent,
               color: '#fff',
-              fontSize: 9,
+              fontSize: 11,
               fontWeight: 700,
               borderRadius: R.r99,
               padding: '1px 5px',
@@ -84,10 +84,10 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
       aria-label="Stratalyx home"
       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8 }}
     >
-      <div style={{ background: C.accent, borderRadius: R.r8, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+      <div style={{ background: C.accent, borderRadius: R.r8, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
         S
       </div>
-      <div style={{ fontWeight: 700, fontSize: 13, color: C.t1 }}>Stratalyx.ai</div>
+      <div style={{ fontWeight: 700, fontSize: 15, color: C.t1 }}>Stratalyx.ai</div>
     </button>
   )
 
@@ -98,7 +98,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
       style={{ display: 'flex', alignItems: 'center', gap: 5, background: fmpKeySet ? C.gainBg : C.warnBg, border: `1px solid ${fmpKeySet ? C.gainB : C.warnB}`, borderRadius: R.r8, padding: '5px 9px', cursor: 'pointer' }}
     >
       <div style={{ width: 6, height: 6, borderRadius: '50%', background: fmpKeySet ? C.gain : C.warn }} />
-      <span style={{ fontSize: 10, fontWeight: 600, color: fmpKeySet ? C.gain : C.warn }}>
+      <span style={{ fontSize: 12, fontWeight: 600, color: fmpKeySet ? C.gain : C.warn }}>
         {isMobile ? (fmpKeySet ? 'Live' : 'API Key') : (fmpKeySet ? 'Live Data' : 'Add API Key')}
       </span>
     </button>
@@ -108,7 +108,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
     <button
       onClick={() => dispatch({ type: 'OPEN_MODAL', payload: '' })}
       aria-label="Analyze stock"
-      style={{ background: C.accent, color: '#fff', border: 'none', borderRadius: R.r8, padding: isMobile ? '6px 10px' : '6px 13px', fontWeight: 600, fontSize: 11, cursor: 'pointer' }}
+      style={{ background: C.accent, color: '#fff', border: 'none', borderRadius: R.r8, padding: isMobile ? '6px 10px' : '6px 13px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
     >
       {isMobile ? '+' : 'Analyze Stock'}
     </button>
@@ -153,7 +153,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         {logoBtn}
         <div>
-          <div style={{ color: C.t3, fontSize: 10 }}>Multi-investor · Multi-LLM · Live Data</div>
+          <div style={{ color: C.t3, fontSize: 12 }}>Multi-investor · Multi-LLM · Live Data</div>
         </div>
 
         {/* Divider */}
@@ -172,7 +172,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
         {/* Active investor pill */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: inv.color + '18', border: `1px solid ${inv.color}33`, borderRadius: R.r8, padding: '4px 9px' }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: inv.color }} />
-          <span style={{ color: inv.color, fontSize: 10, fontWeight: 600 }}>{inv.shortName}</span>
+          <span style={{ color: inv.color, fontSize: 12, fontWeight: 600 }}>{inv.shortName}</span>
         </div>
 
         {analyzeBtn}

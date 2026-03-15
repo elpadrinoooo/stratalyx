@@ -21,7 +21,7 @@ export function WLBtn({ ticker, inWatchlist, onToggle }: Props) {
         background: 'none',
         border: 'none',
         cursor: 'pointer',
-        fontSize: 14,
+        fontSize: 16,
         color: inWatchlist ? C.warn : C.t3,
         padding: '2px 4px',
         lineHeight: 1,

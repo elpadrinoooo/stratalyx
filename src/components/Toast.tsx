@@ -36,7 +36,7 @@ export function Toast({ toast, onDismiss }: Props) {
         maxWidth: 300,
       }}
     >
-      <span style={{ fontSize: 12, color: C.t2, flex: 1 }}>{toast.message}</span>
+      <span style={{ fontSize: 14, color: C.t2, flex: 1 }}>{toast.message}</span>
       <button
         onClick={() => onDismiss(toast.id)}
         aria-label="Dismiss notification"
@@ -44,7 +44,7 @@ export function Toast({ toast, onDismiss }: Props) {
           background: 'none',
           border: 'none',
           color: C.t3,
-          fontSize: 12,
+          fontSize: 14,
           cursor: 'pointer',
           padding: 0,
           flexShrink: 0,
