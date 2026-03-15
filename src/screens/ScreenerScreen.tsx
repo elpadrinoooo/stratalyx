@@ -4,6 +4,7 @@ import { INVESTORS, INV } from '../constants/investors'
 import { STOCKS } from '../constants/stocks'
 import { useApp } from '../state/context'
 import { useWatchlist } from '../hooks/useWatchlist'
+import { useWindowWidth } from '../hooks/useWindowWidth'
 import { Tag } from '../components/Tag'
 import { WLBtn } from '../components/WLBtn'
 import { ProviderModelBar } from '../components/ProviderModelBar'
@@ -19,6 +20,8 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
   const { state, dispatch } = useApp()
   const { inWatchlist, toggle } = useWatchlist()
   const [search, setSearch] = useState('')
+  const width = useWindowWidth()
+  const isMobile = width <= 640
 
   const inv = INV[state.investor] ?? INVESTORS[0]
 
@@ -168,7 +171,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
-            width: 180,
+            flex: isMobile ? '1 1 100%' : '0 0 180px',
             background: C.bg2,
             color: C.t1,
             border: `1px solid ${C.border}`,
@@ -183,7 +186,8 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
         <button
           onClick={() => openAnalyzer('')}
           style={{
-            marginLeft: 'auto',
+            marginLeft: isMobile ? 0 : 'auto',
+            flex: isMobile ? '1 1 100%' : undefined,
             background: C.accent,
             color: '#fff',
             border: 'none',
@@ -198,7 +202,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
         </button>
       </div>
 
-      {/* Table */}
+      {/* Stock list */}
       <div
         style={{
           background: C.bg1,
@@ -207,110 +211,110 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
           overflow: 'hidden',
         }}
       >
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <thead>
-              <tr>
-                {['', 'Ticker', 'Company', 'Sector', 'Description', ''].map((h, i) => (
-                  <th
-                    key={i}
-                    style={{
-                      color: C.t3,
-                      padding: '8px 10px',
-                      textAlign: 'left',
-                      fontWeight: 600,
-                      fontSize: 9,
-                      letterSpacing: '.08em',
-                      textTransform: 'uppercase',
-                      borderBottom: `1px solid ${C.border}`,
-                      background: C.bg1,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((stock) => {
-                const key = `${stock.ticker}:${state.investor}`
-                const result = state.analyses[key]
-                return (
-                  <tr
-                    key={stock.ticker}
-                    style={{ borderBottom: `1px solid ${C.border}` }}
-                  >
-                    {/* Star */}
-                    <td style={{ padding: '8px 6px 8px 10px' }}>
-                      <WLBtn
-                        ticker={stock.ticker}
-                        inWatchlist={inWatchlist(stock.ticker)}
-                        onToggle={toggle}
-                      />
-                    </td>
-                    {/* Ticker */}
-                    <td style={{ padding: '8px 10px' }}>
-                      <span style={{ color: C.accent, fontWeight: 700, fontSize: 12, fontFamily: C.mono }}>
-                        {stock.ticker}
-                      </span>
-                    </td>
-                    {/* Company */}
-                    <td style={{ padding: '8px 10px' }}>
-                      <span style={{ color: C.t1, fontSize: 11 }}>{stock.name}</span>
-                    </td>
-                    {/* Sector */}
-                    <td style={{ padding: '8px 10px' }}>
-                      <Tag color={C.t2} small>{stock.sector}</Tag>
-                    </td>
-                    {/* Description */}
-                    <td style={{ padding: '8px 10px', maxWidth: 300 }}>
-                      <span style={{ color: C.t3, fontSize: 11 }}>{stock.description}</span>
-                    </td>
-                    {/* Score & analyze */}
-                    <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
-                      {result && (
-                        <Tag color={pegColor(result.peg)} small>
-                          {result.strategyScore}/10
-                        </Tag>
-                      )}
+        {isMobile ? (
+          /* ── Mobile card list ── */
+          <div>
+            {filtered.map((stock) => {
+              const key = `${stock.ticker}:${state.investor}`
+              const result = state.analyses[key]
+              return (
+                <div
+                  key={stock.ticker}
+                  style={{ borderBottom: `1px solid ${C.border}`, padding: '10px 14px' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <WLBtn ticker={stock.ticker} inWatchlist={inWatchlist(stock.ticker)} onToggle={toggle} />
+                      <span style={{ color: C.accent, fontWeight: 700, fontSize: 13, fontFamily: C.mono }}>{stock.ticker}</span>
+                      <span style={{ color: C.t2, fontSize: 11 }}>{stock.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {result && <Tag color={pegColor(result.peg)} small>{result.strategyScore}/10</Tag>}
                       <button
                         onClick={() => openAnalyzer(stock.ticker)}
-                        style={{
-                          marginLeft: result ? 6 : 0,
-                          background: C.accentM,
-                          border: `1px solid ${C.accentB}`,
-                          borderRadius: R.r6,
-                          color: C.accent,
-                          fontSize: 10,
-                          fontWeight: 600,
-                          padding: '3px 10px',
-                          whiteSpace: 'nowrap',
-                          cursor: 'pointer',
-                        }}
+                        style={{ background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r6, color: C.accent, fontSize: 10, fontWeight: 600, padding: '3px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}
                       >
                         {result ? 'Re-analyze' : 'Analyze'}
                       </button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Tag color={C.t2} small>{stock.sector}</Tag>
+                    <span style={{ color: C.t3, fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.description}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          /* ── Desktop table ── */
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+              <thead>
+                <tr>
+                  {['', 'Ticker', 'Company', 'Sector', 'Description', ''].map((h, i) => (
+                    <th
+                      key={i}
+                      style={{
+                        color: C.t3,
+                        padding: '8px 10px',
+                        textAlign: 'left',
+                        fontWeight: 600,
+                        fontSize: 9,
+                        letterSpacing: '.08em',
+                        textTransform: 'uppercase',
+                        borderBottom: `1px solid ${C.border}`,
+                        background: C.bg1,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((stock) => {
+                  const key = `${stock.ticker}:${state.investor}`
+                  const result = state.analyses[key]
+                  return (
+                    <tr key={stock.ticker} style={{ borderBottom: `1px solid ${C.border}` }}>
+                      <td style={{ padding: '8px 6px 8px 10px' }}>
+                        <WLBtn ticker={stock.ticker} inWatchlist={inWatchlist(stock.ticker)} onToggle={toggle} />
+                      </td>
+                      <td style={{ padding: '8px 10px' }}>
+                        <span style={{ color: C.accent, fontWeight: 700, fontSize: 12, fontFamily: C.mono }}>{stock.ticker}</span>
+                      </td>
+                      <td style={{ padding: '8px 10px' }}>
+                        <span style={{ color: C.t1, fontSize: 11 }}>{stock.name}</span>
+                      </td>
+                      <td style={{ padding: '8px 10px' }}>
+                        <Tag color={C.t2} small>{stock.sector}</Tag>
+                      </td>
+                      <td style={{ padding: '8px 10px', maxWidth: 300 }}>
+                        <span style={{ color: C.t3, fontSize: 11 }}>{stock.description}</span>
+                      </td>
+                      <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                        {result && <Tag color={pegColor(result.peg)} small>{result.strategyScore}/10</Tag>}
+                        <button
+                          onClick={() => openAnalyzer(stock.ticker)}
+                          style={{ marginLeft: result ? 6 : 0, background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r6, color: C.accent, fontSize: 10, fontWeight: 600, padding: '3px 10px', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                        >
+                          {result ? 'Re-analyze' : 'Analyze'}
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Footer */}
-        <div
-          style={{
-            padding: '7px 14px',
-            borderTop: `1px solid ${C.border}`,
-            display: 'flex',
-            justifyContent: 'space-between',
-          }}
-        >
+        <div style={{ padding: '7px 14px', borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4 }}>
           <span style={{ color: C.t3, fontSize: 10 }}>
-            {filtered.length} stock{filtered.length !== 1 ? 's' : ''}
-            {search ? ` matching "${search}"` : ''}
+            {filtered.length} stock{filtered.length !== 1 ? 's' : ''}{search ? ` matching "${search}"` : ''}
           </span>
           <span style={{ color: C.t4, fontSize: 9 }}>Educational only · Not financial advice</span>
         </div>

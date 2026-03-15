@@ -125,8 +125,8 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
             {analyzeBtn}
           </div>
         </div>
-        {/* Row 2: scrollable tab strip */}
-        <div style={{ overflowX: 'auto', borderTop: `1px solid ${C.border}44` }}>
+        {/* Row 2: scrollable tab strip (scrollbar hidden) */}
+        <div style={{ overflowX: 'auto', borderTop: `1px solid ${C.border}44`, scrollbarWidth: 'none' } as React.CSSProperties}>
           <div style={{ display: 'flex', gap: 2, padding: '5px 14px 6px', width: 'max-content' }}>
             {SCREENS.map(({ label, screen }) => tabBtn(screen, label))}
           </div>

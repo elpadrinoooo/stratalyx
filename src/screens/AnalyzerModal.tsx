@@ -173,6 +173,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
           width: '100%',
           maxWidth: 900,
           boxShadow: '0 24px 80px rgba(0,0,0,.7)',
+          overflow: 'hidden',
         }}
       >
         {/* MODAL HEADER */}
@@ -189,9 +190,11 @@ export function AnalyzerModal({ fmpKey }: Props) {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: C.t1 }}>Strategy Analyzer</span>
-            <span style={{ color: C.t3, fontSize: 11 }}>
-              {inv.name} · {prov?.shortName ?? ''} · {state.model}
-            </span>
+            {!isMobile && (
+              <span style={{ color: C.t3, fontSize: 11 }}>
+                {inv.name} · {prov?.shortName ?? ''} · {state.model}
+              </span>
+            )}
             {result && <LiveBadge live={result.isLive} />}
           </div>
           <button
@@ -212,7 +215,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
         </div>
 
         {/* MODAL BODY */}
-        <div style={{ padding: 18, maxHeight: '82vh', overflowY: 'auto' }}>
+        <div style={{ padding: 18, maxHeight: '82vh', overflowY: 'auto', overflowX: 'hidden' }}>
 
           {/* SETTINGS PANEL */}
           <div
