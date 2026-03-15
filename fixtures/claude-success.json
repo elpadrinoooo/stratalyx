@@ -1,0 +1,8 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Here is my analysis:\n\n```json\n{\n  \"strategyScore\": 8,\n  \"verdict\": \"BUY\",\n  \"verdictReason\": \"Strong moat, consistent earnings growth, and reasonable valuation.\",\n  \"marketPrice\": 185.5,\n  \"intrinsicValueLow\": 170,\n  \"intrinsicValueHigh\": 220,\n  \"marginOfSafety\": 8.4,\n  \"moSUp\": true,\n  \"moat\": \"Wide\",\n  \"moatScore\": 9,\n  \"screenResults\": [\n    { \"rule\": \"ROE > 15%\", \"pass\": true, \"note\": \"ROE of 147% — exceptional capital efficiency\" },\n    { \"rule\": \"Debt/Equity < 1\", \"pass\": false, \"note\": \"Carries significant debt but FCF covers it\" },\n    { \"rule\": \"Consistent earnings\", \"pass\": true, \"note\": \"10+ years of growing EPS\" }\n  ],\n  \"strengths\": [\n    \"Unmatched brand loyalty and ecosystem lock-in\",\n    \"Services revenue growing ~20% YoY\",\n    \"Best-in-class free cash flow generation\"\n  ],\n  \"risks\": [\n    \"High valuation relative to hardware peers\",\n    \"Regulatory pressure in EU and China\"\n  ],\n  \"thesis\": \"Apple's wide moat from its ecosystem, brand, and services flywheel justifies a premium. At current prices the stock offers a modest margin of safety for a long-term holder.\",\n  \"roe\": 147.2,\n  \"pe\": 28.5,\n  \"peg\": 1.9,\n  \"margin\": 26.4,\n  \"debtLevel\": \"Moderate\",\n  \"div\": 0.55,\n  \"fcf\": 99.6\n}\n```"
+    }
+  ]
+}

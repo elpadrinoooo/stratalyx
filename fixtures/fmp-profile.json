@@ -1,0 +1,17 @@
+[
+  {
+    "symbol": "AAPL",
+    "companyName": "Apple Inc.",
+    "sector": "Technology",
+    "industry": "Consumer Electronics",
+    "description": "Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide.",
+    "website": "https://www.apple.com",
+    "mktCap": 2850000000000,
+    "price": 185.5,
+    "currency": "USD",
+    "exchange": "NASDAQ",
+    "country": "US",
+    "fullTimeEmployees": "160000",
+    "image": "https://financialmodelingprep.com/image-stock/AAPL.png"
+  }
+]

@@ -1,0 +1,47 @@
+import type { AnalysisResult } from './analysis'
+
+export type Screen = 'Screener' | 'Strategies' | 'Watchlist' | 'History' | 'Comparisons'
+
+export interface Toast {
+  id: string
+  message: string
+  type: 'success' | 'error' | 'info'
+}
+
+export interface Comparison {
+  id: string
+  ticker: string
+  investorIds: string[]
+  timestamp: number
+}
+
+export interface AppState {
+  screen: Screen
+  investor: string
+  provider: string
+  model: string
+  modalOpen: boolean
+  modalTicker: string
+  analyses: Record<string, AnalysisResult>
+  comparisons: Comparison[]
+  watchlist: string[]
+  toasts: Toast[]
+}
+
+export type Action =
+  | { type: 'SET_SCREEN'; payload: Screen }
+  | { type: 'SET_INVESTOR'; payload: string }
+  | { type: 'SET_PROVIDER'; payload: string }
+  | { type: 'SET_MODEL'; payload: string }
+  | { type: 'OPEN_MODAL'; payload: string }
+  | { type: 'CLOSE_MODAL' }
+  | { type: 'SET_ANALYSIS'; payload: AnalysisResult }
+  | { type: 'CLEAR_ANALYSIS'; payload: string }
+  | { type: 'CLEAR_ALL_ANALYSES' }
+  | { type: 'ADD_COMPARISON'; payload: Comparison }
+  | { type: 'REMOVE_COMPARISON'; payload: string }
+  | { type: 'CLEAR_COMPARISONS' }
+  | { type: 'ADD_TO_WATCHLIST'; payload: string }
+  | { type: 'REMOVE_FROM_WATCHLIST'; payload: string }
+  | { type: 'TOAST'; payload: { message: string; type: Toast['type'] } }
+  | { type: 'DISMISS_TOAST'; payload: string }
