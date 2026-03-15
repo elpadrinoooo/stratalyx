@@ -15,12 +15,31 @@ import { ComparisonsScreen } from './screens/ComparisonsScreen'
 
 const SESSION_KEY = 'stratalyx_fmp_key'
 
+/** Parse a share hash like #/analysis/AAPL/buffett → { ticker, investorId } */
+function parseShareHash(): { ticker: string; investorId: string } | null {
+  const m = window.location.hash.match(/^#\/analysis\/([A-Z.]+)\/([a-z]+)$/i)
+  if (!m) return null
+  return { ticker: m[1].toUpperCase(), investorId: m[2].toLowerCase() }
+}
+
 function AppShell() {
   const { state, dispatch } = useApp()
   const [fmpKey, setFmpKey] = useState<string>(
     () => sessionStorage.getItem(SESSION_KEY) ?? ''
   )
   const [fmpModalOpen, setFmpModalOpen] = useState(false)
+
+  // Handle deep-link hash on first load
+  useEffect(() => {
+    const share = parseShareHash()
+    if (share) {
+      dispatch({ type: 'SET_INVESTOR', payload: share.investorId })
+      dispatch({ type: 'OPEN_MODAL', payload: share.ticker })
+      // Clear hash so it doesn't re-trigger on navigate
+      history.replaceState(null, '', window.location.pathname)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, [])
 
   // Cmd/Ctrl+K → open analyzer modal
   useEffect(() => {

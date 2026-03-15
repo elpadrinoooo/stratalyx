@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { C, R } from '../constants/colors'
 import { INVESTORS, INV } from '../constants/investors'
 import { STOCKS } from '../constants/stocks'
@@ -7,8 +7,7 @@ import { useWatchlist } from '../hooks/useWatchlist'
 import { useWindowWidth } from '../hooks/useWindowWidth'
 import { Tag } from '../components/Tag'
 import { WLBtn } from '../components/WLBtn'
-import { ProviderModelBar } from '../components/ProviderModelBar'
-import { pegColor } from '../engine/utils'
+import { pegColor, scColor } from '../engine/utils'
 import type { Stock } from '../types'
 
 interface Props {
@@ -20,19 +19,53 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
   const { state, dispatch } = useApp()
   const { inWatchlist, toggle } = useWatchlist()
   const [search, setSearch] = useState('')
+  const [sectorFilter, setSectorFilter] = useState('All')
+  const [sortBy, setSortBy] = useState<'default' | 'score' | 'ticker'>('default')
+  const [welcomeDismissed, setWelcomeDismissed] = useState(() =>
+    localStorage.getItem('stratalyx_welcomed') === '1'
+  )
   const width = useWindowWidth()
   const isMobile = width <= 640
 
+  const dismissWelcome = () => {
+    localStorage.setItem('stratalyx_welcomed', '1')
+    setWelcomeDismissed(true)
+  }
+
+  // Mark welcomed after first analysis runs
+  useEffect(() => {
+    if (Object.keys(state.analyses).length > 0) {
+      localStorage.setItem('stratalyx_welcomed', '1')
+      setWelcomeDismissed(true)
+    }
+  }, [state.analyses])
+
   const inv = INV[state.investor] ?? INVESTORS[0]
 
-  const filtered: Stock[] = STOCKS.filter((s) => {
-    const q = search.toLowerCase()
-    return (
-      s.ticker.toLowerCase().includes(q) ||
-      s.name.toLowerCase().includes(q) ||
-      s.sector.toLowerCase().includes(q)
-    )
-  })
+  const sectors = ['All', ...Array.from(new Set(STOCKS.map((s) => s.sector))).sort()]
+
+  const filtered: Stock[] = STOCKS
+    .filter((s) => {
+      const q = search.toLowerCase()
+      const matchesSearch = (
+        s.ticker.toLowerCase().includes(q) ||
+        s.name.toLowerCase().includes(q) ||
+        s.sector.toLowerCase().includes(q)
+      )
+      const matchesSector = sectorFilter === 'All' || s.sector === sectorFilter
+      return matchesSearch && matchesSector
+    })
+    .sort((a, b) => {
+      if (sortBy === 'ticker') return a.ticker.localeCompare(b.ticker)
+      if (sortBy === 'score') {
+        const ra = state.analyses[`${a.ticker}:${state.investor}`]
+        const rb = state.analyses[`${b.ticker}:${state.investor}`]
+        const sa = ra?.strategyScore ?? -1
+        const sb = rb?.strategyScore ?? -1
+        return sb - sa
+      }
+      return 0
+    })
 
   const openAnalyzer = (ticker: string) => {
     dispatch({ type: 'OPEN_MODAL', payload: ticker })
@@ -50,63 +83,86 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
   return (
     <div style={{ padding: 18, maxWidth: 1440, margin: '0 auto' }}>
 
-      {/* FMP Banner */}
-      {!fmpKeySet ? (
+      {/* Page title — shown only after welcome dismissed */}
+      {welcomeDismissed && (
+        <div style={{ marginBottom: 16 }}>
+          <h1 style={{ margin: '0 0 2px', color: C.t1, fontSize: 22, fontWeight: 800 }}>Stock Screener</h1>
+          <div style={{ color: C.t3, fontSize: 14 }}>Browse and analyse stocks through legendary investor frameworks</div>
+        </div>
+      )}
+
+      {/* Welcome hero — shown on first visit until dismissed or first analysis runs */}
+      {!welcomeDismissed && (
         <div
           style={{
-            background: C.warnBg,
-            border: `1px solid ${C.warnB}`,
-            borderRadius: R.r10,
-            padding: '10px 14px',
-            marginBottom: 14,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            flexWrap: 'wrap',
+            background: 'linear-gradient(135deg, rgba(99,102,241,.12) 0%, rgba(16,185,129,.06) 100%)',
+            border: `1px solid ${C.accentB}`,
+            borderRadius: R.r12,
+            padding: isMobile ? '16px 14px' : '20px 24px',
+            marginBottom: 16,
+            position: 'relative',
           }}
         >
-          <span style={{ fontSize: 16 }}>⚡</span>
-          <div style={{ flex: 1 }}>
-            <span style={{ color: C.warn, fontWeight: 700, fontSize: 14 }}>Enable Live Data — </span>
-            <span style={{ color: C.t2, fontSize: 13 }}>
-              Add a free Financial Modeling Prep key to inject real-time financials into every analysis.
-            </span>
-          </div>
           <button
-            onClick={onOpenFmpModal}
-            style={{
-              background: C.warn,
-              color: C.bg0,
-              border: 'none',
-              borderRadius: R.r8,
-              padding: '5px 12px',
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: 'pointer',
-            }}
+            onClick={dismissWelcome}
+            aria-label="Dismiss welcome"
+            style={{ position: 'absolute', top: 10, right: 12, background: 'none', border: 'none', color: C.t3, fontSize: 16, cursor: 'pointer', padding: 4 }}
           >
-            Enable Live Data
+            ✕
           </button>
+          <div style={{ display: 'flex', gap: isMobile ? 10 : 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ color: C.accent, fontWeight: 800, fontSize: isMobile ? 16 : 18, marginBottom: 6 }}>
+                Welcome to Stratalyx.ai
+              </div>
+              <div style={{ color: C.t2, fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>
+                Analyse any stock through the lens of legendary investors — Buffett, Graham, Lynch and more — powered by AI. Pick a stock below and hit <strong style={{ color: C.t1 }}>Analyze</strong> to get started.
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {['AAPL', 'NVDA', 'TSLA'].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => { dismissWelcome(); openAnalyzer(t) }}
+                    style={{ background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r8, color: C.accent, fontSize: 13, fontWeight: 700, padding: '6px 14px', cursor: 'pointer', fontFamily: C.mono }}
+                  >
+                    Try {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {!isMobile && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 180 }}>
+                {[
+                  { icon: '🧠', text: '11 investor frameworks' },
+                  { icon: '⚡', text: 'Live FMP financial data' },
+                  { icon: '🤖', text: 'Multi-LLM: Gemini & Claude' },
+                  { icon: '📊', text: 'Score, verdict & full thesis' },
+                ].map(({ icon, text }) => (
+                  <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 8, color: C.t2, fontSize: 13 }}>
+                    <span>{icon}</span>
+                    <span>{text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      ) : (
-        <div
-          style={{
-            background: C.gainBg,
-            border: `1px solid ${C.gainB}`,
-            borderRadius: R.r10,
-            padding: '9px 14px',
-            marginBottom: 14,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <div style={{ width: 7, height: 7, borderRadius: '50%', background: C.gain }} />
-          <span style={{ color: C.gain, fontWeight: 700, fontSize: 13 }}>Live data active</span>
-          <span style={{ color: C.t2, fontSize: 13 }}>
-            — Real-time FMP financials will be injected into every analysis.
-          </span>
-        </div>
+      )}
+
+      {/* Live data status strip — compact, shown after welcome is dismissed */}
+      {welcomeDismissed && (
+        fmpKeySet ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: C.gainBg, border: `1px solid ${C.gainB}`, borderRadius: R.r8, padding: '7px 12px', marginBottom: 12 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.gain, flexShrink: 0 }} />
+            <span style={{ color: C.gain, fontWeight: 700, fontSize: 13 }}>Live data active</span>
+            <span style={{ color: C.t3, fontSize: 13 }}>— Real-time FMP financials injected into every analysis</span>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r8, padding: '7px 12px', marginBottom: 12, flexWrap: 'wrap' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.t4, flexShrink: 0 }} />
+            <span style={{ color: C.t3, fontSize: 13, flex: 1 }}>AI-estimated data mode · <button onClick={onOpenFmpModal} style={{ background: 'none', border: 'none', color: C.accent, fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0 }}>Add FMP key for live financials</button></span>
+          </div>
+        )
       )}
 
       {/* Strategy selector */}
@@ -164,14 +220,14 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
       </div>
 
       {/* Controls row */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <input
           type="text"
           placeholder="Search ticker or company…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
-            flex: isMobile ? '1 1 100%' : '0 0 180px',
+            flex: isMobile ? '1 1 100%' : '0 0 200px',
             background: C.bg2,
             color: C.t1,
             border: `1px solid ${C.border}`,
@@ -182,7 +238,16 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
             fontFamily: C.sans,
           }}
         />
-        <ProviderModelBar />
+        {/* Sort control */}
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+          style={{ background: C.bg2, color: C.t2, border: `1px solid ${C.border}`, borderRadius: R.r8, padding: '7px 10px', fontSize: 13, cursor: 'pointer', outline: 'none' }}
+        >
+          <option value="default">Sort: Default</option>
+          <option value="score">Sort: Score ↓</option>
+          <option value="ticker">Sort: Ticker A–Z</option>
+        </select>
         <button
           onClick={() => openAnalyzer('')}
           style={{
@@ -200,6 +265,29 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
         >
           Analyze any stock
         </button>
+      </div>
+
+      {/* Sector filter chips */}
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12 }}>
+        {sectors.map((s) => (
+          <button
+            key={s}
+            onClick={() => setSectorFilter(s)}
+            style={{
+              background: sectorFilter === s ? C.accentM : C.bg2,
+              color: sectorFilter === s ? C.accent : C.t3,
+              border: `1px solid ${sectorFilter === s ? C.accentB : C.border}`,
+              borderRadius: R.r99,
+              padding: '3px 10px',
+              fontSize: 12,
+              fontWeight: sectorFilter === s ? 600 : 400,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {s}
+          </button>
+        ))}
       </div>
 
       {/* Stock list */}
@@ -252,13 +340,22 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
             <table style={{ borderCollapse: 'collapse', width: '100%' }}>
               <thead>
                 <tr>
-                  {['', 'Ticker', 'Company', 'Sector', 'Description', ''].map((h, i) => (
+                  {[
+                    { label: '', w: 40 },
+                    { label: 'Ticker', w: 90 },
+                    { label: 'Company', w: 180 },
+                    { label: 'Sector', w: 160 },
+                    { label: 'Description', w: undefined },
+                    { label: 'Score', w: 80 },
+                    { label: '', w: 110 },
+                  ].map(({ label, w }, i) => (
                     <th
                       key={i}
+                      onClick={label === 'Score' ? () => setSortBy(sortBy === 'score' ? 'default' : 'score') : undefined}
                       style={{
-                        color: C.t3,
+                        color: label === 'Score' && sortBy === 'score' ? C.accent : C.t3,
                         padding: '8px 10px',
-                        textAlign: 'left',
+                        textAlign: label === 'Score' ? 'center' : 'left',
                         fontWeight: 600,
                         fontSize: 11,
                         letterSpacing: '.08em',
@@ -266,9 +363,12 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
                         borderBottom: `1px solid ${C.border}`,
                         background: C.bg1,
                         whiteSpace: 'nowrap',
+                        width: w,
+                        cursor: label === 'Score' ? 'pointer' : 'default',
+                        userSelect: 'none',
                       }}
                     >
-                      {h}
+                      {label}{label === 'Score' && sortBy === 'score' ? ' ↓' : ''}
                     </th>
                   ))}
                 </tr>
@@ -291,14 +391,22 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
                       <td style={{ padding: '8px 10px' }}>
                         <Tag color={C.t2} small>{stock.sector}</Tag>
                       </td>
-                      <td style={{ padding: '8px 10px', maxWidth: 300 }}>
-                        <span style={{ color: C.t3, fontSize: 13 }}>{stock.description}</span>
+                      <td style={{ padding: '8px 10px', maxWidth: 260 }}>
+                        <span style={{ color: C.t3, fontSize: 13, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.description}</span>
+                      </td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        {result ? (
+                          <span style={{ color: scColor(result.strategyScore), fontWeight: 700, fontSize: 14, fontFamily: C.mono }}>
+                            {result.strategyScore}/10
+                          </span>
+                        ) : (
+                          <span style={{ color: C.t4, fontSize: 13 }}>—</span>
+                        )}
                       </td>
                       <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
-                        {result && <Tag color={pegColor(result.peg)} small>{result.strategyScore}/10</Tag>}
                         <button
                           onClick={() => openAnalyzer(stock.ticker)}
-                          style={{ marginLeft: result ? 6 : 0, background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r6, color: C.accent, fontSize: 12, fontWeight: 600, padding: '3px 10px', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                          style={{ background: result ? C.bg2 : C.accentM, border: `1px solid ${result ? C.border : C.accentB}`, borderRadius: R.r6, color: result ? C.t2 : C.accent, fontSize: 12, fontWeight: 600, padding: '3px 10px', whiteSpace: 'nowrap', cursor: 'pointer' }}
                         >
                           {result ? 'Re-analyze' : 'Analyze'}
                         </button>
@@ -314,7 +422,9 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
         {/* Footer */}
         <div style={{ padding: '7px 14px', borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4 }}>
           <span style={{ color: C.t3, fontSize: 12 }}>
-            {filtered.length} stock{filtered.length !== 1 ? 's' : ''}{search ? ` matching "${search}"` : ''}
+            {filtered.length} stock{filtered.length !== 1 ? 's' : ''}
+            {search ? ` matching "${search}"` : ''}
+            {sectorFilter !== 'All' ? ` · ${sectorFilter}` : ''}
           </span>
           <span style={{ color: C.t4, fontSize: 11 }}>Educational only · Not financial advice</span>
         </div>

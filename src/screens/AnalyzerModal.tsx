@@ -38,9 +38,18 @@ export function AnalyzerModal({ fmpKey }: Props) {
   const key  = `${ticker.toUpperCase()}:${state.investor}`
   const result: AnalysisResult | undefined = state.analyses[key]
 
-  // Focus input on open
+  // Collapse settings panel when modal opened with a pre-filled ticker
+  const [settingsOpen, setSettingsOpen] = useState(!state.modalTicker)
+
+  // Focus input on open; auto-run if ticker pre-filled and no existing result
   useEffect(() => {
+    if (state.modalTicker && !result) {
+      // Small delay to let modal render fully, then auto-run
+      const t = setTimeout(() => run(state.modalTicker, fmpKey), 120)
+      return () => clearTimeout(t)
+    }
     inputRef.current?.focus()
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally only on mount
   }, [])
 
   // Focus trap — keep Tab within modal
@@ -223,43 +232,59 @@ export function AnalyzerModal({ fmpKey }: Props) {
               background: C.bg1,
               border: `1px solid ${C.border}`,
               borderRadius: R.r12,
-              padding: '12px 14px',
               marginBottom: 14,
+              overflow: 'hidden',
             }}
           >
-            <div style={labelStyle}>Analysis settings</div>
+            {/* Collapsible header */}
+            <button
+              onClick={() => setSettingsOpen((o) => !o)}
+              style={{ width: '100%', background: 'none', border: 'none', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ ...labelStyle, marginBottom: 0 }}>Analysis settings</span>
+                <span style={{ color: inv.color, fontSize: 12, fontWeight: 600 }}>{inv.shortName}</span>
+                <span style={{ color: C.t4, fontSize: 12 }}>·</span>
+                <span style={{ color: C.t3, fontSize: 12 }}>{prov?.shortName ?? ''} · {state.model}</span>
+              </div>
+              <span style={{ color: C.t3, fontSize: 12 }}>{settingsOpen ? '▴ Hide' : '▾ Edit'}</span>
+            </button>
 
-            {/* Investor row */}
-            <div style={{ color: C.t3, fontSize: 12, marginBottom: 6 }}>Investor strategy</div>
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
-              {INVESTORS.map((i) => {
-                const active = i.id === state.investor
-                return (
-                  <button
-                    key={i.id}
-                    onClick={() => dispatch({ type: 'SET_INVESTOR', payload: i.id })}
-                    style={{
-                      background: active ? i.color + '18' : C.bg2,
-                      color: active ? i.color : C.t2,
-                      border: `1px solid ${active ? i.color + '44' : C.border}`,
-                      borderRadius: R.r8,
-                      padding: '4px 10px',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {i.shortName}
-                  </button>
-                )
-              })}
-            </div>
+            {settingsOpen && (
+              <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${C.border}` }}>
+                {/* Investor row */}
+                <div style={{ color: C.t3, fontSize: 12, margin: '10px 0 6px' }}>Investor strategy</div>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+                  {INVESTORS.map((i) => {
+                    const active = i.id === state.investor
+                    return (
+                      <button
+                        key={i.id}
+                        onClick={() => dispatch({ type: 'SET_INVESTOR', payload: i.id })}
+                        style={{
+                          background: active ? i.color + '18' : C.bg2,
+                          color: active ? i.color : C.t2,
+                          border: `1px solid ${active ? i.color + '44' : C.border}`,
+                          borderRadius: R.r8,
+                          padding: '4px 10px',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {i.shortName}
+                      </button>
+                    )
+                  })}
+                </div>
 
-            {/* Provider/Model row */}
-            <div style={{ marginTop: 10 }}>
-              <div style={{ color: C.t3, fontSize: 12, marginBottom: 6 }}>Model</div>
-              <ProviderModelBar />
-            </div>
+                {/* Provider/Model row */}
+                <div>
+                  <div style={{ color: C.t3, fontSize: 12, marginBottom: 6 }}>Model</div>
+                  <ProviderModelBar />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* SEARCH ROW */}
@@ -396,6 +421,15 @@ function ResultSection({
   onRunComparison,
 }: ResultSectionProps) {
   const [showLiveData, setShowLiveData] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const copyShareLink = () => {
+    const url = `${window.location.origin}${window.location.pathname}#/analysis/${result.ticker}/${result.investorId}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   if (!inv) return null
 
@@ -527,17 +561,26 @@ function ResultSection({
 
         {/* RIGHT */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-          <div
-            style={{
-              background: vBg(result.verdict),
-              border: `1px solid ${vColor(result.verdict)}44`,
-              borderRadius: R.r8,
-              padding: '6px 18px',
-            }}
-          >
-            <span style={{ color: vColor(result.verdict), fontWeight: 800, fontSize: 17 }}>
-              {result.verdict}
-            </span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              onClick={copyShareLink}
+              title="Copy shareable link"
+              style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r6, color: copied ? C.gain : C.t3, fontSize: 12, fontWeight: 600, padding: '5px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
+            >
+              {copied ? '✓ Copied!' : '⬡ Share'}
+            </button>
+            <div
+              style={{
+                background: vBg(result.verdict),
+                border: `1px solid ${vColor(result.verdict)}44`,
+                borderRadius: R.r8,
+                padding: '6px 18px',
+              }}
+            >
+              <span style={{ color: vColor(result.verdict), fontWeight: 800, fontSize: 17 }}>
+                {result.verdict}
+              </span>
+            </div>
           </div>
           {result.marketPrice > 0 && (
             <span style={{ color: C.warn, fontWeight: 700, fontSize: 20, fontFamily: C.mono }}>

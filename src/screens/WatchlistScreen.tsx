@@ -8,7 +8,6 @@ import { Tag } from '../components/Tag'
 import { WLBtn } from '../components/WLBtn'
 import { ScoreBar } from '../components/ScoreBar'
 import { LiveBadge } from '../components/LiveBadge'
-import { ProviderModelBar } from '../components/ProviderModelBar'
 import { pegColor, scColor, vColor } from '../engine/utils'
 
 export function WatchlistScreen() {
@@ -24,37 +23,68 @@ export function WatchlistScreen() {
         .map((t) => ({ ticker: t, name: t, sector: '', description: '' }))
     )
 
+  const SUGGESTED = ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'BRK.B', 'AMZN']
+  const suggestedStocks = STOCKS.filter((s) => SUGGESTED.includes(s.ticker)).slice(0, 6)
+
   if (watchlist.length === 0) {
     return (
       <div style={{ padding: 18, maxWidth: 1440, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
-          <div>
-            <h2 style={{ margin: '0 0 2px', color: C.t1, fontSize: 18, fontWeight: 700 }}>Watchlist</h2>
-            <div style={{ color: C.t3, fontSize: 14 }}>Track your favourite stocks</div>
-          </div>
-          <ProviderModelBar />
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ margin: '0 0 4px', color: C.t1, fontSize: 22, fontWeight: 800 }}>Watchlist</h1>
+          <div style={{ color: C.t3, fontSize: 14 }}>Track and analyse your favourite stocks in one place</div>
         </div>
-        <div style={{ textAlign: 'center', padding: '60px 0' }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>☆</div>
-          <div style={{ fontSize: 16, color: C.t2, marginBottom: 6 }}>Your watchlist is empty</div>
-          <div style={{ fontSize: 14, color: C.t3, marginBottom: 20 }}>
-            Star any stock in the Screener to add it here.
+
+        {/* Empty state hero */}
+        <div style={{ textAlign: 'center', padding: '32px 0 24px', marginBottom: 28 }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>☆</div>
+          <div style={{ fontSize: 18, color: C.t1, fontWeight: 700, marginBottom: 6 }}>Your watchlist is empty</div>
+          <div style={{ fontSize: 14, color: C.t3, marginBottom: 20, maxWidth: 340, margin: '0 auto 20px' }}>
+            Star stocks to track them here, or start with one of these popular picks:
           </div>
           <button
             onClick={() => dispatch({ type: 'SET_SCREEN', payload: 'Screener' })}
-            style={{
-              background: C.accent,
-              color: '#fff',
-              border: 'none',
-              borderRadius: R.r8,
-              padding: '8px 16px',
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: 'pointer',
-            }}
+            style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t2, fontSize: 13, padding: '6px 14px', cursor: 'pointer' }}
           >
-            Go to Screener
+            Browse all stocks →
           </button>
+        </div>
+
+        {/* Suggested stocks */}
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ color: C.t3, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 10 }}>
+            Popular stocks to get started
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 10 }}>
+            {suggestedStocks.map((stock) => (
+              <div
+                key={stock.ticker}
+                style={{ background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r12, padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ color: C.accent, fontWeight: 700, fontSize: 15, fontFamily: C.mono }}>{stock.ticker}</span>
+                    <Tag color={C.t3} small>{stock.sector}</Tag>
+                  </div>
+                  <div style={{ color: C.t2, fontSize: 13, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.name}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <button
+                    onClick={() => toggle(stock.ticker)}
+                    title="Add to watchlist"
+                    style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r6, color: C.t2, fontSize: 13, padding: '4px 9px', cursor: 'pointer' }}
+                  >
+                    ☆
+                  </button>
+                  <button
+                    onClick={() => dispatch({ type: 'OPEN_MODAL', payload: stock.ticker })}
+                    style={{ background: C.accent, color: '#fff', border: 'none', borderRadius: R.r6, fontSize: 12, fontWeight: 600, padding: '4px 10px', cursor: 'pointer' }}
+                  >
+                    Analyze
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -73,10 +103,9 @@ export function WatchlistScreen() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
         <div>
-          <h2 style={{ margin: '0 0 2px', color: C.t1, fontSize: 18, fontWeight: 700 }}>Watchlist</h2>
+          <h1 style={{ margin: '0 0 2px', color: C.t1, fontSize: 22, fontWeight: 800 }}>Watchlist</h1>
           <div style={{ color: C.t3, fontSize: 14 }}>{watchlist.length} stock{watchlist.length !== 1 ? 's' : ''} tracked</div>
         </div>
-        <ProviderModelBar />
       </div>
 
       {/* Investor pills */}

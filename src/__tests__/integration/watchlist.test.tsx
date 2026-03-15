@@ -127,7 +127,7 @@ describe('I-14: Empty state shown when watchlist is empty', () => {
       </TestWrapper>
     )
     expect(screen.getByText(/your watchlist is empty/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /go to screener/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /browse all stocks/i })).toBeInTheDocument()
   })
 })
 

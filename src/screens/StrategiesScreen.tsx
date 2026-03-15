@@ -116,9 +116,9 @@ export function StrategiesScreen() {
       <div style={{ color: C.accent, fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em' }}>
         Research Library
       </div>
-      <h2 style={{ margin: '0 0 4px', color: C.t1, fontSize: 20, fontWeight: 800 }}>
+      <h1 style={{ margin: '0 0 4px', color: C.t1, fontSize: 22, fontWeight: 800 }}>
         Investor Frameworks
-      </h2>
+      </h1>
       <p style={{ margin: '0 0 16px', color: C.t2, fontSize: 14, lineHeight: 1.6 }}>
         Explore the documented investment philosophies of legendary investors. Select a framework to
         apply it to your stock analysis.

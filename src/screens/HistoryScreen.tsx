@@ -14,13 +14,27 @@ export function HistoryScreen() {
   if (analyses.length === 0) {
     return (
       <div style={{ padding: 18, maxWidth: 1440, margin: '0 auto' }}>
-        <h2 style={{ margin: '0 0 14px', color: C.t1, fontSize: 18, fontWeight: 700 }}>
-          Analysis History
-        </h2>
-        <div style={{ textAlign: 'center', padding: '60px 0' }}>
-          <div style={{ fontSize: 16, color: C.t2, marginBottom: 6 }}>No analyses yet</div>
-          <div style={{ fontSize: 14, color: C.t3 }}>
-            Run your first analysis from the Screener or the Analyze button.
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ margin: '0 0 4px', color: C.t1, fontSize: 22, fontWeight: 800 }}>Analysis History</h1>
+          <div style={{ color: C.t3, fontSize: 14 }}>Every AI analysis you run is saved here for quick reference</div>
+        </div>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>📊</div>
+          <div style={{ fontSize: 18, color: C.t1, fontWeight: 700, marginBottom: 8 }}>No analyses yet</div>
+          <div style={{ fontSize: 14, color: C.t3, marginBottom: 6, maxWidth: 380, margin: '0 auto 6px' }}>
+            Run your first AI analysis and it will appear here. Each analysis is saved so you can revisit and compare over time.
+          </div>
+          <div style={{ fontSize: 13, color: C.t4, marginBottom: 24 }}>Try: AAPL, MSFT, NVDA, TSLA, BRK.B</div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {['AAPL', 'NVDA', 'MSFT'].map((ticker) => (
+              <button
+                key={ticker}
+                onClick={() => dispatch({ type: 'OPEN_MODAL', payload: ticker })}
+                style={{ background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r8, color: C.accent, fontSize: 13, fontWeight: 700, padding: '8px 18px', cursor: 'pointer', fontFamily: C.mono }}
+              >
+                Analyze {ticker}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -31,9 +45,9 @@ export function HistoryScreen() {
 
   return (
     <div style={{ padding: 18, maxWidth: 1440, margin: '0 auto' }}>
-      <h2 style={{ margin: '0 0 14px', color: C.t1, fontSize: 18, fontWeight: 700 }}>
+      <h1 style={{ margin: '0 0 14px', color: C.t1, fontSize: 22, fontWeight: 800 }}>
         Analysis History
-      </h2>
+      </h1>
 
       <div
         style={{

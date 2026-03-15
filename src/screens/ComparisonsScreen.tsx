@@ -10,15 +10,75 @@ export function ComparisonsScreen() {
   const { comparisons, analyses } = state
 
   if (comparisons.length === 0) {
+    // Mock data for visual preview
+    const mockA = { name: 'Warren Buffett', color: '#6366f1', verdict: 'Strong Buy', score: 8 }
+    const mockB = { name: 'Benjamin Graham', color: '#10b981', verdict: 'Hold', score: 5 }
+
     return (
       <div style={{ padding: 18, maxWidth: 1440, margin: '0 auto' }}>
-        <h2 style={{ margin: '0 0 14px', color: C.t1, fontSize: 18, fontWeight: 700 }}>
-          Strategy Comparisons
-        </h2>
-        <div style={{ textAlign: 'center', padding: '60px 0' }}>
-          <div style={{ fontSize: 16, color: C.t2, marginBottom: 6 }}>No comparisons yet</div>
-          <div style={{ fontSize: 14, color: C.t3 }}>
-            Use the "vs" feature in the Analyzer to compare investor frameworks.
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ margin: '0 0 4px', color: C.t1, fontSize: 22, fontWeight: 800 }}>Strategy Comparisons</h1>
+          <div style={{ color: C.t3, fontSize: 14 }}>See how different legendary investors rate the same stock — side by side</div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,480px) minmax(0,1fr)', gap: 32, alignItems: 'flex-start' }}>
+          {/* Left: instructions */}
+          <div>
+            <div style={{ fontSize: 17, color: C.t1, fontWeight: 700, marginBottom: 10 }}>How it works</div>
+            {[
+              { step: '1', title: 'Run an analysis', desc: 'Pick any stock and run an AI analysis with your chosen investor strategy.' },
+              { step: '2', title: 'Click "vs" another investor', desc: 'Inside the Analyzer, use the "Compare with another strategy" section to run a second analysis.' },
+              { step: '3', title: 'See the comparison', desc: 'Both verdicts and scores appear side by side here, with a score delta to highlight divergence.' },
+            ].map(({ step, title, desc }) => (
+              <div key={step} style={{ display: 'flex', gap: 14, marginBottom: 16 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: C.accentM, border: `1px solid ${C.accentB}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: C.accent, fontWeight: 700, fontSize: 13 }}>
+                  {step}
+                </div>
+                <div>
+                  <div style={{ color: C.t1, fontWeight: 600, fontSize: 14, marginBottom: 3 }}>{title}</div>
+                  <div style={{ color: C.t3, fontSize: 13, lineHeight: 1.5 }}>{desc}</div>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={() => dispatch({ type: 'OPEN_MODAL', payload: 'AAPL' })}
+              style={{ background: C.accent, color: '#fff', border: 'none', borderRadius: R.r8, padding: '9px 20px', fontWeight: 600, fontSize: 14, cursor: 'pointer', marginTop: 4 }}
+            >
+              Try it with AAPL →
+            </button>
+          </div>
+
+          {/* Right: visual preview */}
+          <div>
+            <div style={{ color: C.t3, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 10 }}>
+              Example comparison
+            </div>
+            <div style={{ background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r12, padding: 16, opacity: 0.7 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div>
+                  <span style={{ color: C.accent, fontWeight: 700, fontSize: 16, fontFamily: C.mono }}>AAPL</span>
+                  <span style={{ color: C.t3, fontSize: 13, marginLeft: 8 }}>Apple Inc.</span>
+                </div>
+                <span style={{ color: C.warn, fontFamily: C.mono, fontWeight: 600, fontSize: 14 }}>
+                  Score delta: +{mockA.score - mockB.score}
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[mockA, mockB].map((m) => (
+                  <div key={m.name} style={{ background: m.color + '18', border: `1px solid ${m.color}33`, borderRadius: R.r8, padding: 12 }}>
+                    <div style={{ color: m.color, fontWeight: 700, fontSize: 14, marginBottom: 8 }}>{m.name}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ color: m.verdict === 'Strong Buy' ? '#10b981' : '#f59e0b', fontWeight: 700, fontSize: 14 }}>{m.verdict}</span>
+                      <span style={{ color: C.t2, fontFamily: C.mono, fontSize: 14 }}>{m.score}/10</span>
+                    </div>
+                    <div style={{ height: 6, background: C.bg2, borderRadius: 99 }}>
+                      <div style={{ height: '100%', width: `${m.score * 10}%`, background: m.color, borderRadius: 99 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ color: C.t4, fontSize: 11, textAlign: 'center', marginTop: 6 }}>Preview only · Run a real comparison to see your results</div>
           </div>
         </div>
       </div>
@@ -28,7 +88,7 @@ export function ComparisonsScreen() {
   return (
     <div style={{ padding: 18, maxWidth: 1440, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <h2 style={{ margin: 0, color: C.t1, fontSize: 18, fontWeight: 700 }}>Strategy Comparisons</h2>
+        <h1 style={{ margin: 0, color: C.t1, fontSize: 22, fontWeight: 800 }}>Strategy Comparisons</h1>
         <button
           onClick={() => dispatch({ type: 'CLEAR_COMPARISONS' })}
           style={{
