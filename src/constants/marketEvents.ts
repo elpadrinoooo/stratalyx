@@ -434,6 +434,89 @@ export const MARKET_EVENTS: MarketEvent[] = [
       { title: 'NVIDIA Annual Report 2024', url: 'https://investor.nvidia.com' },
     ],
   },
+  {
+    id: 'correction_2024',
+    date: '2024-07-10',
+    endDate: '2024-08-05',
+    title: '2024 Summer Correction & Yen Carry Unwind',
+    shortTitle: '2024 Correction',
+    type: 'bear',
+    sp500: -9,
+    nasdaq: -14,
+    dow: -7,
+    cause:
+      'A combination of weaker-than-expected US jobs data, a surprise Bank of Japan rate hike that triggered a rapid unwinding of the yen carry trade, and profit-taking in AI-related stocks caused a sharp global sell-off. The VIX briefly spiked above 65 — its highest level since the COVID crash.',
+    impact:
+      'The S&P 500 fell roughly 9% from its July peak to the August 5 trough in under four weeks. The Nasdaq dropped 14% as mega-cap tech led the decline. Japan\'s Nikkei 225 fell over 12% in a single day — its worst session since 1987.',
+    recovery:
+      'Markets recovered quickly; the S&P 500 reclaimed its July highs by mid-September 2024 as the Fed signalled its first rate cut cycle was beginning.',
+    sources: [
+      { title: 'Bloomberg: Yen Carry Trade Unwind', url: 'https://www.bloomberg.com' },
+      { title: 'Federal Reserve: September 2024 FOMC Statement', url: 'https://www.federalreserve.gov' },
+    ],
+  },
+  {
+    id: 'bull_late_2024',
+    date: '2024-08-05',
+    endDate: '2025-01-24',
+    title: 'Post-Election Bull Run 2024–25',
+    shortTitle: 'Post-Election Bull',
+    type: 'bull',
+    sp500: 27,
+    nasdaq: 40,
+    dow: 18,
+    cause:
+      'The Federal Reserve began cutting interest rates in September 2024. Donald Trump\'s re-election in November 2024 spurred a "Trump trade" rally driven by expectations of deregulation, corporate tax cuts, and tariff-driven domestic investment. AI infrastructure spending continued to accelerate.',
+    impact:
+      'The S&P 500 surpassed 6,100 and the Nasdaq Composite reached an all-time high above 21,700 by January 2025. The DJIA crossed 45,000 for the first time. NVIDIA briefly became the world\'s most valuable company with a market cap exceeding $3.6 trillion.',
+    recovery:
+      'N/A — this was a bull market phase.',
+    sources: [
+      { title: 'Federal Reserve: Rate Cut Cycle 2024', url: 'https://www.federalreserve.gov' },
+      { title: 'Reuters: Trump Trade Rally', url: 'https://www.reuters.com' },
+    ],
+  },
+  {
+    id: 'tariff_crash_2025',
+    date: '2025-02-19',
+    endDate: '2025-04-09',
+    title: '2025 Tariff-Driven Bear Market',
+    shortTitle: 'Tariff Crash',
+    type: 'crash',
+    sp500: -19,
+    nasdaq: -24,
+    dow: -15,
+    cause:
+      'President Trump announced sweeping global tariffs in early April 2025 — including a 10% blanket tariff and 145% tariffs on Chinese goods — triggering fears of a global trade war, stagflation, and recession. Retaliatory measures from China and the EU accelerated the sell-off.',
+    impact:
+      'The S&P 500 fell nearly 19% from its February peak to an early April trough, entering correction territory. The Nasdaq dropped 24%, wiping over $5 trillion in market cap from US stocks in two days following the April 2 "Liberation Day" tariff announcement. The CBOE VIX surged above 52.',
+    recovery:
+      'Markets partially rebounded in mid-April 2025 after Trump announced a 90-day tariff pause for most countries (excluding China). The S&P 500 recovered roughly half its losses by late April 2025.',
+    sources: [
+      { title: 'White House: Executive Order on Tariffs', url: 'https://www.whitehouse.gov' },
+      { title: 'Reuters: Liberation Day Tariff Announcement', url: 'https://www.reuters.com' },
+    ],
+  },
+  {
+    id: 'recovery_2025',
+    date: '2025-04-09',
+    title: '2025 Tariff Pause Recovery',
+    shortTitle: '2025 Recovery',
+    type: 'recovery',
+    sp500: 14,
+    nasdaq: 17,
+    dow: 12,
+    cause:
+      'President Trump announced a 90-day pause on tariffs for most trading partners (excluding China) on April 9, 2025, triggering one of the largest single-day market rallies in history. The S&P 500 rose over 9% and the Nasdaq surged more than 12% on that day alone.',
+    impact:
+      'The tariff pause restored confidence that a full-blown global trade war might be averted. Technology stocks led the recovery, with the "Magnificent Seven" gaining trillions in market cap in a single session.',
+    recovery:
+      'Ongoing — markets remain volatile amid unresolved US-China trade tensions and uncertainty around the ultimate tariff framework.',
+    sources: [
+      { title: 'Reuters: Trump Tariff Pause Announcement', url: 'https://www.reuters.com' },
+      { title: 'Bloomberg: April 9 Market Rally', url: 'https://www.bloomberg.com' },
+    ],
+  },
 ]
 
 /** Lookup by id */
