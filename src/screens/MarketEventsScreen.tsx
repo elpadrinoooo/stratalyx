@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   ResponsiveContainer,
-  AreaChart,
+  ComposedChart,
   Area,
   Line,
   XAxis,
@@ -528,89 +528,228 @@ function Timeline({ events, isMobile, onScanClick }: { events: MarketEvent[]; is
 // ── combined timeline chart ───────────────────────────────────────────────────
 
 /**
- * DJIA approximate reference data — 78 turning-point rows so each crash/bull
- * renders as a clear spike or dip rather than a smooth interpolated slope.
+ * Approximate turning-point series for DJIA, S&P 500, and Nasdaq Composite.
+ * Rows are key highs/lows so each crash/bull renders as a clear spike or dip.
+ * All three series extended to early 2026.
  */
-const LONG_TERM_DATA: { t: number; value: number }[] = [
+
+// ── DJIA ──────────────────────────────────────────────────────────────────────
+const DJIA_RAW: { t: number; value: number }[] = [
   { t: new Date('1900-01-01').getTime(), value: 66 },
-  { t: new Date('1903-11-09').getTime(), value: 42 },   // 1903 crash low
-  { t: new Date('1906-01-19').getTime(), value: 103 },  // Banker's Panic pre-peak
-  { t: new Date('1907-11-15').getTime(), value: 53 },   // Banker's Panic trough
-  { t: new Date('1909-10-15').getTime(), value: 100 },  // recovery
-  { t: new Date('1916-11-21').getTime(), value: 110 },  // WWI high
-  { t: new Date('1917-12-19').getTime(), value: 65 },   // WWI trough
-  { t: new Date('1919-11-03').getTime(), value: 119 },  // post-WWI peak
-  { t: new Date('1921-08-24').getTime(), value: 63 },   // post-WWI recession low
-  { t: new Date('1925-02-10').getTime(), value: 159 },  // Roaring 20s
-  { t: new Date('1928-01-03').getTime(), value: 300 },  // late 20s bull
-  { t: new Date('1929-09-03').getTime(), value: 381 },  // Great Crash peak
-  { t: new Date('1929-11-13').getTime(), value: 198 },  // first leg down
-  { t: new Date('1930-04-17').getTime(), value: 279 },  // dead cat bounce
-  { t: new Date('1931-07-08').getTime(), value: 145 },  // continued decline
-  { t: new Date('1932-07-08').getTime(), value: 41 },   // Great Depression trough
-  { t: new Date('1933-07-18').getTime(), value: 111 },  // New Deal bounce
-  { t: new Date('1934-07-26').getTime(), value: 85 },   // pullback
-  { t: new Date('1937-03-10').getTime(), value: 194 },  // recession peak
-  { t: new Date('1938-03-31').getTime(), value: 98 },   // recession trough
-  { t: new Date('1939-09-12').getTime(), value: 155 },  // pre-WWII
-  { t: new Date('1942-04-28').getTime(), value: 92 },   // WWII low
-  { t: new Date('1945-12-10').getTime(), value: 192 },  // V-Day recovery
-  { t: new Date('1946-05-29').getTime(), value: 212 },  // post-war peak
-  { t: new Date('1949-06-13').getTime(), value: 161 },  // post-war adjustment
-  { t: new Date('1953-09-14').getTime(), value: 255 },  // 50s dip
-  { t: new Date('1956-04-06').getTime(), value: 521 },  // 50s bull
-  { t: new Date('1957-10-22').getTime(), value: 420 },  // Sputnik / recession
-  { t: new Date('1961-12-12').getTime(), value: 734 },  // early 60s
-  { t: new Date('1966-01-18').getTime(), value: 995 },  // mid-60s peak
-  { t: new Date('1966-10-07').getTime(), value: 744 },  // mid-60s trough
-  { t: new Date('1968-12-03').getTime(), value: 985 },  // late 60s recovery
-  { t: new Date('1970-05-26').getTime(), value: 631 },  // 1970 recession low
-  { t: new Date('1972-01-11').getTime(), value: 889 },  // early 70s bull
-  { t: new Date('1973-01-11').getTime(), value: 1051 }, // oil crisis peak
-  { t: new Date('1974-10-04').getTime(), value: 570 },  // oil crisis trough
-  { t: new Date('1976-09-21').getTime(), value: 1015 }, // recovery
-  { t: new Date('1980-02-13').getTime(), value: 891 },  // pre-Volcker peak
-  { t: new Date('1980-08-12').getTime(), value: 730 },  // Volcker trough
-  { t: new Date('1981-04-27').getTime(), value: 1024 }, // bounce
-  { t: new Date('1982-08-12').getTime(), value: 776 },  // double-dip trough
-  { t: new Date('1985-01-14').getTime(), value: 1286 }, // mid-80s bull
-  { t: new Date('1987-08-25').getTime(), value: 2722 }, // Black Monday peak
-  { t: new Date('1987-10-19').getTime(), value: 1739 }, // Black Monday crash
-  { t: new Date('1989-07-17').getTime(), value: 2660 }, // recovery
-  { t: new Date('1990-07-16').getTime(), value: 2999 }, // Gulf War peak
-  { t: new Date('1990-10-11').getTime(), value: 2365 }, // Gulf War trough
-  { t: new Date('1991-12-31').getTime(), value: 3169 }, // recovery
-  { t: new Date('1994-01-31').getTime(), value: 3978 }, // rate-hike scare peak
-  { t: new Date('1994-04-04').getTime(), value: 3593 }, // rate-hike trough
-  { t: new Date('1996-01-10').getTime(), value: 5395 }, // dot-com bull
-  { t: new Date('1997-08-06').getTime(), value: 8259 }, // Asian crisis pre-peak
-  { t: new Date('1998-07-17').getTime(), value: 9338 }, // LTCM pre-peak
-  { t: new Date('1998-10-08').getTime(), value: 7539 }, // LTCM trough
-  { t: new Date('1999-12-31').getTime(), value: 11497 },// Y2K peak
-  { t: new Date('2000-01-14').getTime(), value: 11722 },// dot-com all-time high
-  { t: new Date('2001-09-21').getTime(), value: 8236 }, // 9/11 low
-  { t: new Date('2002-10-09').getTime(), value: 7286 }, // dot-com trough
-  { t: new Date('2003-10-27').getTime(), value: 9801 }, // recovery
-  { t: new Date('2006-05-10').getTime(), value: 11642 },// housing bubble
-  { t: new Date('2007-10-09').getTime(), value: 14164 },// GFC peak
-  { t: new Date('2008-09-29').getTime(), value: 10365 },// Lehman shock
-  { t: new Date('2009-03-09').getTime(), value: 6547 }, // GFC trough
-  { t: new Date('2010-04-26').getTime(), value: 11205 },// recovery
-  { t: new Date('2011-10-03').getTime(), value: 10655 },// EU debt crisis
-  { t: new Date('2013-03-05').getTime(), value: 14254 },// new ATH
-  { t: new Date('2015-08-25').getTime(), value: 15666 },// China selloff
-  { t: new Date('2016-02-11').getTime(), value: 15660 },// oil crash trough
-  { t: new Date('2018-01-26').getTime(), value: 26616 },// Trump bull peak
-  { t: new Date('2018-12-26').getTime(), value: 21792 },// Q4 2018 selloff
-  { t: new Date('2019-12-27').getTime(), value: 28645 },// 2019 peak
-  { t: new Date('2020-02-12').getTime(), value: 29551 },// pre-COVID peak
-  { t: new Date('2020-03-23').getTime(), value: 18591 },// COVID trough
-  { t: new Date('2020-11-09').getTime(), value: 29157 },// vaccine rally
-  { t: new Date('2021-11-08').getTime(), value: 36432 },// 2021 peak
-  { t: new Date('2022-10-13').getTime(), value: 28725 },// 2022 trough
-  { t: new Date('2023-07-19').getTime(), value: 35630 },// 2023 recovery
-  { t: new Date('2024-03-21').getTime(), value: 39511 },// recent
+  { t: new Date('1903-11-09').getTime(), value: 42 },
+  { t: new Date('1906-01-19').getTime(), value: 103 },
+  { t: new Date('1907-11-15').getTime(), value: 53 },
+  { t: new Date('1909-10-15').getTime(), value: 100 },
+  { t: new Date('1916-11-21').getTime(), value: 110 },
+  { t: new Date('1917-12-19').getTime(), value: 65 },
+  { t: new Date('1919-11-03').getTime(), value: 119 },
+  { t: new Date('1921-08-24').getTime(), value: 63 },
+  { t: new Date('1925-02-10').getTime(), value: 159 },
+  { t: new Date('1928-01-03').getTime(), value: 300 },
+  { t: new Date('1929-09-03').getTime(), value: 381 },
+  { t: new Date('1929-11-13').getTime(), value: 198 },
+  { t: new Date('1930-04-17').getTime(), value: 279 },
+  { t: new Date('1931-07-08').getTime(), value: 145 },
+  { t: new Date('1932-07-08').getTime(), value: 41 },
+  { t: new Date('1933-07-18').getTime(), value: 111 },
+  { t: new Date('1934-07-26').getTime(), value: 85 },
+  { t: new Date('1937-03-10').getTime(), value: 194 },
+  { t: new Date('1938-03-31').getTime(), value: 98 },
+  { t: new Date('1939-09-12').getTime(), value: 155 },
+  { t: new Date('1942-04-28').getTime(), value: 92 },
+  { t: new Date('1945-12-10').getTime(), value: 192 },
+  { t: new Date('1946-05-29').getTime(), value: 212 },
+  { t: new Date('1949-06-13').getTime(), value: 161 },
+  { t: new Date('1953-09-14').getTime(), value: 255 },
+  { t: new Date('1956-04-06').getTime(), value: 521 },
+  { t: new Date('1957-10-22').getTime(), value: 420 },
+  { t: new Date('1961-12-12').getTime(), value: 734 },
+  { t: new Date('1966-01-18').getTime(), value: 995 },
+  { t: new Date('1966-10-07').getTime(), value: 744 },
+  { t: new Date('1968-12-03').getTime(), value: 985 },
+  { t: new Date('1970-05-26').getTime(), value: 631 },
+  { t: new Date('1972-01-11').getTime(), value: 889 },
+  { t: new Date('1973-01-11').getTime(), value: 1051 },
+  { t: new Date('1974-10-04').getTime(), value: 570 },
+  { t: new Date('1976-09-21').getTime(), value: 1015 },
+  { t: new Date('1980-02-13').getTime(), value: 891 },
+  { t: new Date('1980-08-12').getTime(), value: 730 },
+  { t: new Date('1981-04-27').getTime(), value: 1024 },
+  { t: new Date('1982-08-12').getTime(), value: 776 },
+  { t: new Date('1985-01-14').getTime(), value: 1286 },
+  { t: new Date('1987-08-25').getTime(), value: 2722 },
+  { t: new Date('1987-10-19').getTime(), value: 1739 },
+  { t: new Date('1989-07-17').getTime(), value: 2660 },
+  { t: new Date('1990-07-16').getTime(), value: 2999 },
+  { t: new Date('1990-10-11').getTime(), value: 2365 },
+  { t: new Date('1991-12-31').getTime(), value: 3169 },
+  { t: new Date('1994-01-31').getTime(), value: 3978 },
+  { t: new Date('1994-04-04').getTime(), value: 3593 },
+  { t: new Date('1996-01-10').getTime(), value: 5395 },
+  { t: new Date('1997-08-06').getTime(), value: 8259 },
+  { t: new Date('1998-07-17').getTime(), value: 9338 },
+  { t: new Date('1998-10-08').getTime(), value: 7539 },
+  { t: new Date('1999-12-31').getTime(), value: 11497 },
+  { t: new Date('2000-01-14').getTime(), value: 11722 },
+  { t: new Date('2001-09-21').getTime(), value: 8236 },
+  { t: new Date('2002-10-09').getTime(), value: 7286 },
+  { t: new Date('2003-10-27').getTime(), value: 9801 },
+  { t: new Date('2006-05-10').getTime(), value: 11642 },
+  { t: new Date('2007-10-09').getTime(), value: 14164 },
+  { t: new Date('2008-09-29').getTime(), value: 10365 },
+  { t: new Date('2009-03-09').getTime(), value: 6547 },
+  { t: new Date('2010-04-26').getTime(), value: 11205 },
+  { t: new Date('2011-10-03').getTime(), value: 10655 },
+  { t: new Date('2013-03-05').getTime(), value: 14254 },
+  { t: new Date('2015-08-25').getTime(), value: 15666 },
+  { t: new Date('2016-02-11').getTime(), value: 15660 },
+  { t: new Date('2018-01-26').getTime(), value: 26616 },
+  { t: new Date('2018-12-26').getTime(), value: 21792 },
+  { t: new Date('2019-12-27').getTime(), value: 28645 },
+  { t: new Date('2020-02-12').getTime(), value: 29551 },
+  { t: new Date('2020-03-23').getTime(), value: 18591 },
+  { t: new Date('2020-11-09').getTime(), value: 29157 },
+  { t: new Date('2021-11-08').getTime(), value: 36432 },
+  { t: new Date('2022-10-13').getTime(), value: 28725 },
+  { t: new Date('2023-07-19').getTime(), value: 35630 },
+  { t: new Date('2024-03-21').getTime(), value: 39511 },
+  { t: new Date('2024-07-17').getTime(), value: 41198 },
+  { t: new Date('2024-08-05').getTime(), value: 38703 },
+  { t: new Date('2024-11-11').getTime(), value: 43910 },
+  { t: new Date('2025-01-20').getTime(), value: 43309 },
+  { t: new Date('2025-04-07').getTime(), value: 37965 },
+  { t: new Date('2026-01-01').getTime(), value: 41500 },
 ]
+
+// ── S&P 500 (data available from 1928; widely tracked from 1950) ──────────────
+const SP500_RAW: { t: number; value: number }[] = [
+  { t: new Date('1950-01-03').getTime(), value: 17 },
+  { t: new Date('1953-09-14').getTime(), value: 22 },
+  { t: new Date('1956-08-02').getTime(), value: 49 },
+  { t: new Date('1957-10-22').getTime(), value: 39 },
+  { t: new Date('1961-12-12').getTime(), value: 72 },
+  { t: new Date('1966-01-18').getTime(), value: 94 },
+  { t: new Date('1966-10-07').getTime(), value: 74 },
+  { t: new Date('1968-11-29').getTime(), value: 108 },
+  { t: new Date('1970-05-26').getTime(), value: 69 },
+  { t: new Date('1972-12-11').getTime(), value: 119 },
+  { t: new Date('1974-10-03').getTime(), value: 62 },
+  { t: new Date('1976-09-21').getTime(), value: 107 },
+  { t: new Date('1980-11-28').getTime(), value: 141 },
+  { t: new Date('1982-08-12').getTime(), value: 103 },
+  { t: new Date('1987-08-25').getTime(), value: 336 },
+  { t: new Date('1987-12-04').getTime(), value: 224 },
+  { t: new Date('1989-10-09').getTime(), value: 360 },
+  { t: new Date('1990-10-11').getTime(), value: 296 },
+  { t: new Date('1994-02-02').getTime(), value: 482 },
+  { t: new Date('1994-04-04').getTime(), value: 438 },
+  { t: new Date('1996-01-10').getTime(), value: 616 },
+  { t: new Date('1998-07-17').getTime(), value: 1186 },
+  { t: new Date('1998-10-08').getTime(), value: 923 },
+  { t: new Date('2000-03-24').getTime(), value: 1552 },
+  { t: new Date('2002-10-09').getTime(), value: 777 },
+  { t: new Date('2003-10-27').getTime(), value: 1050 },
+  { t: new Date('2007-10-09').getTime(), value: 1565 },
+  { t: new Date('2009-03-09').getTime(), value: 677 },
+  { t: new Date('2010-04-26').getTime(), value: 1217 },
+  { t: new Date('2011-10-03').getTime(), value: 1099 },
+  { t: new Date('2013-03-28').getTime(), value: 1569 },
+  { t: new Date('2015-08-25').getTime(), value: 1867 },
+  { t: new Date('2016-02-11').getTime(), value: 1829 },
+  { t: new Date('2018-01-26').getTime(), value: 2873 },
+  { t: new Date('2018-12-26').getTime(), value: 2351 },
+  { t: new Date('2019-12-27').getTime(), value: 3240 },
+  { t: new Date('2020-02-19').getTime(), value: 3386 },
+  { t: new Date('2020-03-23').getTime(), value: 2237 },
+  { t: new Date('2020-11-09').getTime(), value: 3572 },
+  { t: new Date('2021-12-29').getTime(), value: 4793 },
+  { t: new Date('2022-10-12').getTime(), value: 3578 },
+  { t: new Date('2023-07-27').getTime(), value: 4588 },
+  { t: new Date('2024-03-21').getTime(), value: 5224 },
+  { t: new Date('2024-07-16').getTime(), value: 5667 },
+  { t: new Date('2024-08-05').getTime(), value: 5186 },
+  { t: new Date('2024-11-11').getTime(), value: 5893 },
+  { t: new Date('2025-01-23').getTime(), value: 6118 },
+  { t: new Date('2025-04-07').getTime(), value: 5074 },
+  { t: new Date('2026-01-01').getTime(), value: 5500 },
+]
+
+// ── Nasdaq Composite (launched Feb 1971) ─────────────────────────────────────
+const NASDAQ_RAW: { t: number; value: number }[] = [
+  { t: new Date('1971-02-08').getTime(), value: 100 },
+  { t: new Date('1972-12-11').getTime(), value: 135 },
+  { t: new Date('1974-10-03').getTime(), value: 55 },
+  { t: new Date('1976-09-21').getTime(), value: 98 },
+  { t: new Date('1980-01-14').getTime(), value: 210 },
+  { t: new Date('1980-04-21').getTime(), value: 132 },
+  { t: new Date('1981-05-29').getTime(), value: 224 },
+  { t: new Date('1982-08-12').getTime(), value: 159 },
+  { t: new Date('1987-08-26').getTime(), value: 455 },
+  { t: new Date('1987-12-04').getTime(), value: 291 },
+  { t: new Date('1990-07-16').getTime(), value: 469 },
+  { t: new Date('1990-10-16').getTime(), value: 326 },
+  { t: new Date('1994-02-01').getTime(), value: 800 },
+  { t: new Date('1994-04-14').getTime(), value: 693 },
+  { t: new Date('1996-01-10').getTime(), value: 990 },
+  { t: new Date('1998-07-20').getTime(), value: 2014 },
+  { t: new Date('1998-10-08').getTime(), value: 1419 },
+  { t: new Date('2000-03-10').getTime(), value: 5048 },
+  { t: new Date('2002-10-09').getTime(), value: 1114 },
+  { t: new Date('2004-01-26').getTime(), value: 2153 },
+  { t: new Date('2007-10-31').getTime(), value: 2859 },
+  { t: new Date('2008-11-21').getTime(), value: 1295 },
+  { t: new Date('2009-03-09').getTime(), value: 1268 },
+  { t: new Date('2010-04-26').getTime(), value: 2535 },
+  { t: new Date('2011-10-04').getTime(), value: 2299 },
+  { t: new Date('2015-07-20').getTime(), value: 5231 },
+  { t: new Date('2016-02-11').getTime(), value: 4267 },
+  { t: new Date('2018-08-30').getTime(), value: 8109 },
+  { t: new Date('2018-12-26').getTime(), value: 6193 },
+  { t: new Date('2019-12-27').getTime(), value: 9022 },
+  { t: new Date('2020-02-19').getTime(), value: 9838 },
+  { t: new Date('2020-03-23').getTime(), value: 6879 },
+  { t: new Date('2021-11-19').getTime(), value: 16057 },
+  { t: new Date('2022-12-28').getTime(), value: 10939 },
+  { t: new Date('2023-07-19').getTime(), value: 14358 },
+  { t: new Date('2024-03-21').getTime(), value: 16428 },
+  { t: new Date('2024-07-10').getTime(), value: 18647 },
+  { t: new Date('2024-08-05').getTime(), value: 16195 },
+  { t: new Date('2024-12-26').getTime(), value: 19310 },
+  { t: new Date('2025-01-24').getTime(), value: 21784 },
+  { t: new Date('2025-04-07').getTime(), value: 15267 },
+  { t: new Date('2026-01-01').getTime(), value: 17800 },
+]
+
+/**
+ * Merge all three series onto a unified sorted timestamp array.
+ * Missing values for a series at a given timestamp are left as null
+ * (Recharts connectNulls will interpolate across them).
+ */
+function nearestValue(raw: { t: number; value: number }[], targetT: number): number | null {
+  if (!raw.length) return null
+  let best = raw[0], bestDiff = Math.abs(raw[0].t - targetT)
+  for (const pt of raw) {
+    const d = Math.abs(pt.t - targetT)
+    if (d < bestDiff) { bestDiff = d; best = pt }
+  }
+  // Only use if within 18 months (don't bridge huge gaps)
+  return bestDiff < 1.5 * 365 * 86_400_000 ? best.value : null
+}
+
+// All unique timestamps from all three series, sorted
+const ALL_TIMESTAMPS = [...new Set([
+  ...DJIA_RAW.map(d => d.t),
+  ...SP500_RAW.map(d => d.t),
+  ...NASDAQ_RAW.map(d => d.t),
+])].sort((a, b) => a - b)
+
+const LONG_TERM_DATA: { t: number; value: number; sp500: number | null; nasdaq: number | null }[] =
+  ALL_TIMESTAMPS.map(t => ({
+    t,
+    value:  nearestValue(DJIA_RAW,   t) ?? DJIA_RAW.find(d => d.t === t)?.value ?? (DJIA_RAW.find(d => d.t === t)?.value ?? null) as unknown as number,
+    sp500:  nearestValue(SP500_RAW,  t),
+    nasdaq: nearestValue(NASDAQ_RAW, t),
+  })).filter(d => d.value !== null)
 
 function fmtYear(t: number) {
   return new Date(t).getFullYear().toString()
@@ -739,8 +878,8 @@ function CombinedTimelineChart({
             Long-Term Market History · Hover dots · Click to jump
           </div>
           <div style={{ color: C.t1, fontSize: 15, fontWeight: 700 }}>
-            Dow Jones Industrial Average
-            <span style={{ color: C.t3, fontSize: 12, fontWeight: 400, marginLeft: 8 }}>Approximate turning-point data, 1900–2024</span>
+            DJIA · S&P 500 · Nasdaq
+            <span style={{ color: C.t3, fontSize: 12, fontWeight: 400, marginLeft: 8 }}>Approximate turning-point data, 1900–2026</span>
           </div>
         </div>
         {/* Live hover readout */}
@@ -753,7 +892,7 @@ function CombinedTimelineChart({
               <div style={{ color: C.t1, fontSize: 20, fontWeight: 800, fontFamily: C.mono, lineHeight: 1 }}>
                 {chartHov.value.toLocaleString()}
               </div>
-              <div style={{ color: C.t4, fontSize: 9, textTransform: 'uppercase', letterSpacing: '.05em' }}>DJIA</div>
+              <div style={{ color: C.t4, fontSize: 9, textTransform: 'uppercase', letterSpacing: '.05em' }}>DJIA (hover)</div>
             </div>
           ) : hoveredEvent ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
@@ -826,13 +965,13 @@ function CombinedTimelineChart({
             label: 'DJIA High',
             value: peak.value >= 1000 ? `${(peak.value / 1000).toFixed(1)}k` : peak.value.toLocaleString(),
             color: 'var(--c-gain)',
-            sub: new Date(peak.t).getFullYear().toString(),
+            sub: `${new Date(peak.t).getFullYear()} (Dow)`,
           },
           {
             label: 'DJIA Low',
             value: trough.value >= 1000 ? `${(trough.value / 1000).toFixed(1)}k` : trough.value.toLocaleString(),
             color: 'var(--c-loss)',
-            sub: new Date(trough.t).getFullYear().toString(),
+            sub: `${new Date(trough.t).getFullYear()} (Dow)`,
           },
           {
             label: 'Events Visible',
@@ -852,7 +991,7 @@ function CombinedTimelineChart({
       {/* ── Chart + dot overlay ── */}
       <div ref={containerRef} style={{ position: 'relative' }}>
         <ResponsiveContainer width="100%" height={CHART_H}>
-          <AreaChart
+          <ComposedChart
             data={LONG_TERM_DATA}
             onMouseMove={(s) => {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -864,7 +1003,7 @@ function CombinedTimelineChart({
           >
             <defs>
               <linearGradient id="ltGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor={C.accent} stopOpacity={0.18} />
+                <stop offset="5%"  stopColor={C.accent} stopOpacity={0.12} />
                 <stop offset="95%" stopColor={C.accent} stopOpacity={0}    />
               </linearGradient>
             </defs>
@@ -910,14 +1049,39 @@ function CombinedTimelineChart({
                 />
               )
             })}
+            {/* DJIA — primary area */}
             <Area
               type="monotone"
               dataKey="value"
+              name="DJIA"
               stroke={C.accent}
-              strokeWidth={2.5}
+              strokeWidth={2}
               fill="url(#ltGrad)"
               dot={false}
               activeDot={{ r: 4, fill: C.accent, strokeWidth: 0 }}
+              connectNulls
+            />
+            {/* S&P 500 */}
+            <Line
+              type="monotone"
+              dataKey="sp500"
+              name="S&P 500"
+              stroke="#4ADE80"
+              strokeWidth={1.5}
+              dot={false}
+              activeDot={{ r: 3, fill: '#4ADE80', strokeWidth: 0 }}
+              connectNulls
+            />
+            {/* Nasdaq Composite */}
+            <Line
+              type="monotone"
+              dataKey="nasdaq"
+              name="Nasdaq"
+              stroke="#F97316"
+              strokeWidth={1.5}
+              dot={false}
+              activeDot={{ r: 3, fill: '#F97316', strokeWidth: 0 }}
+              connectNulls
             />
             {/* Interactive brush — drag handles to zoom */}
             <Brush
@@ -938,7 +1102,7 @@ function CombinedTimelineChart({
               tickFormatter={fmtYear}
               travellerWidth={8}
             />
-          </AreaChart>
+          </ComposedChart>
         </ResponsiveContainer>
 
         {/* Event dots — aligned to x-axis baseline (above brush) */}
@@ -1057,6 +1221,19 @@ function CombinedTimelineChart({
 
       {/* ── Legend ── */}
       <div style={{ display: 'flex', gap: 16, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Index lines */}
+        {[
+          { color: C.accent,   label: 'DJIA',    dash: false },
+          { color: '#4ADE80',  label: 'S&P 500', dash: false },
+          { color: '#F97316',  label: 'Nasdaq',  dash: false },
+        ].map((l) => (
+          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ width: 18, height: 2, background: l.color, borderRadius: 1 }} />
+            <span style={{ color: C.t3, fontSize: 10, fontWeight: 600 }}>{l.label}</span>
+          </div>
+        ))}
+        <div style={{ width: 1, height: 12, background: C.border }} />
+        {/* Event type dots */}
         {[
           { color: 'var(--c-loss)', label: 'Crash / Bear' },
           { color: 'var(--c-warn)', label: 'Crisis' },
@@ -1068,7 +1245,7 @@ function CombinedTimelineChart({
           </div>
         ))}
         <span style={{ color: C.t4, fontSize: 10, marginLeft: 'auto', fontStyle: 'italic' }}>
-          Drag the brush handles below the chart to zoom · Approximate reference
+          Drag brush to zoom · Approximate reference
         </span>
       </div>
     </div>
