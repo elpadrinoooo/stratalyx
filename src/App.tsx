@@ -108,6 +108,23 @@ function AppShell() {
       )}
 
       <Toasts />
+
+      {/* GLOBAL DISCLAIMER FOOTER */}
+      <footer
+        style={{
+          borderTop: `1px solid ${C.border}`,
+          padding: '10px 24px',
+          textAlign: 'center',
+          fontSize: 11,
+          color: C.t4,
+          lineHeight: 1.6,
+        }}
+      >
+        Stratalyx applies publicly documented investment frameworks for educational purposes only.
+        All outputs are AI-generated and do not constitute personalised investment advice or a
+        recommendation to buy or sell any security. Stratalyx is not a registered investment
+        adviser. Always consult a qualified financial adviser before making investment decisions.
+      </footer>
     </div>
   )
 }

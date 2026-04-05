@@ -145,8 +145,8 @@ describe('I-15: Analysis result displayed on card when available', () => {
         <WatchlistScreen />
       </TestWrapper>
     )
-    // Verdict tag
-    expect(screen.getByText('BUY')).toBeInTheDocument()
+    // Verdict tag (displays framework-alignment label, not raw BUY/HOLD/AVOID)
+    expect(screen.getByText('Strong Alignment')).toBeInTheDocument()
     // Strategy score
     expect(screen.getAllByText(/8\/10/).length).toBeGreaterThan(0)
   })

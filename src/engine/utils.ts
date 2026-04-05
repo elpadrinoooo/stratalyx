@@ -87,6 +87,13 @@ export function vBg(verdict: Verdict | string): string {
   return C.warnBg  // HOLD
 }
 
+/** Map internal verdict to user-facing framework-alignment label. */
+export function verdictLabel(verdict: Verdict | string): string {
+  if (verdict === 'BUY')   return 'Strong Alignment'
+  if (verdict === 'AVOID') return 'Weak Alignment'
+  return 'Mixed Signals'  // HOLD
+}
+
 /**
  * Sanitise a raw ticker input for use in API calls and prompts.
  * Rules (PRD §11.2):

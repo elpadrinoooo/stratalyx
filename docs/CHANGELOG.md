@@ -5,6 +5,38 @@ Format: [Semantic Versioning](https://semver.org) — `MAJOR.MINOR.PATCH`
 
 ---
 
+## [Unreleased] — v1.1.0 — Business Foundation
+
+### Added
+- `docs/BUSINESS.md` — full business model, GTM strategy, competitive positioning, retention
+  strategy, and revenue milestones document
+- `docs/TODO.md` — prioritised implementation checklist across 4 phases (Pre-Launch, Monetisation,
+  Retention, Growth) with 60+ specific action items tagged by type
+- ADR-008: Freemium model decision (3 free analyses/month, $19/month Pro)
+- ADR-009: Educational framing requirement — BUY/HOLD/AVOID → framework alignment language
+- ADR-010: Open-core open source strategy (deferred until 100 paying subscribers)
+
+### Changed
+- `docs/PRD.md` v1.0.0 → v1.1.0: major update incorporating business model, legal compliance
+  section (Section 6), monetisation model (Section 7), retention features (F-12, F-13, F-14),
+  updated personas (primary persona revised to "Informed Hobbyist Investor"), business success
+  metrics added, and phased roadmap restructured around business milestones
+- Primary user persona updated: "Alex the engineer" → "Jordan the informed hobbyist investor"
+  (28–45, $80K–$200K income, medium technical comfort — more accurate representation of the
+  paying customer)
+
+### Planned (Phase 0 — Required Before Revenue)
+- Verdict language reframe: BUY/HOLD/AVOID → Strong/Mixed/Weak Framework Alignment
+- Mandatory disclaimer box in AnalyzerModal
+- Affiliation disclaimer on Strategies Library
+- Third-person LLM voice in all prompts
+- Terms of Service and Privacy Policy drafts
+- Production deployment (Vercel + Railway)
+- Sentry + PostHog instrumentation
+- Email capture with lead magnet
+
+---
+
 ## [Unreleased] — v1.0.0
 
 ### Added

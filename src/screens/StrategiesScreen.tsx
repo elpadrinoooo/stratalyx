@@ -278,6 +278,20 @@ export function StrategiesScreen() {
             "{inv.tagline}"
           </div>
 
+          {/* AFFILIATION DISCLAIMER */}
+          <div
+            style={{
+              padding: '7px 20px',
+              background: C.bg1,
+              borderBottom: `1px solid ${C.border}`,
+              fontSize: 11,
+              color: C.t4,
+            }}
+          >
+            Framework criteria are based on publicly documented writings, letters, and interviews.
+            Not affiliated with or endorsed by {inv.name} or their firm.
+          </div>
+
           {/* TABS */}
           <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}` }}>
             {(['Overview', 'Rules', 'Formulas'] as StratTab[]).map((t) => (

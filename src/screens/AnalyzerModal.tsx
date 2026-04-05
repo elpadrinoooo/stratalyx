@@ -12,7 +12,7 @@ import { Spinner } from '../components/Spinner'
 import { Skeleton } from '../components/Skeleton'
 import { LiveBadge } from '../components/LiveBadge'
 import { ProviderModelBar } from '../components/ProviderModelBar'
-import { scColor, vColor, vBg, pegColor, fmtPct, fmtN } from '../engine/utils'
+import { scColor, vColor, vBg, verdictLabel, pegColor, fmtPct, fmtN } from '../engine/utils'
 import type { AnalysisResult } from '../types'
 
 interface Props {
@@ -40,6 +40,8 @@ export function AnalyzerModal({ fmpKey }: Props) {
 
   // Collapse settings panel when modal opened with a pre-filled ticker
   const [settingsOpen, setSettingsOpen] = useState(!state.modalTicker)
+  const [showAllInvestors, setShowAllInvestors] = useState(false)
+  const INV_PILL_LIMIT = 8
 
   // Focus input on open; auto-run if ticker pre-filled and no existing result
   useEffect(() => {
@@ -255,7 +257,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
                 {/* Investor row */}
                 <div style={{ color: C.t3, fontSize: 12, margin: '10px 0 6px' }}>Investor strategy</div>
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
-                  {INVESTORS.map((i) => {
+                  {(showAllInvestors ? INVESTORS : INVESTORS.slice(0, INV_PILL_LIMIT)).map((i) => {
                     const active = i.id === state.investor
                     return (
                       <button
@@ -276,6 +278,22 @@ export function AnalyzerModal({ fmpKey }: Props) {
                       </button>
                     )
                   })}
+                  {INVESTORS.length > INV_PILL_LIMIT && (
+                    <button
+                      onClick={() => setShowAllInvestors((x) => !x)}
+                      style={{
+                        background: 'none',
+                        border: `1px dashed ${C.border}`,
+                        borderRadius: R.r8,
+                        color: C.t3,
+                        fontSize: 12,
+                        padding: '4px 10px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {showAllInvestors ? `− Hide` : `+${INVESTORS.length - INV_PILL_LIMIT} more`}
+                    </button>
+                  )}
                 </div>
 
                 {/* Provider/Model row */}
@@ -285,6 +303,25 @@ export function AnalyzerModal({ fmpKey }: Props) {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* DISCLAIMER */}
+          <div
+            style={{
+              background: C.warnBg,
+              border: `1px solid ${C.warnB}`,
+              borderRadius: R.r8,
+              padding: '8px 12px',
+              marginBottom: 12,
+              fontSize: 12,
+              color: C.warn,
+              lineHeight: 1.5,
+            }}
+          >
+            <strong>Educational framework analysis only.</strong> All outputs are AI-generated and do
+            not constitute personalised investment advice or a recommendation to buy or sell any
+            security. Stratalyx is not a registered investment adviser. Always consult a qualified
+            financial adviser before making investment decisions.
           </div>
 
           {/* SEARCH ROW */}
@@ -578,7 +615,7 @@ function ResultSection({
               }}
             >
               <span style={{ color: vColor(result.verdict), fontWeight: 800, fontSize: 17 }}>
-                {result.verdict}
+                {verdictLabel(result.verdict)}
               </span>
             </div>
           </div>
@@ -792,7 +829,7 @@ function ResultSection({
               <div style={{ background: inv.color + '18', border: `1px solid ${inv.color}33`, borderRadius: R.r8, padding: 12 }}>
                 <div style={{ color: inv.color, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{inv.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ color: vColor(result.verdict), fontWeight: 700, fontSize: 15 }}>{result.verdict}</span>
+                  <span style={{ color: vColor(result.verdict), fontWeight: 700, fontSize: 15 }}>{verdictLabel(result.verdict)}</span>
                   <span style={{ color: C.t2, fontSize: 14, fontFamily: C.mono }}>{result.strategyScore}/10</span>
                 </div>
                 <ScoreBar score={result.strategyScore} color={scColor(result.strategyScore)} />
@@ -801,7 +838,7 @@ function ResultSection({
               <div style={{ background: compInv.color + '18', border: `1px solid ${compInv.color}33`, borderRadius: R.r8, padding: 12 }}>
                 <div style={{ color: compInv.color, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{compInv.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ color: vColor(compResult.verdict), fontWeight: 700, fontSize: 15 }}>{compResult.verdict}</span>
+                  <span style={{ color: vColor(compResult.verdict), fontWeight: 700, fontSize: 15 }}>{verdictLabel(compResult.verdict)}</span>
                   <span style={{ color: C.t2, fontSize: 14, fontFamily: C.mono }}>{compResult.strategyScore}/10</span>
                 </div>
                 <ScoreBar score={compResult.strategyScore} color={scColor(compResult.strategyScore)} />
@@ -845,8 +882,8 @@ function ResultSection({
       </div>
 
       {/* FOOTER */}
-      <div style={{ color: C.t4, fontSize: 11, textAlign: 'right', marginTop: 10 }}>
-        Educational only · Not financial advice · Data source: {result.dataSource}
+      <div style={{ color: C.t4, fontSize: 11, textAlign: 'center', marginTop: 14 }}>
+        Data source: {result.dataSource} · Results may not reflect current market conditions
       </div>
     </div>
   )

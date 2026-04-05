@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { C, R } from '../constants/colors'
 import { STOCKS } from '../constants/stocks'
 import { INV, INVESTORS } from '../constants/investors'
@@ -8,7 +8,7 @@ import { Tag } from '../components/Tag'
 import { WLBtn } from '../components/WLBtn'
 import { ScoreBar } from '../components/ScoreBar'
 import { LiveBadge } from '../components/LiveBadge'
-import { pegColor, scColor, vColor } from '../engine/utils'
+import { pegColor, scColor, vColor, verdictLabel } from '../engine/utils'
 
 export function WatchlistScreen() {
   const { state, dispatch } = useApp()
@@ -90,6 +90,9 @@ export function WatchlistScreen() {
     )
   }
 
+  const [showAllInvestors, setShowAllInvestors] = useState(false)
+  const PILL_LIMIT = 8
+
   const labelStyle: React.CSSProperties = {
     color: C.t3,
     fontSize: 11,
@@ -109,28 +112,46 @@ export function WatchlistScreen() {
       </div>
 
       {/* Investor pills */}
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
-        {INVESTORS.map((i) => {
-          const active = i.id === state.investor
-          return (
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+          {(showAllInvestors ? INVESTORS : INVESTORS.slice(0, PILL_LIMIT)).map((i) => {
+            const active = i.id === state.investor
+            return (
+              <button
+                key={i.id}
+                onClick={() => dispatch({ type: 'SET_INVESTOR', payload: i.id })}
+                style={{
+                  background: active ? i.color + '18' : C.bg2,
+                  color: active ? i.color : C.t2,
+                  border: `1px solid ${active ? i.color + '44' : C.border}`,
+                  borderRadius: R.r8,
+                  padding: '4px 10px',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {i.shortName}
+              </button>
+            )
+          })}
+          {INVESTORS.length > PILL_LIMIT && (
             <button
-              key={i.id}
-              onClick={() => dispatch({ type: 'SET_INVESTOR', payload: i.id })}
+              onClick={() => setShowAllInvestors((x) => !x)}
               style={{
-                background: active ? i.color + '18' : C.bg2,
-                color: active ? i.color : C.t2,
-                border: `1px solid ${active ? i.color + '44' : C.border}`,
+                background: 'none',
+                border: `1px dashed ${C.border}`,
                 borderRadius: R.r8,
+                color: C.t3,
+                fontSize: 12,
                 padding: '4px 10px',
-                fontSize: 13,
-                fontWeight: 600,
                 cursor: 'pointer',
               }}
             >
-              {i.shortName}
+              {showAllInvestors ? `− Hide` : `+${INVESTORS.length - PILL_LIMIT} more`}
             </button>
-          )
-        })}
+          )}
+        </div>
       </div>
 
       {/* Cards grid */}
@@ -164,7 +185,7 @@ export function WatchlistScreen() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                   <WLBtn ticker={stock.ticker} inWatchlist={true} onToggle={toggle} />
-                  {result && <Tag color={vColor(result.verdict)} small>{result.verdict}</Tag>}
+                  {result && <Tag color={vColor(result.verdict)} small>{verdictLabel(result.verdict)}</Tag>}
                 </div>
               </div>
 

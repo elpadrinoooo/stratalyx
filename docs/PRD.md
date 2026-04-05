@@ -1,9 +1,9 @@
-# Stratalyx.ai — Product Requirements Document
+# Stratalyx — Product Requirements Document
 
-**Version:** 1.0.0
-**Status:** Active Development
+**Version:** 1.1.0
+**Status:** Active Development — Pre-Launch
 **Last Updated:** March 2026
-**Owner:** Stratalyx Product Team
+**Owner:** Stratalyx Product
 **Classification:** Internal — Engineering Reference
 
 ---
@@ -15,17 +15,19 @@
 3. [Goals and Success Metrics](#3-goals-and-success-metrics)
 4. [Users and Personas](#4-users-and-personas)
 5. [Feature Requirements](#5-feature-requirements)
-6. [Non-Functional Requirements](#6-non-functional-requirements)
-7. [Technical Architecture](#7-technical-architecture)
-8. [Data Requirements](#8-data-requirements)
-9. [API Contracts](#9-api-contracts)
-10. [UI/UX Requirements](#10-uiux-requirements)
-11. [Security Requirements](#11-security-requirements)
-12. [Testing Requirements](#12-testing-requirements)
-13. [Roadmap](#13-roadmap)
-14. [Out of Scope](#14-out-of-scope)
-15. [Open Questions](#15-open-questions)
-16. [Decision Log](#16-decision-log)
+6. [Legal and Compliance Requirements](#6-legal-and-compliance-requirements)
+7. [Business Model](#7-business-model)
+8. [Non-Functional Requirements](#8-non-functional-requirements)
+9. [Technical Architecture](#9-technical-architecture)
+10. [Data Requirements](#10-data-requirements)
+11. [API Contracts](#11-api-contracts)
+12. [UI/UX Requirements](#12-uiux-requirements)
+13. [Security Requirements](#13-security-requirements)
+14. [Testing Requirements](#14-testing-requirements)
+15. [Roadmap](#15-roadmap)
+16. [Out of Scope](#16-out-of-scope)
+17. [Open Questions](#17-open-questions)
+18. [Decision Log](#18-decision-log)
 
 ---
 
@@ -33,21 +35,42 @@
 
 ### 1.1 What is Stratalyx?
 
-Stratalyx is a **multi-investor, multi-LLM stock analysis platform** that applies the documented investment frameworks of eleven legendary investors to any publicly traded stock. It combines real-time financial data from Financial Modeling Prep (FMP) with AI analysis via Anthropic Claude to produce structured, framework-aligned investment theses.
+Stratalyx is a **multi-investor, multi-LLM stock framework analysis platform** that applies the
+documented investment philosophies of legendary investors to any publicly traded US stock. It
+combines real-time financial data from Financial Modeling Prep (FMP) with AI analysis to produce
+structured, framework-aligned educational research.
 
 ### 1.2 Core Value Proposition
 
-> "Ask what Warren Buffett, Benjamin Graham, or Cathie Wood would think about any stock — grounded in real financial data, not guesswork."
+> "See how Warren Buffett, Benjamin Graham, or Peter Lynch would evaluate any stock — grounded in
+> real financial data, not guesswork. Learn the framework. Apply the lens. Think like a legend."
 
 Unlike generic AI chatbots or screeners, Stratalyx:
 - Applies a **specific, documented investor framework** rather than a generic "is this a good stock" prompt
-- Injects **verified live financial data** (P/E, ROE, FCF, margins, growth rates) into every AI prompt
+- Injects **verified live financial data** (P/E, ROE, FCF, margins, growth rates) into every analysis
 - Produces **structured, comparable outputs** across multiple strategies for the same stock
-- Educates users on **why** each criterion matters, not just what the verdict is
+- Educates users on **why** each criterion matters, not just what the framework says
+- Positions all outputs as **educational research**, not personalised investment recommendations
 
-### 1.3 Current State (v1.0)
+### 1.3 Legal Positioning
 
-The application is a fully functional React single-page application built and validated as a Claude artifact. It is being migrated to a production TypeScript + Vite + Express codebase for local development, testing, and eventual deployment.
+Stratalyx is an **educational research and framework-analysis tool**. It does not:
+- Provide personalised investment advice
+- Recommend specific securities for specific investors
+- Operate as a Registered Investment Adviser (RIA) under the Investment Advisers Act of 1940
+
+All analysis outputs are clearly labelled as AI-generated educational content applying documented
+public-domain investment frameworks. Users are required to acknowledge this at sign-up. See
+Section 6 for full compliance requirements.
+
+### 1.4 Current State
+
+The application is a fully functional React SPA with an Express proxy backend. It runs locally. It
+has a complete test suite (113 tests), full TypeScript strict-mode compliance, and 120 curated
+stocks in the screener with dynamic full US market loading via FMP.
+
+**Pre-launch requirements before taking payments:** legal review, compliance language implementation,
+production deployment (Vercel + Railway), Stripe billing integration, and email capture.
 
 ---
 
@@ -55,17 +78,32 @@ The application is a fully functional React single-page application built and va
 
 ### 2.1 The Gap We Fill
 
-Individual investors and finance students face three compounding problems:
+Financially literate self-directed investors face three compounding problems:
 
-1. **Information overload** — financial data is abundant but contextually meaningless without an interpretive framework
-2. **Framework inaccessibility** — the investment philosophies of Buffett, Graham, Lynch et al. are documented in books but not operationalised into actionable screening tools
-3. **AI without grounding** — existing AI tools hallucinate financial figures and lack verified real-time data, making their outputs unreliable for investment research
+1. **Data without interpretation** — financial data is abundant and free (Yahoo Finance, Finviz,
+   Macrotrends). What people cannot get is interpretation through a trusted mental model. A retail
+   investor staring at a P/E of 32 doesn't know if that's cheap or expensive for this company, in
+   this sector, at this moment.
 
-### 2.2 What We Are Not
+2. **Frameworks in books, not tools** — the investment philosophies of Buffett, Graham, Lynch et al.
+   are extensively documented in books. They are not operationalised into actionable screening tools
+   that apply to real companies with real current data.
 
-- Not a trading platform
-- Not a financial advisor
-- Not a real-time price ticker or portfolio tracker
+3. **AI without grounding** — existing AI tools hallucinate financial figures. Stratalyx grounds
+   every analysis in verified live financial data before the AI makes a single interpretive claim.
+
+### 2.2 The Emotional Job-to-be-Done
+
+Users are not buying analysis. They are buying **validated conviction** — the feeling that their
+investment thinking has been checked against a legendary investor's criteria. This is a different
+purchase psychology and it commands higher willingness to pay than a data terminal.
+
+### 2.3 What We Are Not
+
+- Not a trading platform or broker
+- Not a financial advisor or registered investment adviser
+- Not a real-time price streaming service
+- Not a portfolio performance tracker
 - Not a social/community platform (yet)
 
 ---
@@ -76,13 +114,15 @@ Individual investors and finance students face three compounding problems:
 
 | Goal | Description |
 |------|-------------|
-| G-01 | Users can apply any of 11 investor frameworks to any US-listed stock in under 30 seconds |
+| G-01 | Users can apply any investor framework to any US-listed stock in under 30 seconds |
 | G-02 | Every analysis is grounded in real financial data when an FMP key is present |
 | G-03 | Users can compare how two different investors would evaluate the same stock |
 | G-04 | The Strategies page functions as a standalone educational resource |
 | G-05 | The platform is extensible — new investors, providers, and data sources can be added without architectural changes |
+| G-06 | All outputs are clearly framed as educational framework analysis, not investment advice |
+| G-07 | Re-engagement triggers bring users back within 7 days of their last analysis |
 
-### 3.2 Success Metrics (v1.0)
+### 3.2 Technical Success Metrics (v1.0)
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
@@ -94,190 +134,378 @@ Individual investors and finance students face three compounding problems:
 | TypeScript strict mode errors | 0 | `tsc --noEmit` |
 | Unit test coverage | ≥90% | Jest coverage report |
 
+### 3.3 Business Success Metrics (v1.1 — Post-Launch)
+
+| Metric | Target (Month 3) | Target (Month 12) |
+|--------|-----------------|-------------------|
+| Free registered users | 1,000 | 10,000 |
+| Paying subscribers (Pro) | 30 | 500 |
+| Monthly MRR | $570 | $9,500 |
+| Monthly churn (Pro) | <8% | <5% |
+| Free-to-paid conversion | >2% | >3% |
+| D7 retention (free users) | >25% | >35% |
+| D30 retention (paid users) | >70% | >80% |
+
 ---
 
 ## 4. Users and Personas
 
-### 4.1 Primary Persona — The Informed Individual Investor
+### 4.1 Primary Persona — The Informed Hobbyist Investor (REVISED)
 
-**Name:** Alex, 34
-**Background:** Software engineer, self-directed investor with $50k portfolio
-**Goals:** Apply systematic frameworks to stock research, reduce emotional bias
-**Pain points:** Reads investment books but struggles to operationalise the criteria
-**How they use Stratalyx:** Runs a stock through 2–3 investor frameworks before making a decision, uses the comparison feature to understand divergences
-**Technical comfort:** High — comfortable with API keys, developer tools
+**Name:** Jordan, 33
+**Background:** Marketing manager or software professional, earns $90K–$160K, has $30K–$150K
+invested across Fidelity, Robinhood, or Schwab. Has read at least one investing book. Has strong
+opinions about popular stocks. Active on financial Twitter/X and Reddit.
+**Goals:** Feel like they are doing real, systematic analysis — not just vibes + Googling. Reduce
+the emotional component of investment decisions. Learn through the process.
+**Pain points:** Knows what P/E means but doesn't know what a "good" P/E looks like for this
+specific company. Wants a framework but finds book criteria abstract without real numbers.
+**How they use Stratalyx:** Runs a stock through 2–3 investor frameworks when researching a
+position. Checks the watchlist after earnings. Shares a particularly interesting analysis result on
+Twitter/X or Reddit.
+**Willingness to pay:** $15–$25/month for something they use weekly.
+**Technical comfort:** Medium — comfortable with apps, not with API keys.
 
 ### 4.2 Secondary Persona — The Finance Student
 
 **Name:** Priya, 22
-**Background:** Finance undergraduate, learning fundamental analysis
-**Goals:** Understand how legendary investors think, practice applying frameworks
-**Pain points:** Theory in textbooks doesn't connect to real stocks with real numbers
-**How they use Stratalyx:** Uses the Strategies page as a study resource, runs analyses on well-known stocks to see how the framework applies
-**Technical comfort:** Medium
+**Background:** Finance or economics undergraduate or early-career analyst. Learning fundamental
+analysis. Writing investment research papers or blog posts.
+**Goals:** Understand how legendary investors think. See real frameworks applied to real companies
+with real numbers. Build a mental model for evaluating companies.
+**How they use Stratalyx:** Uses the Strategies Library as a study resource. Runs analyses on
+well-known stocks to see framework application. May share results in class or on LinkedIn.
+**Willingness to pay:** Low (student). Valuable as a word-of-mouth vector. Should be
+on the free tier.
+**Technical comfort:** Medium.
 
 ### 4.3 Tertiary Persona — The Fintech Developer
 
 **Name:** Marcus, 29
-**Background:** Full-stack developer building fintech tools
-**Goals:** Understand the architecture, extend or fork the platform
-**How they use Stratalyx:** Reads the codebase, extends investor frameworks, integrates new data providers
-**Technical comfort:** Expert
+**Background:** Full-stack developer building fintech tools or personal projects.
+**Goals:** Understand the architecture. Extend or fork the platform. Contribute investor frameworks.
+**How they use Stratalyx:** GitHub repository, Strategies Library for framework validation, open
+source contribution if that path is pursued.
+**Technical comfort:** Expert.
 
 ---
 
 ## 5. Feature Requirements
 
-### 5.1 Core Features (v1.0 — Must Have)
+### 5.1 Core Features (v1.0 — Production Ready)
 
 #### F-01: Strategy Screener
 
 **Priority:** P0
-**Description:** Display a table of pre-loaded stocks with key financial metrics. Allow filtering by name/ticker. Show the active investor strategy with philosophy summary. Trigger analysis from any row.
+**Description:** Full US market stock list (FMP-powered) with search, sector filter, sort, and
+pagination. Active investor strategy banner. Analysis trigger from any row.
 
 **Acceptance Criteria:**
-- [ ] Table renders all 10 pre-loaded stocks
-- [ ] Search filters by ticker and company name in real time
-- [ ] Active investor banner updates immediately on strategy selection
-- [ ] Provider and model selectors are visible and functional
-- [ ] "Analyze" button opens the Analyzer Modal pre-filled with the ticker
-- [ ] Live data status indicator reflects whether FMP key is configured
-- [ ] All 11 investor strategies selectable via pill buttons
+- [x] Starts with 120 curated stocks, expands to full US market via FMP `/stock/list`
+- [x] 24-hour localStorage cache for full stock list
+- [x] Search filters by ticker and company name in real time
+- [x] Sector filter chips with "All" option
+- [x] Sort by Default / Score / Ticker A–Z
+- [x] Pagination: 100 per page, "Load more" button
+- [x] Footer shows "Showing X of Y · Z total" with loading indicator
+- [x] Active investor banner updates immediately on strategy selection
+- [x] "Analyze" button opens the Analyzer Modal pre-filled with the ticker
+- [x] Live data status indicator reflects whether FMP key is configured
+- [x] All 11 investor strategies selectable via pill buttons
 
 #### F-02: Strategy Analyzer Modal
 
 **Priority:** P0
-**Description:** Full-screen modal that accepts any ticker, fetches live financial data, constructs an investor-specific prompt, and returns a structured AI analysis.
+**Description:** Full-screen modal that accepts any ticker, fetches live financial data, constructs
+an investor-specific prompt, and returns a structured AI analysis with educational framing.
 
 **Acceptance Criteria:**
-- [ ] Accepts any US ticker input (validated and sanitised)
-- [ ] Enter key triggers analysis
-- [ ] Analyze button disabled when input is empty or analysis is in progress
-- [ ] Loading skeleton displayed during analysis
-- [ ] Analysis settings panel shows investor, provider, and model selectors
-- [ ] If FMP key configured: fetches 5 data endpoints concurrently before calling Claude
-- [ ] Live data injected verbatim into Claude prompt as a structured block
-- [ ] Result displays: verdict badge, strategy score, market price, intrinsic value range, margin of safety, moat assessment, screen results, KPI grid, strengths, risks, thesis
-- [ ] Data source labelled: "FMP Live Data" or "Claude Training Knowledge"
-- [ ] "Compare with another strategy" section allows running a second investor framework
-- [ ] Result saved to History automatically
-- [ ] Toast notification on completion
-- [ ] Modal closes on backdrop click or Escape key
-- [ ] Error state shown on API failure with message
+- [x] Accepts any US ticker input (validated and sanitised)
+- [x] Enter key triggers analysis
+- [x] Collapsible settings panel (collapsed when ticker pre-filled)
+- [x] Auto-runs analysis on mount when ticker is pre-filled
+- [x] Loading skeleton with phase labels during analysis
+- [x] Result displays: framework alignment verdict, strategy score, market price, intrinsic value
+      range, margin of safety, moat assessment, screen results, KPI grid, strengths, risks, thesis
+- [x] Data source labelled: "FMP Live Data" or "AI Framework Estimate"
+- [x] Shareable URL: `#/analysis/TICKER/investorId`
+- [x] Share button copies link to clipboard
+- [x] Result saved to History automatically
+- [x] Modal closes on backdrop click or Escape key
+- [ ] **All verdict language uses framework-alignment framing (see Section 6.3)**
 
 #### F-03: Strategies Research Library
 
 **Priority:** P0
-**Description:** Sidebar + detail panel layout presenting all 11 investor profiles with biography, philosophy, screening rules, and financial formulas.
+**Description:** Educational resource presenting all investor profiles with biography, philosophy,
+screening rules, and financial formulas.
 
 **Acceptance Criteria:**
-- [ ] All 11 investors listed in sidebar with avatar, name, era, style tags
-- [ ] Avatar loads from Wikimedia with monogram fallback on error
-- [ ] Detail panel has 3 tabs: Overview, Rules, Formulas
-- [ ] Overview: biography, philosophy, use case, expandable learn more section
-- [ ] Rules: all screening criteria with threshold and explanatory rationale
-- [ ] Formulas: all equations with formula string and plain-language explanation
-- [ ] Hero strip shows AUM, CAGR, era, style as stat pills
-- [ ] "Use strategy →" button sets active investor AND navigates to Screener
-- [ ] Active investor in sidebar reflects global state investor selection
+- [x] All 11 investors listed in sidebar
+- [x] Detail panel with 3 tabs: Overview, Rules, Formulas
+- [x] Hero strip shows AUM, CAGR, era, style as stat pills
+- [x] "Use strategy →" button sets active investor AND navigates to Screener
 
 #### F-04: Watchlist
 
 **Priority:** P1
-**Description:** Starred stocks from the Screener, displayed as cards with the active investor's analysis result if available.
-
-**Acceptance Criteria:**
-- [ ] Star button on every screener row toggles watchlist membership
-- [ ] Watchlist badge on nav tab shows count
-- [ ] Empty state with CTA to Screener
-- [ ] Each card shows: ticker, name, sector, moat, P/E, PEG, dividend, FCF
-- [ ] If analysis exists for active investor: show score bar, verdict, reason, re-analyze button
-- [ ] If no analysis: show "Analyze with [Investor]" CTA button
-- [ ] Investor and provider/model selectors available on Watchlist page
-- [ ] Live data badge shown on cards with completed analyses
+- [x] Star button on every screener row toggles watchlist membership
+- [x] Watchlist badge on nav tab shows count
+- [x] Suggested popular stocks on empty state
+- [x] Each card shows key financial metrics
+- [x] Analysis CTA per card
 
 #### F-05: Analysis History
 
 **Priority:** P1
-**Description:** Grid of all completed analyses across all sessions, sorted by most recent.
-
-**Acceptance Criteria:**
-- [ ] All saved analyses displayed as cards
-- [ ] Each card shows: ticker, company name, verdict badge, investor tag, score bar, score/10, date
-- [ ] Live data badge visible on each card
-- [ ] Clicking a card re-opens the Analyzer Modal for that ticker
-- [ ] Sorted by timestamp descending
-- [ ] Empty state shown when no analyses exist
+- [x] All completed analyses displayed as cards sorted by recency
+- [x] Clicking a card re-opens the Analyzer Modal for that ticker
 
 #### F-06: Strategy Comparisons
 
 **Priority:** P1
-**Description:** Side-by-side view of two investor analyses on the same stock.
-
-**Acceptance Criteria:**
-- [ ] Comparisons created from the "vs [investor]" section in the Analyzer Modal
-- [ ] Each comparison shows both investor results side by side
-- [ ] Score delta calculated and highlighted in amber if divergence > 3 points
-- [ ] Warning shown for significant divergences
-- [ ] Maximum 20 comparisons stored
-- [ ] Empty state shown when no comparisons exist
+- [x] Side-by-side comparison of two investor analyses on the same stock
+- [x] Score delta with amber warning for divergences > 3 points
 
 #### F-07: Navigation
 
 **Priority:** P0
-**Description:** Persistent top navbar with logo, tab navigation, live data status indicator, active investor badge, and Analyze CTA.
+- [x] All 5 nav tabs functional
+- [x] Cmd/Ctrl+K opens Analyzer Modal
+- [x] Badge counts on Watchlist, History, Comparisons
+
+### 5.2 Pre-Launch Requirements (Must complete before monetising)
+
+#### F-08: Legal Compliance Language
+
+**Priority:** P0 — BLOCKING for monetisation
+**Description:** Reframe all output language and add mandatory disclosures throughout the product.
+See Section 6 for full requirements.
+
+#### F-09: User Authentication
+
+**Priority:** P0 for v1.1
+**Description:** Email + password sign-up with Supabase Auth. Required for persistent history,
+paid subscriptions, and re-engagement notifications.
 
 **Acceptance Criteria:**
-- [ ] Logo click navigates to Screener from any screen
-- [ ] All 5 nav tabs functional: Screener, Strategies, Watchlist, History, Comparisons
-- [ ] Active tab visually highlighted
-- [ ] Badge counts on Watchlist, History, Comparisons tabs
-- [ ] FMP key status indicator (green = live, amber = AI only)
-- [ ] Active investor pill shown in navbar
-- [ ] Global "Analyze" button opens modal
-- [ ] Cmd/Ctrl+K opens Analyzer Modal
-- [ ] Escape closes modal
+- [ ] Email + password sign-up and sign-in
+- [ ] "Continue with Google" OAuth option
+- [ ] Email verification on sign-up
+- [ ] Password reset flow
+- [ ] Mandatory ToS + disclaimer acknowledgment checkbox at sign-up
+- [ ] JWT-based session via Supabase
 
-#### F-08: FMP API Key Management
+#### F-10: Freemium Billing (Stripe)
 
-**Priority:** P1
-**Description:** In-app modal for entering and managing the FMP API key, stored in memory for the session.
+**Priority:** P0 for v1.1
+**Description:** Stripe Checkout integration. Free tier with usage limits, Pro tier with
+unlimited access.
+
+**Pricing:**
+- **Free:** 3 analyses/month, Buffett + Lynch frameworks only, no history export
+- **Pro ($19/month or $149/year):** Unlimited analyses, all frameworks, history export,
+  watchlist sync, priority queue
+- **Teams ($49/seat/month):** Shared watchlists, team history, API access — future tier
 
 **Acceptance Criteria:**
-- [ ] Accessible from navbar status indicator
-- [ ] Explains what live data unlocks
-- [ ] Input field for key entry
-- [ ] Save button stores key in state and shows success toast
-- [ ] Clear button removes key
-- [ ] Disclaimer: key stored in memory only, never persisted to storage
+- [ ] Usage counter tracked per user (server-side, not localStorage)
+- [ ] Hard paywall at 3 analyses/month for free users
+- [ ] "Upgrade to Pro" modal triggered at paywall
+- [ ] Stripe Checkout redirect on upgrade click
+- [ ] Stripe webhook handling: subscription created / cancelled / payment failed
+- [ ] Subscription status stored in user record (Supabase)
+- [ ] Pro badge visible in navbar for paying users
+- [ ] Annual plan available at 35% discount
 
-### 5.2 Planned Features (v1.1 — Should Have)
+#### F-11: Email Capture (Pre-Auth)
 
-| ID | Feature | Priority | Notes |
-|----|---------|----------|-------|
-| F-09 | User authentication (email/password + OAuth) | P0 | Enables persistence |
-| F-10 | Persistent analysis history (database) | P0 | Requires F-09 |
-| F-11 | User preferences (default investor, theme) | P1 | Requires F-09 |
-| F-12 | Portfolio tracker (multiple stocks, aggregate scoring) | P1 | |
-| F-13 | Export analysis to PDF | P2 | |
-| F-14 | Email digest of watchlist analyses | P2 | |
-| F-15 | Screener with custom filters (P/E range, sector, etc.) | P1 | |
+**Priority:** P0 — Before auth is built
+**Description:** Simple email capture with lead magnet for users who visit the product before
+account creation is ready. Used to build a pre-launch list.
 
-### 5.3 Future Features (v2.0 — Could Have)
+**Lead magnet:** "Free PDF: How Buffett Would Evaluate the Magnificent 7" — 7 one-page framework
+analyses generated from the product.
+
+#### F-12: Re-engagement Notifications (Retention-Critical)
+
+**Priority:** P1 for v1.1
+**Description:** Event-triggered emails that bring users back to the product. This is the single
+most important retention mechanism.
+
+**Notification types:**
+- **Earnings alert:** When a stock in a user's watchlist reports quarterly earnings, re-run the
+  analysis and send: "AAPL Q2 earnings released — Buffett score changed from 7.1 → 8.4. Revenue
+  grew 12% YoY." (Requires earnings calendar endpoint from FMP)
+- **Price-movement alert:** When a watchlisted stock moves >5% in a day, notify the user and
+  show the current framework score vs. the score at time of last analysis
+- **Weekly digest:** Sunday evening email showing watchlist scores, any score changes, and
+  1 featured analysis to re-engage inactive users
+
+**Acceptance Criteria:**
+- [ ] Earnings calendar fetched from FMP `/earning_calendar` weekly
+- [ ] Automated re-analysis triggered server-side when earnings date passes
+- [ ] Email sent via Resend or Postmark (transactional email provider)
+- [ ] Users can configure notification preferences (on/off per type)
+- [ ] Unsubscribe link in every email (CAN-SPAM / GDPR requirement)
+
+#### F-13: Portfolio Analysis Mode
+
+**Priority:** P1 for v1.1 — High perceived-value feature
+**Description:** User inputs up to 10 holdings. The product runs all of them through the active
+investor framework and produces a portfolio alignment score.
+
+**Acceptance Criteria:**
+- [ ] Input: up to 10 ticker symbols
+- [ ] Output: per-stock framework score, portfolio aggregate score, best/worst aligned holdings
+- [ ] Visual breakdown: which holdings pass all criteria, which fail which rules
+- [ ] CTA: "Analyze underperforming holdings in detail"
+
+#### F-14: Analysis Output Format Improvement (Retention)
+
+**Priority:** P1 — Quick win
+**Description:** Lead with structured data, not prose. Users should be able to read the key
+output in 15 seconds on mobile.
+
+**New output structure:**
+1. Framework Alignment header with score badge + verdict badge (above the fold)
+2. 5 key framework signals in a scannable list (pass/fail per criterion, bold, icon)
+3. 2-sentence thesis summary
+4. "Read full analysis ↓" expand for the detailed prose
+
+### 5.3 Future Features (v2.0)
 
 | ID | Feature |
 |----|---------|
-| F-16 | Custom investor framework builder |
-| F-17 | Historical analysis replay (how would Buffett have rated AAPL in 2015?) |
-| F-18 | Multi-stock batch analysis |
-| F-19 | Collaborative watchlists |
-| F-20 | Broker API integration (read-only portfolio import) |
+| F-15 | Custom investor framework builder |
+| F-16 | Historical analysis replay (how would Buffett rate AAPL in 2015?) |
+| F-17 | Multi-stock batch analysis |
+| F-18 | Collaborative watchlists |
+| F-19 | Public API / developer access |
+| F-20 | Mobile native app (React Native or Expo) |
+| F-21 | Additional investor frameworks (target: 30+ by v2.0) |
+| F-22 | Broker API integration (read-only portfolio import) |
 
 ---
 
-## 6. Non-Functional Requirements
+## 6. Legal and Compliance Requirements
 
-### 6.1 Performance
+**This section is BLOCKING for any monetisation. Do not charge money before completing this
+section. Consult a fintech-specialist securities attorney before launch.**
+
+### 6.1 Regulatory Background
+
+Under the **Investment Advisers Act of 1940**, anyone who provides investment advice for
+compensation and is in the business of giving investment advice must register as an RIA with the
+SEC or state regulators. The SEC's position is that the AI/algorithm origin of advice does not
+remove the adviser-status obligation from the platform operator.
+
+Stratalyx avoids this by:
+1. Positioning outputs as **educational framework application**, not personalised recommendations
+2. Reframing all verdict language (see 6.3)
+3. Adding mandatory disclosures at every output touchpoint
+4. Requiring explicit user acknowledgment at sign-up
+
+### 6.2 Pre-Launch Legal Checklist
+
+- [ ] **Consult a fintech securities attorney** (2-hour engagement, ~$600–$1,000) before
+      launching paid tiers. Confirm the educational positioning is sufficient.
+- [ ] **Draft Terms of Service** that explicitly disclaim investment adviser status, establish
+      educational purpose, and include arbitration clause
+- [ ] **Draft Privacy Policy** that covers email collection, analytics data, FMP data processing,
+      and LLM data forwarding (Anthropic API ToS compliance)
+- [ ] **Review FMP API Terms of Service** — confirm: storing API responses, displaying in UI,
+      and forwarding to third-party LLMs are all permitted uses
+- [ ] **Review Anthropic API Terms** — confirm financial analysis use case is permitted
+- [ ] **State-by-state review** — New York, California, and Massachusetts have the most
+      aggressive securities law enforcement. Confirm no blue-sky law issues.
+- [ ] **GDPR basics** if any EU users are expected: cookie consent, data deletion endpoint,
+      privacy policy in plain language
+
+### 6.3 Required Language Changes (Code Changes)
+
+The following language must be changed throughout the product. These are not optional.
+
+| Current language | Required replacement |
+|-----------------|---------------------|
+| `BUY` verdict | `Strong Framework Alignment` |
+| `HOLD` verdict | `Mixed Framework Signals` |
+| `AVOID` verdict | `Weak Framework Alignment` |
+| "Intrinsic value: $185" | "Estimated fair value under this framework's assumptions: $185" |
+| "Warren Buffett would buy this" | "This stock meets the key criteria of Buffett's documented framework" |
+| "Analysis" (where it implies recommendation) | "Framework Evaluation" |
+
+**Note:** The score (0–10) and the prose thesis can remain as-is. They are clearly analytical
+rather than directive. The verdict badge is the highest-risk element.
+
+### 6.4 Required Disclaimers
+
+The following disclaimer must appear at **minimum** in these locations:
+1. Before every analysis is generated (modal, above the Run Analysis button)
+2. Watermarked or appended on every shareable analysis URL
+3. In the Terms of Service (with explicit checkbox acknowledgment at sign-up)
+4. In the product footer
+
+**Required disclaimer text:**
+> "Stratalyx applies documented public investment frameworks for educational purposes only. All
+> outputs are AI-generated and do not constitute personalised investment advice, a solicitation,
+> or a recommendation to buy or sell any security. Stratalyx is not a registered investment
+> adviser. Past performance of any investor or framework does not guarantee future results. Always
+> do your own research and consult a qualified financial adviser before making investment
+> decisions."
+
+### 6.5 Investor Name / Likeness Considerations
+
+Using the names and documented frameworks of public figures like Buffett, Graham, and Lynch is
+generally acceptable as educational commentary on publicly documented philosophies. However:
+
+- Do NOT imply any endorsement by or affiliation with the living investors or their firms
+- Do NOT generate analysis text in first person as if written by the investor
+  ("I, Warren Buffett, would...") — use third person ("Under Buffett's documented framework...")
+- Do NOT directly contradict a living investor's publicly stated current position without a clear
+  disclaimer that this is a framework simulation, not their actual view
+- Add a note in the Strategies Library: "Framework criteria are based on publicly documented
+  writings, interviews, and letters. This is not affiliated with or endorsed by any investor or
+  their firm."
+
+---
+
+## 7. Business Model
+
+Full business strategy details in `docs/BUSINESS.md`. Summary:
+
+### 7.1 Model: Freemium SaaS
+
+**Free tier:** 3 analyses/month, 2 frameworks (Buffett + Lynch), no history export
+**Pro ($19/month or $149/year):** Unlimited analyses, all frameworks, history, portfolio analysis
+**Teams ($49/seat/month):** Shared features, API access — future
+
+### 7.2 Monetisation Sequence
+
+1. **Phase 1 (Now → Month 1):** Email capture only. Build pre-launch list. No payment friction.
+2. **Phase 2 (Month 1–2):** Deploy with free tier. No paywall. Collect usage data.
+   Understand how people actually use the product.
+3. **Phase 3 (Month 2–3):** Add Stripe paywall. Convert early active users with a founder
+   discount ($9/month for life for the first 50 subscribers).
+4. **Phase 4 (Month 3+):** Full $19/month Pro tier. Add annual discount.
+
+### 7.3 Open Source Strategy
+
+The plan is to open-source the **core framework engine** (investor framework definitions, prompt
+templates, financial data pipeline) after achieving 100 paying customers and validating product-
+market fit. This:
+- Builds the founder's name in the developer community
+- Attracts contributors who add frameworks (free R&D)
+- Does not give away the hosted product's UX, billing, notifications, or data layer
+
+The hosted SaaS at stratalyx.ai remains the paid product. The GitHub repo becomes the distribution
+moat. Reference: Ghost, Cal.com, Plausible Analytics open-core model.
+
+---
+
+## 8. Non-Functional Requirements
+
+### 8.1 Performance
 
 | Requirement | Target |
 |-------------|--------|
@@ -288,41 +516,38 @@ Individual investors and finance students face three compounding problems:
 | Cumulative Layout Shift | < 0.1 |
 | Total Blocking Time | < 300ms |
 
-### 6.2 Reliability
+### 8.2 Reliability
 
 - API proxy must handle FMP and Claude errors gracefully with user-friendly messages
 - FMP cache (1hr TTL) must prevent redundant calls within a session
 - Analysis must never crash the app — all errors caught and displayed in error state
 - React Error Boundaries must wrap all screens and the modal
 
-### 6.3 Security
+### 8.3 Mobile Responsiveness
 
-- API keys must never be transmitted to or stored in the browser
-- All external API calls must route through the Express proxy
-- FMP key entered in-app is stored in sessionStorage only (cleared on tab close)
-- Ticker input sanitised against injection: strip `< > { } " ' \`, truncate to 10 chars, uppercase, alphanumeric + dots only
-- CORS restricted to localhost:5173 in development
+Financial decisions happen on the go. The product must be fully usable on mobile:
+- All screens scroll and render correctly on 375px+ viewports
+- Analysis output scannable in 15 seconds without scrolling (score + 5 signals above fold)
+- Touch targets minimum 44×44px
+- No horizontal scroll on any screen
 
-### 6.4 Accessibility
+### 8.4 Accessibility
 
 - All interactive elements must be keyboard navigable
 - All buttons must have accessible labels
 - Colour contrast must meet WCAG AA (4.5:1 for normal text)
 - Modal must trap focus when open
 
-### 6.5 Browser Support
+### 8.5 Browser Support
 
-- Chrome 100+
-- Firefox 100+
-- Safari 15+
-- Edge 100+
+- Chrome 100+, Firefox 100+, Safari 15+, Edge 100+
 - Mobile: iOS Safari 15+, Chrome for Android 100+
 
 ---
 
-## 7. Technical Architecture
+## 9. Technical Architecture
 
-### 7.1 System Architecture
+### 9.1 System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -346,23 +571,32 @@ Individual investors and finance students face three compounding problems:
 ┌──────────────────┐    ┌────────────────────────────┐
 │  Anthropic API   │    │  Financial Modeling Prep   │
 │  Claude Haiku    │    │  /profile, /ratios-ttm,    │
-│  claude-haiku-   │    │  /income-statement,        │
-│  4-5-20251001    │    │  /cash-flow-statement,     │
-│                  │    │  /quote                    │
+│  (multi-LLM      │    │  /income-statement,        │
+│   support built  │    │  /cash-flow-statement,     │
+│   in)            │    │  /quote, /stock/list       │
 └──────────────────┘    └────────────────────────────┘
 ```
 
-### 7.2 Frontend Architecture
+**v1.1 additions:**
+```
+┌──────────────────┐    ┌────────────────────────────┐
+│  Supabase        │    │  Stripe                    │
+│  Auth + Postgres │    │  Billing + Webhooks        │
+└──────────────────┘    └────────────────────────────┘
+          ↓
+┌──────────────────┐
+│  Resend/Postmark │
+│  Transactional   │
+│  Email           │
+└──────────────────┘
+```
 
-See `CLAUDE.md` Repository Structure section for the full file tree.
+### 9.2 State Management
 
-### 7.3 State Management
+Single `useReducer` at the root. State shape defined in `AppState`. All mutations go through typed
+`Action` dispatches. Will be segmented when auth + persistence state is added in v1.1.
 
-Single `useReducer` at the root. State shape is defined in `AppState`. All mutations go through typed `Action` dispatches. No external state library — the app's complexity does not warrant Redux or Zustand at this stage.
-
-**Analysis storage key format:** `"TICKER:investorId"` — e.g. `"AAPL:buffett"`
-
-### 7.4 Data Flow — Analysis Request
+### 9.3 Data Flow — Analysis Request
 
 ```
 User enters ticker
@@ -388,257 +622,238 @@ Render result
 
 ---
 
-## 8. Data Requirements
+## 10. Data Requirements
 
-### 8.1 Investor Data
+### 10.1 Investor Data
 
-All 11 investor profiles are static constants defined in `src/constants/investors.ts`. Each profile contains:
-- Biographical information (name, shortName, era, tagline, avatar)
-- Visual identity (color)
-- Strategy metadata (style, rules, equations)
-- LLM prompt context (`ctx` field — injected verbatim into every analysis prompt)
+All 11 investor profiles are static constants in `src/constants/investors.ts`. Each contains
+biographical information, visual identity, strategy metadata, screening rules, financial equations,
+and the LLM prompt context (`ctx` field).
 
-**Data source:** Publicly documented investment books, annual reports, interviews, and academic research. All figures and biographical details are referenced to public sources.
+**Data source:** Publicly documented investment books, annual reports, interviews, and academic
+research. All figures are referenced to public sources.
 
-### 8.2 Stock Screener Data
+**Disclaimer to add to Strategies Library:** "Framework criteria are based on publicly documented
+writings, letters, and interviews. Not affiliated with or endorsed by any investor or their firm."
 
-10 pre-loaded stocks in `src/constants/stocks.ts` serve as screener demonstration data. These are approximate figures used for display only. All actual analysis uses live FMP data when a key is present.
+### 10.2 Stock Screener Data
 
-### 8.3 Live Financial Data (FMP)
+120 curated stocks in `src/constants/stocks.ts` serve as the baseline. `useStockList` hook
+dynamically fetches the full FMP US stock list (NYSE, NASDAQ, AMEX, NYSE ARCA — common stocks
+only), merges it with the static list, and caches it in localStorage for 24 hours.
+
+### 10.3 Live Financial Data (FMP)
 
 5 FMP endpoints called per analysis:
 
-| Endpoint | Data retrieved | TTL |
-|----------|---------------|-----|
+| Endpoint | Data retrieved | Cache TTL |
+|----------|---------------|-----------|
 | `GET /profile/{symbol}` | Company name, sector, description, price, mktCap, beta | 1hr |
 | `GET /ratios-ttm/{symbol}` | P/E, P/B, ROE, margins, debt ratios, PEG | 1hr |
-| `GET /income-statement/{symbol}?limit=5` | Revenue, EPS, operating income (5yr history) | 1hr |
+| `GET /income-statement/{symbol}?limit=5` | Revenue, EPS, operating income (5yr) | 1hr |
 | `GET /cash-flow-statement/{symbol}?limit=3` | FCF, capex, operating cash flow | 1hr |
 | `GET /quote/{symbol}` | Real-time price, market cap | 1hr |
 
-### 8.4 LLM Output Contract
-
-Every analysis result must conform to `AnalysisResult` interface. The `sanitiseResult()` function enforces:
-- `strategyScore` and `moatScore` clamped to integer 0–10
-- `verdict` is always one of `BUY | HOLD | AVOID` (defaults to `HOLD`)
-- `strengths` is always an array, maximum 5 items
-- `risks` is always an array, maximum 4 items
-- `screenResults` is always an array
+Additional endpoints (v1.1):
+- `GET /earning_calendar` — for earnings-triggered re-analysis notifications
 
 ---
 
-## 9. API Contracts
+## 11. API Contracts
 
-### 9.1 POST /api/claude
+### 11.1 POST /api/claude
 
-**Request:**
-```typescript
-{
-  prompt:     string   // full analysis prompt
-  model:      string   // enforced server-side to claude-haiku-4-5-20251001
-}
-```
+**Request:** `{ prompt: string, model: string }`
+**Response:** Anthropic `/v1/messages` response — `data.content[].text` contains analysis JSON.
+**Errors:** 503 (key not configured), 502 (upstream unreachable), 4xx passthrough
 
-**Response:** Anthropic `/v1/messages` response — `data.content[].text` contains the analysis JSON string.
-
-**Error responses:** 503 (key not configured), 502 (upstream unreachable), 4xx (upstream error passthrough)
-
-### 9.2 GET /api/fmp/:path
+### 11.2 GET /api/fmp/:path
 
 **Request:** Any valid FMP v3 path. Query params passed through. `apikey` injected server-side.
-
-**Response:** Raw FMP API response, cached for 1hr.
-
+**Response:** Raw FMP API response, cached 1hr.
 **Cache header:** `X-Cache: HIT | MISS`
 
-### 9.3 GET /health
+### 11.3 GET /health
 
-**Response:**
-```typescript
-{
-  status:    'ok'
-  claude:    boolean   // whether ANTHROPIC_API_KEY is set
-  fmp:       boolean   // whether FMP_API_KEY is set
-  cacheSize: number    // current FMP cache entry count
-  uptime:    number    // server uptime in seconds
-  time:      string    // ISO timestamp
-}
-```
+**Response:** `{ status, claude: boolean, fmp: boolean, cacheSize, uptime, time }`
 
 ---
 
-## 10. UI/UX Requirements
+## 12. UI/UX Requirements
 
-### 10.1 Design System
+### 12.1 Design System
 
-All design tokens are defined in `src/constants/colors.ts` as the `C` object. No external CSS framework. All styles are inline React styles.
+All design tokens in `src/constants/colors.ts` as the `C` object. No external CSS framework.
+All styles are inline React styles.
 
-**Colour palette:**
-- Background: `#07080c` (bg0) → `#181c27` (bg3), 4 levels of depth
-- Border: `#232840`
-- Accent: `#6366f1` (indigo)
-- Gain: `#10b981` (emerald)
-- Loss: `#ef4444` (red)
-- Warning: `#f59e0b` (amber)
-- Text: `#f0f2f8` (t1) → `#2e3554` (t4), 4 levels
+### 12.2 Analysis Output Priority (REVISED)
 
-**Typography:**
-- UI: system-ui sans-serif stack
-- Data/code: `SFMono-Regular, Consolas, Menlo` monospace
+The analysis modal output must be restructured so key information is readable in 15 seconds:
 
-### 10.2 Layout Principles
+1. **Above the fold:** Framework alignment badge (Strong/Mixed/Weak) + score (7.4/10) + ticker +
+   investor name
+2. **5 key signals:** Framework criteria pass/fail list (scannable, icon + bold criterion name +
+   result)
+3. **2-sentence thesis** summary
+4. **"Read full analysis →"** expand for detailed prose, KPI grid, risks, strengths
 
-- Maximum content width: 1440px, centred
-- All screens scroll independently
-- Modal overlays use fixed positioning with `rgba(0,0,0,0.8)` backdrop
-- Responsive via CSS grid `auto-fill` columns — no hardcoded breakpoints
-- Overflow-x: auto on tables for mobile
+This pattern must be implemented before launch. Users currently scroll through dense prose on mobile.
 
-### 10.3 Interaction Patterns
+### 12.3 Interaction Patterns
 
 - Investor selection: pill button strip, single select, instant feedback
-- Provider/model selection: native `<select>` elements
 - Analysis trigger: button + Enter key
 - Watchlist toggle: star icon, optimistic update
-- Screen navigation: tab bar, no page transitions
+- Screen navigation: tab bar
 - Modal dismiss: backdrop click, Escape key, explicit close button
-- Toast notifications: auto-dismiss after 3.5s, manual close
+- Toast notifications: auto-dismiss after 3.5s
 
-### 10.4 Loading States
+### 12.4 Legal Disclaimer Placement
 
-- Analysis in progress: spinner + descriptive phase text ("Fetching live data from FMP…" → "Applying Buffett's framework…")
-- Skeleton placeholders shown while awaiting result
-- Buttons disabled during loading with reduced opacity
-
-### 10.5 Error States
-
-- API errors: red banner with error message, no crash
-- Invalid ticker: validation before API call
-- Missing API key: amber banner with CTA, graceful degradation to AI estimates
+- In modal: amber info box above "Run Framework Analysis" button
+- On every result card: small grey footer text
+- In page footer: persistent 1-line disclaimer
 
 ---
 
-## 11. Security Requirements
+## 13. Security Requirements
 
-### 11.1 API Key Security
+### 13.1 API Key Security
 
 | Requirement | Implementation |
 |------------|----------------|
 | Anthropic key never in browser | Server-side only, `.env`, Express proxy |
 | FMP key (server) never in browser | Server-side only, `.env`, Express proxy |
-| FMP key (in-app) not persisted | sessionStorage only, cleared on tab close |
 | `.env` never committed | `.gitignore` enforced, `.env.example` provided |
 
-### 11.2 Input Sanitisation
+### 13.2 Input Sanitisation
 
-The ticker `clean()` pipeline enforces:
-1. Strip `< > { } " ' \` characters
-2. Truncate to 10 characters
-3. Uppercase
-4. Allow only `A-Z 0-9 .`
-5. Return empty string for null/undefined
+The ticker `clean()` pipeline: strip `< > { } " ' \` → truncate to 10 chars → uppercase →
+allow only `A-Z 0-9 .` → return empty string for null/undefined.
 
-This prevents prompt injection via ticker input.
+### 13.3 Rate Limiting (Production)
 
-### 11.3 Model Enforcement
+- Claude proxy: 20 req/min per IP (already implemented)
+- FMP proxy: 60 req/min per IP (already implemented)
+- Auth endpoints (v1.1): 10 attempts/15min per IP
 
-The Express proxy enforces `model: "claude-haiku-4-5-20251001"` and caps `max_tokens` at 2000 regardless of what the client sends, preventing accidental use of expensive models.
-
-### 11.4 CORS Policy
+### 13.4 CORS Policy
 
 Development: `origin: 'http://localhost:5173'`
 Production: `origin: process.env.FRONTEND_URL`
 
 ---
 
-## 12. Testing Requirements
+## 14. Testing Requirements
 
-See `docs/TESTING.md` for full test plan. Summary:
+See `docs/TESTING.md` for full test plan.
 
-| Type | Framework | Coverage Target | Files |
-|------|-----------|----------------|-------|
-| Unit | Jest + ts-jest | ≥90% | `src/__tests__/unit/` |
-| Integration | Jest + MSW | ≥85% | `src/__tests__/integration/` |
-| LLM Contract | Jest + MSW | 100% of output fields | `src/__tests__/contracts/` |
-| E2E | Cypress | Critical user flows | `cypress/e2e/` |
-| Performance | k6 + Lighthouse | p95 < 6s, LCP < 2.5s | `k6/` |
+| Type | Framework | Coverage Target |
+|------|-----------|----------------|
+| Unit | Jest + ts-jest | ≥90% |
+| Integration | Jest + MSW | ≥85% |
+| LLM Contract | Jest + MSW | 100% of output fields |
+| E2E | Cypress | Critical user flows |
 
-**CI requirement:** All unit, integration, and contract tests must pass before merge. Coverage must not drop below threshold.
+**Additional tests required before launch:**
+- [ ] Legal disclaimer text appears in analysis modal (integration test)
+- [ ] Framework alignment language used throughout (no raw BUY/HOLD/AVOID in UI text)
+- [ ] Paywall modal triggers at 4th analysis attempt (free user) — requires auth + billing
 
 ---
 
-## 13. Roadmap
+## 15. Roadmap
 
-### v1.0 — Foundation (Current)
-- [x] 11 investor strategy frameworks with educational content
-- [x] Live financial data integration (FMP)
-- [x] AI analysis via Claude with investor-specific prompts
-- [x] Strategy comparison feature
-- [x] Watchlist management
-- [x] Analysis history
-- [x] TypeScript migration
-- [x] Express proxy (API key security)
-- [x] Full test suite (unit)
-- [ ] React Error Boundaries
-- [ ] Accessibility audit (WCAG AA)
-- [ ] Production deployment
+### Phase 0 — Pre-Launch Compliance + Deployment (Weeks 1–2)
 
-### v1.1 — Accounts & Persistence
-- [ ] User authentication (Supabase Auth or Auth.js)
-- [ ] PostgreSQL database (analyses, watchlists, preferences)
-- [ ] Row-level security (users see only their own data)
-- [ ] Session persistence across devices
+- [ ] Legal review consultation (securities attorney)
+- [ ] Reframe verdict language: BUY/HOLD/AVOID → framework alignment
+- [ ] Add required disclaimers to modal, footer, and ToS draft
+- [ ] Add investor name/likeness disclaimer to Strategies Library
+- [ ] Production deployment: Vercel (frontend) + Railway (backend)
+- [ ] Custom domain + SSL
+- [ ] Sentry error monitoring
+- [ ] PostHog analytics
+- [ ] Email capture + lead magnet PDF
 
-### v1.2 — Screener Power Features
-- [ ] Custom filter builder (sector, P/E range, market cap)
-- [ ] Bulk analysis (run one strategy across all watchlist stocks)
-- [ ] Export to PDF / CSV
+### Phase 1 — Monetisation Foundation (Weeks 3–6)
 
-### v2.0 — Platform
-- [ ] Public API
+- [ ] Supabase Auth (email + Google OAuth)
+- [ ] Stripe freemium paywall (3 free analyses, $19/month Pro)
+- [ ] Usage counter (server-side per user)
+- [ ] "Upgrade to Pro" modal at paywall
+- [ ] Annual plan ($149/year)
+- [ ] Founder discount campaign ($9/month for first 50 subscribers)
+- [ ] Stripe webhook handling
+
+### Phase 2 — Retention Loop (Months 2–3)
+
+- [ ] Earnings calendar integration (FMP `/earning_calendar`)
+- [ ] Earnings-triggered re-analysis (server-side cron)
+- [ ] Transactional email (Resend): earnings alerts + price movement alerts
+- [ ] Weekly digest email for inactive users
+- [ ] Analysis output restructure: scan-first format
+- [ ] Portfolio analysis mode (up to 10 holdings)
+- [ ] Mobile UX audit and fixes
+
+### Phase 3 — Growth (Months 3–6)
+
+- [ ] SEO content pipeline: 10 cornerstone articles on investor frameworks
+- [ ] Twitter/X analysis thread automation
+- [ ] Affiliate program setup (30% commission, 3-month cookie)
+- [ ] Open source core framework engine on GitHub
+- [ ] Additional investor frameworks: Druckenmiller, Dalio, Ackman, Philip Fisher deep-cut
+- [ ] Analysis versioning (delta vs. last analysis)
+
+### Phase 4 — Platform (Months 6–12)
+
+- [ ] Public API + developer documentation
 - [ ] Custom investor framework builder
 - [ ] Historical analysis replay
-- [ ] Mobile app (React Native)
+- [ ] B2B partnerships (financial newsletter integrations)
+- [ ] Teams tier launch
 
 ---
 
-## 14. Out of Scope
-
-The following are explicitly NOT in scope for v1.0:
+## 16. Out of Scope (v1.0)
 
 - Real-time price streaming (WebSockets / SSE)
 - Options, futures, crypto, or non-US equities
-- Portfolio performance tracking
+- Portfolio performance tracking (returns, P&L)
 - Broker API integration (buy/sell execution)
-- Social features (sharing, comments, follows)
-- Paid subscription / billing
+- Social features (public profiles, follows, comments)
 - Mobile native app
 - Dark/light theme toggle (dark only)
-- Internationalisation (English only)
+- Internationalisation (English only for launch)
 
 ---
 
-## 15. Open Questions
+## 17. Open Questions
 
 | # | Question | Owner | Status |
 |---|---------|-------|--------|
-| OQ-01 | Which database for v1.1 persistence? (Supabase vs PlanetScale vs Neon) | Engineering | Open |
-| OQ-02 | Deployment target for v1.0? (Vercel + Railway vs Fly.io vs self-hosted) | Engineering | Open |
-| OQ-03 | Should the FMP cache move to Redis for multi-user scenarios? | Engineering | Open |
-| OQ-04 | Which auth provider for v1.1? (Supabase Auth vs Auth.js vs Clerk) | Engineering | Open |
-| OQ-05 | Should we support non-US equities (LSE, TSX) in v1.1? | Product | Open |
-| OQ-06 | Rate limiting strategy for the proxy? (per-IP vs per-user) | Engineering | Open |
+| OQ-01 | Which database for v1.1? (Supabase Postgres vs Neon) | Engineering | Leaning Supabase (single auth + db vendor) |
+| OQ-02 | Deployment target confirmed? (Vercel + Railway) | Engineering | Open |
+| OQ-03 | Which transactional email provider? (Resend vs Postmark) | Engineering | Leaning Resend (developer experience) |
+| OQ-04 | Open source timing: 100 paying users or time-based (6 months)? | Product | Open |
+| OQ-05 | Should we support non-US equities (LSE, TSX) in Phase 3? | Product | Deferred |
+| OQ-06 | Attorney engagement: local fintech lawyer vs. online service (Clerky, LegalZoom)? | Founder | Open — prefer specialist |
+| OQ-07 | Lead magnet PDF: generated programmatically or hand-crafted? | Product | Hand-crafted for quality |
+| OQ-08 | Domain: stratalyx.ai is the target — is it available/affordable? | Founder | Check immediately |
 
 ---
 
-## 16. Decision Log
+## 18. Decision Log
 
 | Date | Decision | Rationale | Alternatives Considered |
 |------|---------|-----------|------------------------|
-| 2026-03 | TypeScript over JavaScript | Type safety catches category of bugs most likely during file-splitting refactor. Claude Code performs better with typed codebases. | JavaScript — rejected: no type safety, harder for AI-assisted development |
-| 2026-03 | Express over Hono for proxy | Most documented, easiest to debug on Linux, Claude Code has deepest Express knowledge | Hono (lighter but less documented for beginners), Next.js API routes (too much framework overhead for a simple proxy) |
-| 2026-03 | FMP over Alpha Vantage | Better TypeScript types, more comprehensive financial ratios, cleaner API design | Alpha Vantage (more restrictive free tier), Yahoo Finance (unofficial, unreliable) |
-| 2026-03 | Inline styles over CSS modules | Artifact-origin constraint; avoids build tooling for style isolation. Acceptable for single-team project. | Tailwind (requires compiler), CSS Modules (extra files), styled-components (runtime overhead) |
-| 2026-03 | Single useReducer over Zustand/Redux | App complexity does not warrant external state library. Discriminated Action union provides type safety equivalent to Redux Toolkit. | Zustand (simpler but less type-safe), Redux Toolkit (overkill for current scope) |
-| 2026-03 | In-memory FMP cache on Express | Prevents burning free tier (250 calls/day) on repeated analyses. 1hr TTL appropriate for financial data freshness. | Redis (overkill for single-user local dev), No cache (burns quota too fast) |
-| 2026-03 | MSW for API mocking in tests | Industry standard, intercepts at network level, works identically in Jest and Cypress | jest.mock (too low-level), nock (Node-only), manual fetch mocking (brittle) |
+| 2026-03 | TypeScript over JavaScript | Type safety. Claude Code performs better with typed codebases. | JavaScript — rejected |
+| 2026-03 | Express over Hono for proxy | Most documented, easiest to debug | Hono, Next.js API routes |
+| 2026-03 | FMP over Alpha Vantage | Better ratios, cleaner API, 250 free calls/day | Alpha Vantage, Yahoo Finance |
+| 2026-03 | Inline styles over CSS framework | Artifact-origin constraint; token object provides equivalent maintainability | Tailwind, CSS Modules |
+| 2026-03 | Single useReducer over Zustand/Redux | Sufficient for current complexity | Zustand, Redux Toolkit |
+| 2026-03 | In-memory FMP cache on Express | Prevents burning free tier (250 calls/day) | Redis (overkill for now) |
+| 2026-03 | MSW for API mocking in tests | Network-level interception, same handlers in Jest + Cypress | jest.mock, nock |
+| 2026-03 | Educational framing over investment advice | Legal compliance — avoids unregistered RIA status | No change — too high legal risk |
+| 2026-03 | Freemium at 3 analyses/month | Forces conversion decision within first week, not first month | 10 free (too generous), no free tier (too high friction) |
+| 2026-03 | Open-source core, paid hosted product | Builds founder brand + contributor community without giving away moat | Fully closed (no community benefit), fully open (no revenue) |

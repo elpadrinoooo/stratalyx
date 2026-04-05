@@ -5,7 +5,7 @@ import { useApp } from '../state/context'
 import { Tag } from '../components/Tag'
 import { ScoreBar } from '../components/ScoreBar'
 import { LiveBadge } from '../components/LiveBadge'
-import { scColor, vColor } from '../engine/utils'
+import { scColor, vColor, verdictLabel } from '../engine/utils'
 
 export function HistoryScreen() {
   const { state, dispatch } = useApp()
@@ -80,7 +80,7 @@ export function HistoryScreen() {
                   <div style={{ color: C.t3, fontSize: 12, marginTop: 2 }}>{result.companyName}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                  <Tag color={vColor(result.verdict)} small>{result.verdict}</Tag>
+                  <Tag color={vColor(result.verdict)} small>{verdictLabel(result.verdict)}</Tag>
                   <LiveBadge live={result.isLive} />
                 </div>
               </div>

@@ -3,16 +3,16 @@ import { C, R } from '../constants/colors'
 import { INV } from '../constants/investors'
 import { useApp } from '../state/context'
 import { ScoreBar } from '../components/ScoreBar'
-import { scColor, vColor } from '../engine/utils'
+import { scColor, vColor, verdictLabel } from '../engine/utils'
 
 export function ComparisonsScreen() {
   const { state, dispatch } = useApp()
   const { comparisons, analyses } = state
 
   if (comparisons.length === 0) {
-    // Mock data for visual preview
-    const mockA = { name: 'Warren Buffett', color: '#6366f1', verdict: 'Strong Buy', score: 8 }
-    const mockB = { name: 'Benjamin Graham', color: '#10b981', verdict: 'Hold', score: 5 }
+    // Mock data for visual preview — uses internal verdict tokens so verdictLabel() applies correctly
+    const mockA = { name: 'Warren Buffett', color: '#6366f1', verdict: 'BUY'  as const, score: 8 }
+    const mockB = { name: 'Benjamin Graham', color: '#10b981', verdict: 'HOLD' as const, score: 5 }
 
     return (
       <div style={{ padding: 18, maxWidth: 1440, margin: '0 auto' }}>
@@ -68,7 +68,7 @@ export function ComparisonsScreen() {
                   <div key={m.name} style={{ background: m.color + '18', border: `1px solid ${m.color}33`, borderRadius: R.r8, padding: 12 }}>
                     <div style={{ color: m.color, fontWeight: 700, fontSize: 14, marginBottom: 8 }}>{m.name}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ color: m.verdict === 'Strong Buy' ? '#10b981' : '#f59e0b', fontWeight: 700, fontSize: 14 }}>{m.verdict}</span>
+                      <span style={{ color: vColor(m.verdict), fontWeight: 700, fontSize: 14 }}>{verdictLabel(m.verdict)}</span>
                       <span style={{ color: C.t2, fontFamily: C.mono, fontSize: 14 }}>{m.score}/10</span>
                     </div>
                     <div style={{ height: 6, background: C.bg2, borderRadius: 99 }}>
@@ -185,7 +185,7 @@ export function ComparisonsScreen() {
                         }}
                       >
                         <span style={{ color: vColor(r.verdict), fontWeight: 700, fontSize: 15 }}>
-                          {r.verdict}
+                          {verdictLabel(r.verdict)}
                         </span>
                         <span style={{ color: C.t2, fontSize: 14, fontFamily: C.mono }}>
                           {r.strategyScore}/10

@@ -12,32 +12,32 @@ export function buildPrompt(
 
   return `${investor.ctx}${liveSection}
 
-Analyse ${ticker} using your documented investment framework. Apply every rule and equation in your methodology rigorously and honestly.
+Analyse ${ticker} by applying the documented investment framework described above. Apply every rule and equation in the methodology rigorously and honestly. Write all output in third person (e.g. "Under this framework..." or "The ${investor.name} criteria suggest..."). Do not write as if you are ${investor.name}.
 
 You MUST respond with a single valid JSON object — no prose before or after it. Do not wrap it in markdown code blocks. Every field is required.
 
 {
-  "strategyScore":      <integer 0–10, your honest assessment of fit with your framework>,
+  "strategyScore":      <integer 0–10, honest assessment of how well this stock fits the framework>,
   "verdict":            <"BUY" | "HOLD" | "AVOID">,
-  "verdictReason":      <one clear sentence explaining the verdict>,
+  "verdictReason":      <one clear sentence explaining the framework alignment verdict>,
   "marketPrice":        <current price as a number, or 0 if unknown>,
-  "intrinsicValueLow":  <conservative intrinsic value estimate, or 0>,
-  "intrinsicValueHigh": <optimistic intrinsic value estimate, or 0>,
+  "intrinsicValueLow":  <conservative intrinsic value under this framework's assumptions, or 0>,
+  "intrinsicValueHigh": <optimistic intrinsic value under this framework's assumptions, or 0>,
   "marginOfSafety":     <margin of safety as a percentage 0–100, or 0>,
   "moSUp":              <true if price is below intrinsic value, false otherwise>,
   "moat":               <"Wide" | "Narrow" | "None">,
   "moatScore":          <integer 0–10>,
   "screenResults": [
     { "rule": "<rule label>", "pass": <true|false>, "note": "<one sentence>" }
-    /* include one entry per rule in your framework */
+    /* include one entry per rule in the framework */
   ],
   "strengths": [
-    /* up to 5 strings — key strengths through your framework lens */
+    /* up to 5 strings — key strengths through this framework's lens */
   ],
   "risks": [
-    /* up to 4 strings — key risks through your framework lens */
+    /* up to 4 strings — key risks through this framework's lens */
   ],
-  "thesis":    <2–4 sentence investment thesis as you would write it>,
+  "thesis":    <2–4 sentence investment thesis written in third person, describing framework alignment>,
   "roe":       <return on equity as a decimal, e.g. 0.35 for 35%, or 0>,
   "pe":        <P/E ratio as a number, or 0>,
   "peg":       <PEG ratio as a number, or 0>,
