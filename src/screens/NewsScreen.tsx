@@ -18,8 +18,8 @@ interface Article {
 interface SavedArticle extends Article {
   id:           string
   savedAt:      number
-  searchTicker: string | null   // which ticker query surfaced this article
-  rewritten?:   string          // LLM-generated version (cached)
+  searchTicker: string | null
+  insight?:     string   // user-triggered AI insight (cached)
 }
 
 interface NewsPayload {
@@ -32,14 +32,19 @@ type SortMode = 'newest' | 'oldest' | 'ticker' | 'source'
 
 interface SearchResult { symbol: string; name: string }
 
-// ── localStorage library ──────────────────────────────────────────────────────
+// ── localStorage ──────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'stratalyx_news_library'
 
 function loadLibrary(): SavedArticle[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as SavedArticle[]) : []
+    if (!raw) return []
+    // migrate old 'rewritten' field → 'insight'
+    return (JSON.parse(raw) as (SavedArticle & { rewritten?: string })[]).map(a => {
+      if (a.rewritten && !a.insight) { a.insight = a.rewritten; delete a.rewritten }
+      return a
+    })
   } catch { return [] }
 }
 
@@ -48,14 +53,13 @@ function saveLibrary(lib: SavedArticle[]): void {
 }
 
 function articleId(a: Article): string {
-  // Stable ID from URL, fallback to title hash
   const src = a.url && a.url !== '#' ? a.url : a.title
   let h = 0
   for (let i = 0; i < src.length; i++) h = (Math.imul(31, h) + src.charCodeAt(i)) | 0
   return Math.abs(h).toString(36)
 }
 
-// ── placeholder articles ──────────────────────────────────────────────────────
+// ── placeholders ──────────────────────────────────────────────────────────────
 
 const N = Date.now(), H = 3_600_000
 
@@ -90,135 +94,299 @@ const SITE_COLORS: Record<string, string> = {
   Yahoo: '#6001D2', SeekingAlpha: '#1C6EBB', Motley: '#E52D1E',
 }
 
-// ── article modal (LLM rewrite) ───────────────────────────────────────────────
+// ── inject keyframes once ─────────────────────────────────────────────────────
 
-function ArticleModal({
+if (typeof document !== 'undefined') {
+  if (!document.getElementById('news-spin-style')) {
+    const s = document.createElement('style'); s.id = 'news-spin-style'
+    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}'
+    document.head.appendChild(s)
+  }
+  if (!document.getElementById('news-panel-style')) {
+    const s = document.createElement('style'); s.id = 'news-panel-style'
+    s.textContent = `
+      @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
+      @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    `
+    document.head.appendChild(s)
+  }
+}
+
+// ── reader panel ──────────────────────────────────────────────────────────────
+
+function ReaderPanel({
   article,
+  related,
   onClose,
-  onRewriteSave,
+  onInsightSave,
+  onRelatedClick,
+  onTickerClick,
 }: {
-  article: SavedArticle
-  onClose: () => void
-  onRewriteSave: (id: string, rewritten: string) => void
+  article:       SavedArticle
+  related:       SavedArticle[]
+  onClose:       () => void
+  onInsightSave: (id: string, insight: string) => void
+  onRelatedClick:(a: SavedArticle) => void
+  onTickerClick: (t: string) => void
 }) {
-  const [content, setContent]     = useState(article.rewritten ?? '')
-  const [generating, setGenerating] = useState(!article.rewritten)
+  const width    = useWindowWidth()
+  const isMobile = width <= 640
+  const panelW   = isMobile ? '100vw' : Math.min(540, width * 0.48) + 'px'
 
+  const [imgErr,     setImgErr]     = useState(false)
+  const [insight,    setInsight]    = useState(article.insight ?? '')
+  const [aiLoading,  setAiLoading]  = useState(false)
+  const [aiDone,     setAiDone]     = useState(!!article.insight)
+  const fallbackBg = SITE_COLORS[article.site] ?? C.accentM
+
+  // Close on Escape
   useEffect(() => {
-    if (article.rewritten) { setContent(article.rewritten); return }
+    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
+  }, [onClose])
 
-    let cancelled = false
-    setGenerating(true)
+  // Prevent body scroll while open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
 
+  function handleGenerateInsight() {
+    if (aiLoading || aiDone) return
+    setAiLoading(true)
     fetch('/api/gemini', {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt: `You are a financial analyst writing for Stratalyx, a professional investor research platform.
+        prompt: `You are a senior financial analyst writing for Stratalyx investors.
 
-Rewrite the following financial news article in clear, analytical prose for investors. Preserve all key facts, companies, figures, and market context. Write in third person. Be concise (200–300 words).
+Analyse the following news article and produce a structured investment brief. Be direct, data-driven, and concise.
 
-End with exactly two lines:
-"Key Takeaway: [one sharp sentence summarising the market implication]"
-"Source: ${article.site}"
+Structure your response exactly as:
+**Market Impact:** [2-3 sentences on price/sector implications]
+**Key Risks:** [2-3 sentences on what could go wrong]
+**Opportunity:** [1-2 sentences on who benefits]
+**Key Takeaway:** [One sharp sentence]
 
 Headline: ${article.title}
-
-Article text:
-${article.text || '(No article body available — rewrite based on the headline only.)'}`,
+Article: ${article.text || '(No body — base on headline only.)'}
+Source: ${article.site}`,
       }),
     })
       .then(r => r.json())
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((d: any) => {
-        if (cancelled) return
-        const text: string = d?.content?.[0]?.text ?? d?.error ?? 'Could not generate article.'
-        setContent(text)
-        setGenerating(false)
-        onRewriteSave(article.id, text)
+        const text: string = d?.content?.[0]?.text ?? d?.error ?? 'Could not generate insight.'
+        setInsight(text)
+        setAiDone(true)
+        setAiLoading(false)
+        onInsightSave(article.id, text)
       })
       .catch(() => {
-        if (cancelled) return
-        setContent('Failed to generate article — check your Claude API key.')
-        setGenerating(false)
+        setInsight('Failed to generate insight. Please try again.')
+        setAiLoading(false)
       })
+  }
 
-    return () => { cancelled = true }
-  }, [article, onRewriteSave])
-
-  // Format content: bold "Key Takeaway:" and "Source:" lines
-  const paragraphs = content.split('\n').filter(l => l.trim())
+  // Render AI insight with bold **section:** headers
+  function renderInsight(text: string) {
+    return text.split('\n').filter(l => l.trim()).map((line, i) => {
+      const boldMatch = line.match(/^\*\*(.+?):\*\*\s*(.*)/)
+      if (boldMatch) return (
+        <div key={i} style={{ marginBottom: 12 }}>
+          <span style={{ color: C.t1, fontWeight: 700, fontSize: 13 }}>{boldMatch[1]}: </span>
+          <span style={{ color: C.t2, fontSize: 13, lineHeight: 1.7 }}>{boldMatch[2]}</span>
+        </div>
+      )
+      return <p key={i} style={{ color: C.t2, fontSize: 13, lineHeight: 1.7, margin: '0 0 10px' }}>{line}</p>
+    })
+  }
 
   return (
-    <div
-      onClick={e => e.target === e.currentTarget && onClose()}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(0,0,0,.72)', backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 16,
-      }}
-    >
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 9998,
+          background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(2px)',
+          animation: 'fadeIn .2s ease',
+        }}
+      />
+
+      {/* Panel */}
       <div style={{
-        background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r12,
-        width: '100%', maxWidth: 680, maxHeight: '88vh', display: 'flex', flexDirection: 'column',
-        overflow: 'hidden',
+        position: 'fixed', top: 0, right: 0, bottom: 0,
+        width: panelW, zIndex: 9999,
+        background: C.bg1, borderLeft: `1px solid ${C.border}`,
+        display: 'flex', flexDirection: 'column',
+        animation: 'slideInRight .25s cubic-bezier(.4,0,.2,1)',
+        boxShadow: '-8px 0 40px rgba(0,0,0,.35)',
       }}>
-        {/* Header */}
-        <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.border}`, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
-              <span style={{ background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r99, color: C.accent, fontSize: 10, fontWeight: 700, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '.05em' }}>
-                AI Rewrite
-              </span>
-              <span style={{ color: C.t4, fontSize: 11 }}>{article.site} · {relDate(article.publishedDate)}</span>
-              {article.tickers.slice(0,4).map(t => (
-                <span key={t} style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r99, color: C.t3, fontSize: 10, fontFamily: 'monospace', padding: '1px 6px' }}>{t}</span>
-              ))}
-            </div>
-            <h2 style={{ margin: 0, color: C.t1, fontSize: 16, fontWeight: 700, lineHeight: 1.4 }}>{article.title}</h2>
+
+        {/* ── Top bar ── */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 16px', borderBottom: `1px solid ${C.border}`,
+          flexShrink: 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ background: SITE_COLORS[article.site] ? SITE_COLORS[article.site] + '22' : C.bg2, border: `1px solid ${SITE_COLORS[article.site] ? SITE_COLORS[article.site] + '44' : C.border}`, borderRadius: R.r6, color: SITE_COLORS[article.site] ?? C.t3, fontSize: 11, fontWeight: 700, padding: '2px 8px' }}>
+              {article.site}
+            </span>
+            <span style={{ color: C.t4, fontSize: 11 }}>{relDate(article.publishedDate)}</span>
           </div>
-          <button onClick={onClose}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg3; (e.currentTarget as HTMLButtonElement).style.color = C.t1 }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg2; (e.currentTarget as HTMLButtonElement).style.color = C.t3 }}
-            style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t3, cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '4px 9px', flexShrink: 0, transition: 'background .12s, color .12s' }}>×</button>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {article.url && article.url !== '#' && (
+              <a href={article.url} target="_blank" rel="noopener noreferrer"
+                style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r6, color: C.t3, fontSize: 11, fontWeight: 600, padding: '4px 10px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                Source ↗
+              </a>
+            )}
+            <button
+              onClick={onClose}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg3; (e.currentTarget as HTMLButtonElement).style.color = C.t1 }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg2; (e.currentTarget as HTMLButtonElement).style.color = C.t3 }}
+              style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r6, color: C.t3, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '4px 10px', transition: 'background .12s, color .12s' }}>
+              ×
+            </button>
+          </div>
         </div>
 
-        {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 18px 20px' }}>
-          {generating ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '40px 0', color: C.t3 }}>
-              <div style={{ width: 28, height: 28, border: `3px solid ${C.border}`, borderTopColor: C.accent, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              <span style={{ fontSize: 13 }}>Generating analysis…</span>
-            </div>
+        {/* ── Scrollable body ── */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+
+          {/* Hero image */}
+          {article.image && !imgErr ? (
+            <img
+              src={article.image}
+              alt=""
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+              onError={() => setImgErr(true)}
+              style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block', flexShrink: 0 }}
+            />
           ) : (
-            <div style={{ fontSize: 14, lineHeight: 1.8, color: C.t2 }}>
-              {paragraphs.map((p, i) => {
-                const isKeyTakeaway = p.startsWith('Key Takeaway:')
-                const isSource      = p.startsWith('Source:')
-                if (isKeyTakeaway) return (
-                  <div key={i} style={{ background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r8, padding: '10px 14px', margin: '18px 0 10px', color: C.t1, fontSize: 13, fontWeight: 600, lineHeight: 1.6 }}>
-                    <span style={{ color: C.accent, fontWeight: 700 }}>Key Takeaway: </span>
-                    {p.replace('Key Takeaway:', '').trim()}
-                  </div>
-                )
-                if (isSource) return (
-                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
-                    <span style={{ color: C.t4, fontSize: 12 }}>{p}</span>
-                    {article.url && article.url !== '#' && (
-                      <a href={article.url} target="_blank" rel="noopener noreferrer" style={{ color: C.accent, fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>
-                        Read original ↗
-                      </a>
-                    )}
-                  </div>
-                )
-                return <p key={i} style={{ margin: '0 0 14px' }}>{p}</p>
-              })}
+            <div style={{ width: '100%', height: 160, background: fallbackBg + '33', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: `1px solid ${C.border}` }}>
+              <span style={{ color: fallbackBg, fontSize: 40, fontWeight: 800, fontFamily: 'monospace', opacity: 0.3 }}>
+                {article.site.slice(0, 2).toUpperCase()}
+              </span>
             </div>
           )}
+
+          <div style={{ padding: '18px 20px 24px' }}>
+
+            {/* Ticker chips */}
+            {article.tickers.length > 0 && (
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12 }}>
+                {article.tickers.map(t => (
+                  <button key={t}
+                    onClick={() => { onTickerClick(t); onClose() }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = C.accentM }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg2 }}
+                    style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r99, color: C.accent, cursor: 'pointer', fontSize: 11, fontFamily: 'monospace', fontWeight: 700, padding: '3px 9px', transition: 'background .12s' }}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Headline */}
+            <h2 style={{ margin: '0 0 14px', color: C.t1, fontSize: 18, fontWeight: 800, lineHeight: 1.4 }}>
+              {article.title}
+            </h2>
+
+            {/* Summary */}
+            {article.text && (
+              <p style={{ margin: '0 0 20px', color: C.t2, fontSize: 14, lineHeight: 1.8 }}>
+                {article.text}
+              </p>
+            )}
+
+            {/* AI Insight section */}
+            <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 18, marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: C.t1, fontSize: 13, fontWeight: 700 }}>AI Insight</span>
+                  {aiDone && (
+                    <span style={{ background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r99, color: C.accent, fontSize: 9, fontWeight: 700, padding: '1px 6px', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                      ✦ Done
+                    </span>
+                  )}
+                </div>
+                {!aiDone && (
+                  <button
+                    onClick={handleGenerateInsight}
+                    disabled={aiLoading}
+                    onMouseEnter={e => { if (!aiLoading) (e.currentTarget as HTMLButtonElement).style.opacity = '0.85' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+                    style={{
+                      background: C.accent, border: 'none', borderRadius: R.r8,
+                      color: 'var(--c-fg-on-accent, #fff)', cursor: aiLoading ? 'not-allowed' : 'pointer',
+                      fontSize: 12, fontWeight: 700, padding: '6px 14px',
+                      opacity: aiLoading ? 0.7 : 1, transition: 'opacity .15s',
+                      display: 'flex', alignItems: 'center', gap: 6,
+                    }}>
+                    {aiLoading
+                      ? <><div style={{ width: 12, height: 12, border: `2px solid rgba(255,255,255,.3)`, borderTopColor: '#fff', borderRadius: '50%', animation: 'spin .7s linear infinite' }} /> Analysing…</>
+                      : '✦ Generate Insight'}
+                  </button>
+                )}
+              </div>
+
+              {!insight && !aiLoading && (
+                <p style={{ color: C.t4, fontSize: 12, fontStyle: 'italic', margin: 0 }}>
+                  Click "Generate Insight" to get an AI-powered market analysis of this article.
+                </p>
+              )}
+
+              {insight && (
+                <div style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r8, padding: '14px 16px' }}>
+                  {renderInsight(insight)}
+                </div>
+              )}
+            </div>
+
+            {/* Related articles */}
+            {related.length > 0 && (
+              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 18 }}>
+                <div style={{ color: C.t3, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>
+                  Related · {related[0].tickers.find(t => article.tickers.includes(t))}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {related.slice(0, 4).map(r => (
+                    <div key={r.id}
+                      onClick={() => onRelatedClick(r)}
+                      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = C.bg2 }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = C.bg0 }}
+                      style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 10px', borderRadius: R.r8, cursor: 'pointer', background: C.bg0, transition: 'background .12s' }}>
+                      {r.image ? (
+                        <img src={r.image} alt="" referrerPolicy="no-referrer"
+                          style={{ width: 56, height: 42, objectFit: 'cover', borderRadius: R.r6, flexShrink: 0 }}
+                          onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                      ) : (
+                        <div style={{ width: 56, height: 42, borderRadius: R.r6, flexShrink: 0, background: (SITE_COLORS[r.site] ?? C.accentM) + '33', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ color: SITE_COLORS[r.site] ?? C.accent, fontSize: 13, fontWeight: 800, fontFamily: 'monospace' }}>{r.site.slice(0,2).toUpperCase()}</span>
+                        </div>
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ color: C.t1, fontSize: 12, fontWeight: 600, lineHeight: 1.4,
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          display: '-webkit-box', WebkitLineClamp: 2 as any, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
+                          {r.title}
+                        </div>
+                        <div style={{ color: C.t4, fontSize: 10, marginTop: 3 }}>{r.site} · {relDate(r.publishedDate)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -230,10 +398,10 @@ function NewsCard({
   onCardClick,
   onTickerClick,
 }: {
-  article: SavedArticle
-  placeholder: boolean
-  onCardClick: (a: SavedArticle) => void
-  onTickerClick: (t: string) => void
+  article:      SavedArticle
+  placeholder:  boolean
+  onCardClick:  (a: SavedArticle) => void
+  onTickerClick:(t: string) => void
 }) {
   const [imgErr, setImgErr] = useState(false)
   const visibleTickers = article.tickers.slice(0, 4)
@@ -249,16 +417,22 @@ function NewsCard({
         cursor: 'pointer', opacity: placeholder ? 0.8 : 1,
         transition: 'border-color .15s, box-shadow .15s',
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = C.accentB; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 16px rgba(0,0,0,.2)` }}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = C.accentB; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 20px rgba(0,0,0,.2)' }}
       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = C.border; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}
     >
-      {/* Image / fallback */}
+      {/* Thumbnail */}
       {article.image && !imgErr ? (
-        <img src={article.image} alt="" onError={() => setImgErr(true)}
-          style={{ width: '100%', height: 130, objectFit: 'cover', display: 'block', flexShrink: 0 }} />
+        <img
+          src={article.image}
+          alt=""
+          referrerPolicy="no-referrer"
+          crossOrigin="anonymous"
+          onError={() => setImgErr(true)}
+          style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block', flexShrink: 0 }}
+        />
       ) : (
-        <div style={{ width: '100%', height: 130, background: fallbackBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <span style={{ color: 'var(--c-fg-on-accent, #fff)', fontSize: 26, fontWeight: 800, fontFamily: 'monospace', opacity: 0.4 }}>
+        <div style={{ width: '100%', height: 140, background: fallbackBg + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderBottom: `1px solid ${C.border}` }}>
+          <span style={{ color: fallbackBg, fontSize: 32, fontWeight: 800, fontFamily: 'monospace', opacity: 0.35 }}>
             {article.site.slice(0, 2).toUpperCase()}
           </span>
         </div>
@@ -271,7 +445,7 @@ function NewsCard({
           <span style={{ color: C.border }}>·</span>
           <span style={{ color: C.t4, fontSize: 11 }}>{relDate(article.publishedDate)}</span>
           {placeholder && <span style={{ marginLeft: 'auto', background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r99, color: C.t4, fontSize: 9, fontWeight: 600, padding: '1px 6px', textTransform: 'uppercase' }}>Sample</span>}
-          {article.rewritten && !placeholder && <span style={{ marginLeft: 'auto', color: C.accent, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em' }}>✦ Analysed</span>}
+          {article.insight && !placeholder && <span style={{ marginLeft: 'auto', color: C.accent, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em' }}>✦ Insight</span>}
         </div>
 
         <div style={{ color: C.t1, fontSize: 13, fontWeight: 700, lineHeight: 1.4,
@@ -312,7 +486,7 @@ function NewsCard({
 function SkeletonCard() {
   return (
     <div style={{ background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r12, overflow: 'hidden' }}>
-      <div style={{ height: 130, background: C.bg2 }} />
+      <div style={{ height: 140, background: C.bg2 }} />
       <div style={{ padding: '11px 13px' }}>
         <div style={{ height: 10, background: C.bg2, borderRadius: R.r4, marginBottom: 8, width: '40%' }} />
         <div style={{ height: 13, background: C.bg2, borderRadius: R.r4, marginBottom: 5 }} />
@@ -323,7 +497,7 @@ function SkeletonCard() {
   )
 }
 
-// ── main screen ───────────────────────────────────────────────────────────────
+// ── sort options ──────────────────────────────────────────────────────────────
 
 const SORT_OPTIONS: { id: SortMode; label: string }[] = [
   { id: 'newest', label: 'Newest' },
@@ -332,13 +506,7 @@ const SORT_OPTIONS: { id: SortMode; label: string }[] = [
   { id: 'source', label: 'Source A–Z' },
 ]
 
-// inject spinner keyframe once
-if (typeof document !== 'undefined' && !document.getElementById('news-spin-style')) {
-  const s = document.createElement('style')
-  s.id = 'news-spin-style'
-  s.textContent = '@keyframes spin { to { transform: rotate(360deg) } }'
-  document.head.appendChild(s)
-}
+// ── main screen ───────────────────────────────────────────────────────────────
 
 export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
   const width    = useWindowWidth()
@@ -346,78 +514,65 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
   const isTablet = width <= 960
   const cols     = isMobile ? 1 : isTablet ? 2 : 3
 
-  // ── library (persistent) ──
-  const [library, setLibrary]   = useState<SavedArticle[]>(() => loadLibrary())
+  // ── library ──
+  const [library, setLibrary]         = useState<SavedArticle[]>(() => loadLibrary())
   const [isPlaceholder, setIsPlaceholder] = useState(false)
 
-  // Sync library → localStorage on every change (reliable alternative to calling
-  // saveLibrary inside state updaters, which React may discard in Strict Mode)
-  useEffect(() => {
-    saveLibrary(library)
-  }, [library])
+  useEffect(() => { saveLibrary(library) }, [library])
 
-  // Merge incoming articles into library (dedup by id)
   const mergeIntoLibrary = useCallback((articles: Article[], ticker: string | null) => {
     setLibrary(prev => {
       const existing = new Map(prev.map(a => [a.id, a]))
       for (const a of articles) {
         const id = articleId(a)
-        if (!existing.has(id)) {
-          existing.set(id, { ...a, id, savedAt: Date.now(), searchTicker: ticker })
-        }
+        if (!existing.has(id)) existing.set(id, { ...a, id, savedAt: Date.now(), searchTicker: ticker })
       }
       return Array.from(existing.values())
     })
   }, [])
 
   // ── fetch state ──
-  const [loading, setLoading]       = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [error, setError]           = useState('')
-  const [noKey, setNoKey]           = useState(false)
-  const [hasMore, setHasMore]       = useState(true)
-  const [page, setPage]             = useState(0)
+  const [loading,      setLoading]      = useState(true)
+  const [loadingMore,  setLoadingMore]  = useState(false)
+  const [error,        setError]        = useState('')
+  const [noKey,        setNoKey]        = useState(false)
+  const [hasMore,      setHasMore]      = useState(true)
+  const [page,         setPage]         = useState(0)
   const [activeTicker, setActiveTicker] = useState<string | null>(null)
 
-  // ── search / suggestions ──
-  const [tickerInput, setTickerInput] = useState('')
-  const [suggestions, setSuggestions] = useState<SearchResult[]>([])
-  const [showSugg, setShowSugg]       = useState(false)
-  const searchRef                     = useRef<HTMLDivElement>(null)
-  const debounceRef                   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // ── search ──
+  const [tickerInput,  setTickerInput]  = useState('')
+  const [suggestions,  setSuggestions]  = useState<SearchResult[]>([])
+  const [showSugg,     setShowSugg]     = useState(false)
+  const searchRef  = useRef<HTMLDivElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ── sort / filter ──
-  const [sortMode, setSortMode]         = useState<SortMode>('newest')
-  const [filterTicker, setFilterTicker] = useState<string | null>(null)
+  const [sortMode,      setSortMode]      = useState<SortMode>('newest')
+  const [filterTicker,  setFilterTicker]  = useState<string | null>(null)
 
-  // ── article modal ──
+  // ── reader panel ──
   const [selectedArticle, setSelectedArticle] = useState<SavedArticle | null>(null)
 
-  // ── fetch news ──────────────────────────────────────────────────────────────
+  // ── fetch ──────────────────────────────────────────────────────────────────
 
   const showPlaceholders = useCallback((ticker: string | null) => {
     setIsPlaceholder(true)
-    const placeholdersSaved = PLACEHOLDER_ARTICLES.map(a => ({
-      ...a, id: articleId(a), savedAt: Date.now(), searchTicker: ticker,
-    }))
-    const filtered = ticker ? placeholdersSaved.filter(a => a.tickers.includes(ticker)) : placeholdersSaved
-    mergeIntoLibrary(filtered.length > 0 ? filtered : placeholdersSaved, ticker)
+    const ps = PLACEHOLDER_ARTICLES.map(a => ({ ...a, id: articleId(a), savedAt: Date.now(), searchTicker: ticker }))
+    const filtered = ticker ? ps.filter(a => a.tickers.includes(ticker)) : ps
+    mergeIntoLibrary(filtered.length > 0 ? filtered : ps, ticker)
   }, [mergeIntoLibrary])
 
   const fetchNews = useCallback(async (ticker: string | null, pg: number, append: boolean) => {
-    if (append) setLoadingMore(true)
-    else setLoading(true)
+    if (append) setLoadingMore(true); else setLoading(true)
     setError('')
-
     try {
       const params = new URLSearchParams({ page: String(pg) })
       if (ticker) params.set('ticker', ticker)
       const res = await fetch(`/api/news?${params}`)
-
       if (res.status === 503) { setNoKey(true); showPlaceholders(ticker); setLoading(false); setLoadingMore(false); return }
       if (res.status === 403) { const d = await res.json() as { error?: string }; showPlaceholders(ticker); throw new Error(d.error ?? 'News unavailable') }
       if (!res.ok) throw new Error(`Failed to load news (${res.status})`)
-
       const data = await res.json() as NewsPayload
       setIsPlaceholder(false)
       mergeIntoLibrary(data.articles, ticker)
@@ -433,8 +588,7 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
 
   useEffect(() => { fetchNews(null, 0, false) }, [fetchNews])
 
-  // ── suggestions ─────────────────────────────────────────────────────────────
-
+  // ── suggestions ──
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     const q = tickerInput.trim()
@@ -444,8 +598,7 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
         if (!res.ok) return
         const data = await res.json() as { results: SearchResult[] }
-        setSuggestions(data.results)
-        setShowSugg(data.results.length > 0)
+        setSuggestions(data.results); setShowSugg(data.results.length > 0)
       } catch { /* ignore */ }
     }, 280)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
@@ -477,24 +630,18 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
   }, [fetchNews])
 
   const handleLoadMore = useCallback(() => {
-    const next = page + 1; setPage(next)
-    fetchNews(activeTicker, next, true)
+    const next = page + 1; setPage(next); fetchNews(activeTicker, next, true)
   }, [page, activeTicker, fetchNews])
 
-  // ── save LLM rewrite back to library ────────────────────────────────────────
-
-  const handleRewriteSave = useCallback((id: string, rewritten: string) => {
-    setLibrary(prev => prev.map(a => a.id === id ? { ...a, rewritten } : a))
-    // Keep selectedArticle in sync so reopening the same modal shows cached content
-    setSelectedArticle(prev => prev?.id === id ? { ...prev, rewritten } : prev)
+  // ── insight save ──
+  const handleInsightSave = useCallback((id: string, insight: string) => {
+    setLibrary(prev => prev.map(a => a.id === id ? { ...a, insight } : a))
+    setSelectedArticle(prev => prev?.id === id ? { ...prev, insight } : prev)
   }, [])
 
-  // ── sorted / filtered view ───────────────────────────────────────────────────
-
+  // ── display ──
   const displayArticles = useMemo(() => {
-    let list = filterTicker
-      ? library.filter(a => a.tickers.includes(filterTicker))
-      : library
+    let list = filterTicker ? library.filter(a => a.tickers.includes(filterTicker)) : library
     switch (sortMode) {
       case 'newest': list = [...list].sort((a, b) => b.savedAt - a.savedAt); break
       case 'oldest': list = [...list].sort((a, b) => a.savedAt - b.savedAt); break
@@ -504,30 +651,40 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
     return list
   }, [library, sortMode, filterTicker])
 
-  // Unique tickers in library for filter chips
   const knownTickers = useMemo(() => {
     const set = new Set<string>()
     library.forEach(a => a.tickers.forEach(t => set.add(t)))
     return Array.from(set).sort().slice(0, 20)
   }, [library])
 
+  // Related articles for the reader panel
+  const relatedArticles = useMemo(() => {
+    if (!selectedArticle) return []
+    return library
+      .filter(a => a.id !== selectedArticle.id && a.tickers.some(t => selectedArticle.tickers.includes(t)))
+      .sort((a, b) => b.savedAt - a.savedAt)
+      .slice(0, 4)
+  }, [selectedArticle, library])
+
   return (
     <div style={{ padding: 18, maxWidth: 1440, margin: '0 auto' }}>
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h1 style={{ margin: '0 0 4px', color: C.t1, fontSize: 22, fontWeight: 800 }}>Financial News</h1>
           <div style={{ color: C.t3, fontSize: 13 }}>
             {library.length > 0
-              ? `${library.length} article${library.length !== 1 ? 's' : ''} saved · click any to read AI analysis`
+              ? `${library.length} article${library.length !== 1 ? 's' : ''} in library · click any to read`
               : 'Search for a stock or browse the latest market news'}
           </div>
         </div>
         {library.length > 0 && (
           <button
             onClick={() => { setLibrary([]); setIsPlaceholder(false) }}
-            style={{ background: 'transparent', border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t4, cursor: 'pointer', fontSize: 11, padding: '5px 10px' }}
-          >
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.lossB; (e.currentTarget as HTMLButtonElement).style.color = C.loss }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.border; (e.currentTarget as HTMLButtonElement).style.color = C.t4 }}
+            style={{ background: 'transparent', border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t4, cursor: 'pointer', fontSize: 11, padding: '5px 10px', transition: 'border-color .12s, color .12s' }}>
             Clear library
           </button>
         )}
@@ -588,7 +745,6 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
       {/* Sort + filter bar */}
       {displayArticles.length > 0 && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Sort buttons */}
           <div style={{ display: 'flex', gap: 3, background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r8, padding: 3 }}>
             {SORT_OPTIONS.map(o => (
               <button key={o.id} onClick={() => setSortMode(o.id)}
@@ -597,8 +753,6 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
               </button>
             ))}
           </div>
-
-          {/* Ticker filter chips */}
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             {knownTickers.slice(0, 12).map(t => (
               <button key={t} onClick={() => setFilterTicker(filterTicker === t ? null : t)}
@@ -607,27 +761,26 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
               </button>
             ))}
           </div>
-
           <span style={{ marginLeft: 'auto', color: C.t4, fontSize: 11 }}>{displayArticles.length} article{displayArticles.length !== 1 ? 's' : ''}</span>
         </div>
       )}
 
-      {/* Loading skeletons */}
+      {/* Skeletons */}
       {loading && library.length === 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 14 }}>
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       )}
 
-      {/* Articles grid */}
+      {/* Grid */}
       {displayArticles.length > 0 && (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 14 }}>
             {displayArticles.map(a => (
-              <NewsCard key={a.id} article={a} placeholder={isPlaceholder} onCardClick={setSelectedArticle} onTickerClick={t => { setFilterTicker(t); setActiveTicker(t); setPage(0); fetchNews(t, 0, false) }} />
+              <NewsCard key={a.id} article={a} placeholder={isPlaceholder} onCardClick={setSelectedArticle}
+                onTickerClick={t => { setFilterTicker(t); setActiveTicker(t); setPage(0); fetchNews(t, 0, false) }} />
             ))}
           </div>
-
           {!isPlaceholder && hasMore && !filterTicker && (
             <div style={{ textAlign: 'center', marginTop: 22 }}>
               <button onClick={handleLoadMore} disabled={loadingMore}
@@ -639,7 +792,7 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
         </>
       )}
 
-      {/* Empty state */}
+      {/* Empty */}
       {!loading && displayArticles.length === 0 && (
         <div style={{ textAlign: 'center', padding: '48px 20px' }}>
           <div style={{ fontSize: 36, marginBottom: 12 }}>📰</div>
@@ -650,12 +803,19 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
 
       {/* Footer */}
       <div style={{ color: C.t4, fontSize: 10, marginTop: 16, textAlign: 'right' }}>
-        {isPlaceholder ? 'Sample articles · not real news' : 'News via Finnhub · AI analysis via Claude · Not investment advice'}
+        {isPlaceholder ? 'Sample articles · not real news' : 'News via Finnhub · AI insights via Gemini · Not investment advice'}
       </div>
 
-      {/* Article modal */}
+      {/* Reader panel */}
       {selectedArticle && (
-        <ArticleModal article={selectedArticle} onClose={() => setSelectedArticle(null)} onRewriteSave={handleRewriteSave} />
+        <ReaderPanel
+          article={selectedArticle}
+          related={relatedArticles}
+          onClose={() => setSelectedArticle(null)}
+          onInsightSave={handleInsightSave}
+          onRelatedClick={setSelectedArticle}
+          onTickerClick={t => { setFilterTicker(t); setActiveTicker(t); setPage(0); fetchNews(t, 0, false) }}
+        />
       )}
     </div>
   )
