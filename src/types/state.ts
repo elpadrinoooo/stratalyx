@@ -24,7 +24,9 @@ export interface AppState {
   modalTicker: string
   analyses: Record<string, AnalysisResult>
   comparisons: Comparison[]
+  archivedComparisons: string[]
   watchlist: string[]
+  archived: string[]
   toasts: Toast[]
 }
 
@@ -38,9 +40,13 @@ export type Action =
   | { type: 'SET_ANALYSIS'; payload: AnalysisResult }
   | { type: 'CLEAR_ANALYSIS'; payload: string }
   | { type: 'CLEAR_ALL_ANALYSES' }
+  | { type: 'ARCHIVE_ANALYSIS'; payload: string }
+  | { type: 'UNARCHIVE_ANALYSIS'; payload: string }
   | { type: 'ADD_COMPARISON'; payload: Comparison }
   | { type: 'REMOVE_COMPARISON'; payload: string }
   | { type: 'CLEAR_COMPARISONS' }
+  | { type: 'ARCHIVE_COMPARISON'; payload: string }
+  | { type: 'UNARCHIVE_COMPARISON'; payload: string }
   | { type: 'ADD_TO_WATCHLIST'; payload: string }
   | { type: 'REMOVE_FROM_WATCHLIST'; payload: string }
   | { type: 'TOAST'; payload: { message: string; type: Toast['type'] } }

@@ -15,7 +15,9 @@
     "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit",
     "cy:open": "cypress open",
-    "cy:run": "cypress run"
+    "cy:run": "cypress run",
+    "e2e": "playwright test e2e/",
+    "e2e:ui": "playwright test e2e/ --ui"
   },
   "dependencies": {
     "cors": "^2.8.6",
@@ -23,10 +25,12 @@
     "express": "^4.22.1",
     "express-rate-limit": "^8.3.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "recharts": "^3.8.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^14.3.1",
     "@testing-library/user-event": "^14.6.1",
@@ -36,6 +40,7 @@
     "@types/node": "^20.19.37",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
+    "@types/supertest": "^7.2.0",
     "@vitejs/plugin-react": "^4.7.0",
     "concurrently": "^8.2.2",
     "cypress": "^15.12.0",
@@ -47,6 +52,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "msw": "^2.12.10",
     "nodemon": "^3.1.14",
+    "supertest": "^7.2.2",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",

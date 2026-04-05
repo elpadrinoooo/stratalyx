@@ -88,43 +88,43 @@ describe('extractJson()', () => {
 
 describe('pegColor()', () => {
   it('returns gain for PEG ≤ 1.5', () => {
-    expect(pegColor(1.0)).toMatch(/10b981/)
+    expect(pegColor(1.0)).toMatch(/gain/)
   })
   it('returns warn for PEG between 1.5 and 2.5', () => {
-    expect(pegColor(2.0)).toMatch(/f59e0b/)
+    expect(pegColor(2.0)).toMatch(/warn/)
   })
   it('returns loss for PEG > 2.5', () => {
-    expect(pegColor(3.0)).toMatch(/ef4444/)
+    expect(pegColor(3.0)).toMatch(/loss/)
   })
   it('returns loss for Infinity', () => {
-    expect(pegColor(Infinity)).toMatch(/ef4444/)
+    expect(pegColor(Infinity)).toMatch(/loss/)
   })
 })
 
 describe('scColor()', () => {
   it('returns gain for score ≥ 7', () => {
-    expect(scColor(8)).toMatch(/10b981/)
+    expect(scColor(8)).toMatch(/gain/)
   })
   it('returns warn for score 5–6', () => {
-    expect(scColor(6)).toMatch(/f59e0b/)
+    expect(scColor(6)).toMatch(/warn/)
   })
   it('returns loss for score < 5', () => {
-    expect(scColor(3)).toMatch(/ef4444/)
+    expect(scColor(3)).toMatch(/loss/)
   })
 })
 
 describe('vColor()', () => {
   it('returns gain for BUY', () => {
-    expect(vColor('BUY')).toMatch(/10b981/)
+    expect(vColor('BUY')).toMatch(/gain/)
   })
   it('returns loss for AVOID', () => {
-    expect(vColor('AVOID')).toMatch(/ef4444/)
+    expect(vColor('AVOID')).toMatch(/loss/)
   })
   it('returns warn for HOLD', () => {
-    expect(vColor('HOLD')).toMatch(/f59e0b/)
+    expect(vColor('HOLD')).toMatch(/warn/)
   })
   it('returns warn for unknown verdict', () => {
-    expect(vColor('UNKNOWN')).toMatch(/f59e0b/)
+    expect(vColor('UNKNOWN')).toMatch(/warn/)
   })
 })
 

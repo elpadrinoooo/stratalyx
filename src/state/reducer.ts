@@ -40,6 +40,13 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'CLEAR_ALL_ANALYSES':
       return { ...state, analyses: {} }
 
+    case 'ARCHIVE_ANALYSIS':
+      if (state.archived.includes(action.payload)) return state
+      return { ...state, archived: [...state.archived, action.payload] }
+
+    case 'UNARCHIVE_ANALYSIS':
+      return { ...state, archived: state.archived.filter((k) => k !== action.payload) }
+
     case 'ADD_COMPARISON': {
       const existing = state.comparisons.filter((c) => c.id !== action.payload.id)
       const updated = [action.payload, ...existing].slice(0, MAX_COMPARISONS)
@@ -54,6 +61,13 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'CLEAR_COMPARISONS':
       return { ...state, comparisons: [] }
+
+    case 'ARCHIVE_COMPARISON':
+      if (state.archivedComparisons.includes(action.payload)) return state
+      return { ...state, archivedComparisons: [...state.archivedComparisons, action.payload] }
+
+    case 'UNARCHIVE_COMPARISON':
+      return { ...state, archivedComparisons: state.archivedComparisons.filter((id) => id !== action.payload) }
 
     case 'ADD_TO_WATCHLIST':
       if (state.watchlist.includes(action.payload)) return state

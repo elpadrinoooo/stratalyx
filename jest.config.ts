@@ -20,7 +20,7 @@ const config: Config = {
     '\\.(jpg|jpeg|png|gif|svg|webp)$': '<rootDir>/src/__mocks__/fileMock.ts',
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
-  testMatch: ['<rootDir>/src/__tests__/**/*.test.{ts,tsx}'],
+  testMatch: ['<rootDir>/src/__tests__/**/*.test.{ts,tsx}', '<rootDir>/server/__tests__/**/*.test.ts'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',

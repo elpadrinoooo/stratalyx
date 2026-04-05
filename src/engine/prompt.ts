@@ -20,7 +20,6 @@ You MUST respond with a single valid JSON object — no prose before or after it
   "strategyScore":      <integer 0–10, honest assessment of how well this stock fits the framework>,
   "verdict":            <"BUY" | "HOLD" | "AVOID">,
   "verdictReason":      <one clear sentence explaining the framework alignment verdict>,
-  "marketPrice":        <current price as a number, or 0 if unknown>,
   "intrinsicValueLow":  <conservative intrinsic value under this framework's assumptions, or 0>,
   "intrinsicValueHigh": <optimistic intrinsic value under this framework's assumptions, or 0>,
   "marginOfSafety":     <margin of safety as a percentage 0–100, or 0>,

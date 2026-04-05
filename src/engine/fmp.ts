@@ -5,16 +5,17 @@ import { fmtN, fmtPct, fmtB } from './utils'
 const API_ORIGIN = typeof window === 'undefined' ? (process.env?.['API_BASE'] ?? '') : ''
 
 /** Fetch all 5 FMP endpoints concurrently via the Express proxy. */
-export async function fetchLiveData(ticker: string): Promise<LiveData> {
+export async function fetchLiveData(ticker: string, fmpKey?: string): Promise<LiveData> {
   const t = encodeURIComponent(ticker.toUpperCase())
   const base = `${API_ORIGIN}/api/fmp`
+  const headers: HeadersInit = fmpKey ? { 'x-fmp-key': fmpKey } : {}
 
   const [profile, ratios, income, cashFlow, quote] = await Promise.allSettled([
-    fetch(`${base}/profile/${t}`).then((r) => r.json() as Promise<FMPProfile[]>),
-    fetch(`${base}/ratios-ttm/${t}`).then((r) => r.json() as Promise<FMPRatiosTTM[]>),
-    fetch(`${base}/income-statement/${t}?period=annual&limit=5`).then((r) => r.json() as Promise<FMPIncomeStatement[]>),
-    fetch(`${base}/cash-flow-statement/${t}?period=annual&limit=3`).then((r) => r.json() as Promise<FMPCashFlow[]>),
-    fetch(`${base}/quote/${t}`).then((r) => r.json() as Promise<FMPQuote[]>),
+    fetch(`${base}/profile/${t}`, { headers }).then((r) => r.json() as Promise<FMPProfile[]>),
+    fetch(`${base}/ratios-ttm/${t}`, { headers }).then((r) => r.json() as Promise<FMPRatiosTTM[]>),
+    fetch(`${base}/income-statement/${t}?period=annual&limit=5`, { headers }).then((r) => r.json() as Promise<FMPIncomeStatement[]>),
+    fetch(`${base}/cash-flow-statement/${t}?period=annual&limit=3`, { headers }).then((r) => r.json() as Promise<FMPCashFlow[]>),
+    fetch(`${base}/quote/${t}`, { headers }).then((r) => r.json() as Promise<FMPQuote[]>),
   ])
 
   return {

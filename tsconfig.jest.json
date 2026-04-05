@@ -17,5 +17,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "msw", "fixtures"]
+  "include": ["src", "msw", "fixtures", "server"]
 }

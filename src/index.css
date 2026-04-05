@@ -1,54 +1,112 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+/* ── Theme tokens ────────────────────────────────────────────────────────────
+   Dark is the default. Light overrides via [data-theme="light"].
+   System follows prefers-color-scheme when no explicit data-theme is set.
+   ─────────────────────────────────────────────────────────────────────────── */
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+:root,
+[data-theme="dark"] {
+  --c-bg0: #07080c;
+  --c-bg1: #0d0f16;
+  --c-bg2: #12151f;
+  --c-bg3: #181c27;
+  --c-border: #232840;
+  --c-border-44: rgba(35,40,64,.27);
+  --c-border-88: rgba(35,40,64,.53);
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --c-accent:  #6366f1;
+  --c-accentM: rgba(99,102,241,.12);
+  --c-accentB: rgba(99,102,241,.28);
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  --c-gain:   #10b981;
+  --c-gainBg: rgba(16,185,129,.08);
+  --c-gainB:  rgba(16,185,129,.25);
+
+  --c-loss:   #ef4444;
+  --c-lossBg: rgba(239,68,68,.08);
+  --c-lossB:  rgba(239,68,68,.25);
+
+  --c-warn:   #f59e0b;
+  --c-warnBg: rgba(245,158,11,.08);
+  --c-warnB:  rgba(245,158,11,.25);
+
+  --c-t1: #f0f2f8;
+  --c-t2: #9ba3be;
+  --c-t3: #5a6280;
+  --c-t4: #2e3554;
+
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --c-bg0: #f4f6fc;
+  --c-bg1: #ffffff;
+  --c-bg2: #eef0f9;
+  --c-bg3: #e4e7f5;
+  --c-border: #c8cde5;
+  --c-border-44: rgba(150,160,200,.27);
+  --c-border-88: rgba(150,160,200,.55);
+
+  --c-accent:  #4f46e5;
+  --c-accentM: rgba(79,70,229,.08);
+  --c-accentB: rgba(79,70,229,.22);
+
+  --c-gain:   #059669;
+  --c-gainBg: rgba(5,150,105,.08);
+  --c-gainB:  rgba(5,150,105,.22);
+
+  --c-loss:   #dc2626;
+  --c-lossBg: rgba(220,38,38,.08);
+  --c-lossB:  rgba(220,38,38,.22);
+
+  --c-warn:   #d97706;
+  --c-warnBg: rgba(217,119,6,.08);
+  --c-warnB:  rgba(217,119,6,.22);
+
+  --c-t1: #0f172a;
+  --c-t2: #374151;
+  --c-t3: #6b7280;
+  --c-t4: #9ca3af;
+
+  color-scheme: light;
+}
+
+/* System preference: light (only when no explicit data-theme is set) */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --c-bg0: #f4f6fc;
+    --c-bg1: #ffffff;
+    --c-bg2: #eef0f9;
+    --c-bg3: #e4e7f5;
+    --c-border: #c8cde5;
+    --c-border-44: rgba(150,160,200,.27);
+    --c-border-88: rgba(150,160,200,.55);
+
+    --c-accent:  #4f46e5;
+    --c-accentM: rgba(79,70,229,.08);
+    --c-accentB: rgba(79,70,229,.22);
+
+    --c-gain:   #059669;
+    --c-gainBg: rgba(5,150,105,.08);
+    --c-gainB:  rgba(5,150,105,.22);
+
+    --c-loss:   #dc2626;
+    --c-lossBg: rgba(220,38,38,.08);
+    --c-lossB:  rgba(220,38,38,.22);
+
+    --c-warn:   #d97706;
+    --c-warnBg: rgba(217,119,6,.08);
+    --c-warnB:  rgba(217,119,6,.22);
+
+    --c-t1: #0f172a;
+    --c-t2: #374151;
+    --c-t3: #6b7280;
+    --c-t4: #9ca3af;
+
+    color-scheme: light;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
+/* ── Layout ──────────────────────────────────────────────────────────────── */
 
 #root {
   width: 100%;
@@ -60,48 +118,4 @@
 
 body {
   margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
 }

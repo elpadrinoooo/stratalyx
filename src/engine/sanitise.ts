@@ -75,7 +75,7 @@ export function sanitiseResult(
     strategyScore:     clamp010(raw.strategyScore),
     verdict:           toVerdict(raw.verdict),
     verdictReason:     typeof raw.verdictReason === 'string' ? raw.verdictReason : '',
-    marketPrice:       Number(raw.marketPrice) || 0,
+    marketPrice:       0,  // always set from live FMP data, never from LLM
     intrinsicValueLow: Number(raw.intrinsicValueLow) || 0,
     intrinsicValueHigh:Number(raw.intrinsicValueHigh) || 0,
     marginOfSafety:    Number(raw.marginOfSafety) || 0,

@@ -19,7 +19,6 @@ const FULL_RAW: RawLLMResult = {
   strategyScore: 8,
   verdict: 'BUY',
   verdictReason: 'Strong moat and FCF.',
-  marketPrice: 185.5,
   intrinsicValueLow: 170,
   intrinsicValueHigh: 220,
   marginOfSafety: 8.4,

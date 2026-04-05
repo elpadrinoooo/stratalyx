@@ -13,6 +13,7 @@ import { Skeleton } from '../components/Skeleton'
 import { LiveBadge } from '../components/LiveBadge'
 import { ProviderModelBar } from '../components/ProviderModelBar'
 import { scColor, vColor, vBg, verdictLabel, pegColor, fmtPct, fmtN } from '../engine/utils'
+import { PriceChart } from '../components/PriceChart'
 import type { AnalysisResult } from '../types'
 
 interface Props {
@@ -77,6 +78,12 @@ export function AnalyzerModal({ fmpKey }: Props) {
     document.addEventListener('keydown', handleTab)
     return () => document.removeEventListener('keydown', handleTab)
   }, [phase])
+
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -364,6 +371,26 @@ export function AnalyzerModal({ fmpKey }: Props) {
             </button>
           </div>
 
+          {/* LEGAL DISCLAIMER */}
+          <div
+            style={{
+              background: C.warnBg,
+              border: `1px solid ${C.warnB}`,
+              borderRadius: R.r8,
+              padding: '8px 12px',
+              marginTop: 10,
+              fontSize: 12,
+              color: C.t3,
+              lineHeight: 1.6,
+            }}
+          >
+            <span style={{ color: C.warn, fontWeight: 700 }}>Educational use only. </span>
+            Stratalyx applies publicly documented investment frameworks for educational purposes only.
+            All outputs are AI-generated and do not constitute personalised investment advice or a
+            recommendation to buy or sell any security. Stratalyx is not a registered investment
+            adviser. Always consult a qualified financial adviser before making investment decisions.
+          </div>
+
           {/* LOADING BANNER */}
           {phase === 'running' && (
             <div
@@ -649,6 +676,14 @@ function ResultSection({
         </div>
       )}
 
+      {/* PRICE CHART */}
+      <PriceChart
+        ticker={result.ticker}
+        ivLow={result.intrinsicValueLow}
+        ivHigh={result.intrinsicValueHigh}
+        currentPrice={result.marketPrice}
+      />
+
       {/* SCREEN RESULTS */}
       {result.screenResults.length > 0 && (
         <div
@@ -881,9 +916,23 @@ function ResultSection({
         )}
       </div>
 
-      {/* FOOTER */}
-      <div style={{ color: C.t4, fontSize: 11, textAlign: 'center', marginTop: 14 }}>
-        Data source: {result.dataSource} · Results may not reflect current market conditions
+      {/* FOOTER DISCLAIMER */}
+      <div
+        style={{
+          borderTop: `1px solid ${C.border}`,
+          marginTop: 16,
+          paddingTop: 12,
+          fontSize: 11,
+          color: C.t4,
+          lineHeight: 1.6,
+          textAlign: 'center',
+        }}
+      >
+        <div style={{ marginBottom: 3 }}>
+          Data source: {result.dataSource} · Analyzed {new Date(result.timestamp).toLocaleDateString()}
+        </div>
+        Educational framework analysis only — not investment advice. AI outputs may be inaccurate or incomplete.
+        Stratalyx is not a registered investment adviser. Do not make financial decisions based solely on this output.
       </div>
     </div>
   )

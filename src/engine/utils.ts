@@ -89,9 +89,9 @@ export function vBg(verdict: Verdict | string): string {
 
 /** Map internal verdict to user-facing framework-alignment label. */
 export function verdictLabel(verdict: Verdict | string): string {
-  if (verdict === 'BUY')   return 'Strong Alignment'
-  if (verdict === 'AVOID') return 'Weak Alignment'
-  return 'Mixed Signals'  // HOLD
+  if (verdict === 'BUY')   return 'Strong Framework Alignment'
+  if (verdict === 'AVOID') return 'Weak Framework Alignment'
+  return 'Mixed Framework Signals'  // HOLD
 }
 
 /**
@@ -106,7 +106,8 @@ export function verdictLabel(verdict: Verdict | string): string {
 export function sanitizeTicker(raw: unknown): string {
   if (typeof raw !== 'string' || !raw.trim()) return ''
   return raw
-    .replace(/[<>{}'\\]/g, '')
+    .replace(/[\r\n\t]/g, '')        // strip newlines/tabs (prompt injection)
+    .replace(/[<>{}'"\\/]/g, '')     // strip injection-prone chars
     .toUpperCase()
     .replace(/[^A-Z0-9.]/g, '')
     .slice(0, 10)

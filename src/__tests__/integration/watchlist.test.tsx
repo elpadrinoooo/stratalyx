@@ -2,7 +2,7 @@
  * Integration tests — WatchlistScreen + WLBtn
  * I-12 through I-15
  */
-import React, { useReducer } from 'react'
+import React, { useReducer, act } from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from '@jest/globals'
 import { AppContext } from '../../state/context'
@@ -67,12 +67,14 @@ const MOCK_RESULT: AnalysisResult = {
 // ── I-12: WLBtn toggles watchlist membership ──────────────────────────────────
 
 describe('I-12: WLBtn toggles watchlist membership', () => {
-  it('adds ticker to watchlist on first click and removes on second', () => {
-    render(
-      <TestWrapper>
-        <ScreenerScreen fmpKeySet={false} onOpenFmpModal={() => {}} />
-      </TestWrapper>
-    )
+  it('adds ticker to watchlist on first click and removes on second', async () => {
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <ScreenerScreen fmpKeySet={false} onOpenFmpModal={() => {}} />
+        </TestWrapper>
+      )
+    })
 
     // Find the AAPL watchlist button (initially ☆ — not in watchlist)
     const aaplCell = screen.getByText('AAPL')
@@ -146,7 +148,7 @@ describe('I-15: Analysis result displayed on card when available', () => {
       </TestWrapper>
     )
     // Verdict tag (displays framework-alignment label, not raw BUY/HOLD/AVOID)
-    expect(screen.getByText('Strong Alignment')).toBeInTheDocument()
+    expect(screen.getByText('Strong Framework Alignment')).toBeInTheDocument()
     // Strategy score
     expect(screen.getAllByText(/8\/10/).length).toBeGreaterThan(0)
   })

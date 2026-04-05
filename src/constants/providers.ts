@@ -82,28 +82,6 @@ export const PROVIDERS: Provider[] = [
     ],
   },
   {
-    id: 'meta',
-    name: 'Meta',
-    shortName: 'Llama',
-    color: '#0668e1',
-    models: [
-      {
-        id: 'llama-3.3-70b',
-        label: 'Llama 3.3 70B',
-        tier: 'balanced',
-        inputCost: 0.59,
-        outputCost: 0.79,
-      },
-      {
-        id: 'llama-4-maverick',
-        label: 'Llama 4 Maverick',
-        tier: 'powerful',
-        inputCost: 0.20,
-        outputCost: 0.60,
-      },
-    ],
-  },
-  {
     id: 'mistral',
     name: 'Mistral',
     shortName: 'Mistral',

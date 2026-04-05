@@ -10,6 +10,12 @@ interface Props {
 export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
   const [value, setValue] = useState(currentKey)
 
+  // Lock body scroll while open
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
   const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose()
   }
@@ -166,7 +172,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
 
         {/* Disclaimer */}
         <div style={{ color: C.t4, fontSize: 11, marginTop: 10, textAlign: 'center' }}>
-          Key stored in memory only — never sent anywhere except FMP's API directly from your browser.
+          Key stored in session memory only — forwarded securely to the backend proxy when fetching live data.
         </div>
       </div>
     </div>

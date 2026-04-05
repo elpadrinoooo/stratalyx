@@ -56,7 +56,6 @@ export interface RawLLMResult {
   strategyScore?: unknown
   verdict?: unknown
   verdictReason?: unknown
-  marketPrice?: unknown
   intrinsicValueLow?: unknown
   intrinsicValueHigh?: unknown
   marginOfSafety?: unknown

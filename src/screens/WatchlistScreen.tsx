@@ -23,6 +23,9 @@ export function WatchlistScreen() {
         .map((t) => ({ ticker: t, name: t, sector: '', description: '' }))
     )
 
+  // Must be declared before any early return to satisfy Rules of Hooks
+  const [showAllInvestors, setShowAllInvestors] = useState(false)
+
   const SUGGESTED = ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'BRK.B', 'AMZN']
   const suggestedStocks = STOCKS.filter((s) => SUGGESTED.includes(s.ticker)).slice(0, 6)
 
@@ -90,7 +93,6 @@ export function WatchlistScreen() {
     )
   }
 
-  const [showAllInvestors, setShowAllInvestors] = useState(false)
   const PILL_LIMIT = 8
 
   const labelStyle: React.CSSProperties = {

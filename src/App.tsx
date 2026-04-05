@@ -28,6 +28,7 @@ function AppShell() {
     () => sessionStorage.getItem(SESSION_KEY) ?? ''
   )
   const [fmpModalOpen, setFmpModalOpen] = useState(false)
+  const [shareBanner, setShareBanner] = useState(false)
 
   // Handle deep-link hash on first load
   useEffect(() => {
@@ -35,6 +36,7 @@ function AppShell() {
     if (share) {
       dispatch({ type: 'SET_INVESTOR', payload: share.investorId })
       dispatch({ type: 'OPEN_MODAL', payload: share.ticker })
+      setShareBanner(true)
       // Clear hash so it doesn't re-trigger on navigate
       history.replaceState(null, '', window.location.pathname)
     }
@@ -84,6 +86,35 @@ function AppShell() {
       }}
     >
       <Navbar fmpKeySet={!!fmpKey} onOpenFmpModal={() => setFmpModalOpen(true)} />
+
+      {shareBanner && (
+        <div
+          style={{
+            background: C.warnBg,
+            borderBottom: `1px solid ${C.warnB}`,
+            padding: '9px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            fontSize: 13,
+            color: C.t2,
+          }}
+        >
+          <span>
+            <span style={{ color: C.warn, fontWeight: 700 }}>Shared analysis — educational use only. </span>
+            This is an AI-generated framework analysis, not personalised investment advice.
+            Always consult a qualified financial adviser before making investment decisions.
+          </span>
+          <button
+            onClick={() => setShareBanner(false)}
+            aria-label="Dismiss disclaimer"
+            style={{ background: 'none', border: 'none', color: C.t3, fontSize: 16, cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <main>
         {screen === 'Screener'    && <ErrorBoundary><ScreenerScreen    fmpKeySet={!!fmpKey} onOpenFmpModal={() => setFmpModalOpen(true)} /></ErrorBoundary>}

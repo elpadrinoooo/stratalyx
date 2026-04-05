@@ -7,7 +7,9 @@ const STORAGE_KEY = 'stratalyx_state_v2'
 interface PersistedSlice {
   analyses: AppState['analyses']
   comparisons: AppState['comparisons']
+  archivedComparisons: AppState['archivedComparisons']
   watchlist: AppState['watchlist']
+  archived: AppState['archived']
   provider: AppState['provider']
   model: AppState['model']
 }
@@ -26,11 +28,15 @@ export function loadState(): AppState {
         ? slice.analyses
         : INIT.analyses,
       comparisons: Array.isArray(slice.comparisons) ? slice.comparisons : INIT.comparisons,
+      archivedComparisons: Array.isArray(slice.archivedComparisons) ? slice.archivedComparisons : INIT.archivedComparisons,
       watchlist: Array.isArray(slice.watchlist) ? slice.watchlist : INIT.watchlist,
+      archived: Array.isArray(slice.archived) ? slice.archived : INIT.archived,
       provider: typeof slice.provider === 'string' && PROV[slice.provider] ? slice.provider : INIT.provider,
-      model: typeof slice.model === 'string' && slice.model
-        && PROV[slice.provider ?? '']?.models.some(m => m.id === slice.model)
-        ? slice.model : INIT.model,
+      model: (() => {
+        const provider = typeof slice.provider === 'string' && PROV[slice.provider] ? slice.provider : INIT.provider
+        return typeof slice.model === 'string' && PROV[provider]?.models.some(m => m.id === slice.model)
+          ? slice.model : INIT.model
+      })(),
     }
   } catch {
     return INIT
@@ -43,7 +49,9 @@ export function saveState(state: AppState): void {
     const slice: PersistedSlice = {
       analyses: state.analyses,
       comparisons: state.comparisons,
+      archivedComparisons: state.archivedComparisons,
       watchlist: state.watchlist,
+      archived: state.archived,
       provider: state.provider,
       model: state.model,
     }

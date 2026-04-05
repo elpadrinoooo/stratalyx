@@ -2,7 +2,7 @@
  * Integration tests — ScreenerScreen
  * I-07 through I-11
  */
-import React, { useReducer } from 'react'
+import React, { useReducer, act } from 'react'
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import { describe, it, expect } from '@jest/globals'
 import { AppContext, useApp } from '../../state/context'
@@ -33,21 +33,26 @@ function StateDisplay() {
   )
 }
 
-function renderScreener(fmpKeySet = false) {
-  return render(
-    <TestWrapper>
-      <ScreenerScreen fmpKeySet={fmpKeySet} onOpenFmpModal={() => {}} />
-      <StateDisplay />
-    </TestWrapper>
-  )
+// Wraps in act() to flush the async useStockList fetch (fails → setLoading(false))
+// so React state updates are not reported as out-of-act warnings.
+async function renderScreener(fmpKeySet = false) {
+  let utils!: ReturnType<typeof render>
+  await act(async () => {
+    utils = render(
+      <TestWrapper>
+        <ScreenerScreen fmpKeySet={fmpKeySet} onOpenFmpModal={() => {}} />
+        <StateDisplay />
+      </TestWrapper>
+    )
+  })
+  return utils
 }
 
 // ── I-07: Stock screener renders stocks ───────────────────────────────────────
 
 describe('I-07: ScreenerScreen renders all demo stocks', () => {
-  it(`renders first-page stocks and shows total count`, () => {
-    renderScreener()
-    // Always-visible top stocks
+  it('renders first-page stocks and shows total count', async () => {
+    await renderScreener()
     expect(screen.getByText('AAPL')).toBeInTheDocument()
     expect(screen.getByText('MSFT')).toBeInTheDocument()
     expect(screen.getByText('NVDA')).toBeInTheDocument()
@@ -59,12 +64,11 @@ describe('I-07: ScreenerScreen renders all demo stocks', () => {
 // ── I-08: Filter by ticker ────────────────────────────────────────────────────
 
 describe('I-08: Search filters by ticker', () => {
-  it('shows only matching ticker after search', () => {
-    renderScreener()
+  it('shows only matching ticker after search', async () => {
+    await renderScreener()
     const input = screen.getByPlaceholderText(/search ticker/i)
     fireEvent.change(input, { target: { value: 'AAPL' } })
     expect(screen.getByText('AAPL')).toBeInTheDocument()
-    // Other tickers should not be present
     expect(screen.queryByText('MSFT')).not.toBeInTheDocument()
     expect(screen.queryByText('NVDA')).not.toBeInTheDocument()
   })
@@ -73,16 +77,16 @@ describe('I-08: Search filters by ticker', () => {
 // ── I-09: Filter by company name ──────────────────────────────────────────────
 
 describe('I-09: Search filters by company name', () => {
-  it('shows only Apple after searching "Apple"', () => {
-    renderScreener()
+  it('shows only Apple after searching "Apple"', async () => {
+    await renderScreener()
     const input = screen.getByPlaceholderText(/search ticker/i)
     fireEvent.change(input, { target: { value: 'Apple' } })
     expect(screen.getByText('AAPL')).toBeInTheDocument()
     expect(screen.queryByText('MSFT')).not.toBeInTheDocument()
   })
 
-  it('shows only Visa after searching "Visa"', () => {
-    renderScreener()
+  it('shows only Visa after searching "Visa"', async () => {
+    await renderScreener()
     const input = screen.getByPlaceholderText(/search ticker/i)
     fireEvent.change(input, { target: { value: 'Visa' } })
     expect(screen.getByText('V')).toBeInTheDocument()
@@ -93,10 +97,8 @@ describe('I-09: Search filters by company name', () => {
 // ── I-10: Clicking Analyze opens modal with ticker ────────────────────────────
 
 describe('I-10: Clicking Analyze opens modal with correct ticker', () => {
-  it('opens modal with AAPL when its Analyze button is clicked', () => {
-    renderScreener()
-    // Each stock row has an "Analyze" button; find the one nearest AAPL
-    // The ticker cell immediately precedes the Analyze button in each row
+  it('opens modal with AAPL when its Analyze button is clicked', async () => {
+    await renderScreener()
     const aaplCell = screen.getByText('AAPL')
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const row = aaplCell.closest('tr')!
@@ -110,14 +112,14 @@ describe('I-10: Clicking Analyze opens modal with correct ticker', () => {
 // ── I-11: Investor pill updates active investor ────────────────────────────────
 
 describe('I-11: Investor pill updates active investor in state', () => {
-  it('default investor is buffett and strategy banner shows his name', () => {
-    renderScreener()
+  it('default investor is buffett and strategy banner shows his name', async () => {
+    await renderScreener()
     expect(screen.getByTestId('investor')).toHaveTextContent('buffett')
     expect(screen.getByText('Warren Buffett')).toBeInTheDocument()
   })
 
-  it('clicking Lynch pill changes active investor to lynch', () => {
-    renderScreener()
+  it('clicking Lynch pill changes active investor to lynch', async () => {
+    await renderScreener()
     const lynchPill = screen.getByRole('button', { name: /Lynch/i })
     fireEvent.click(lynchPill)
     expect(screen.getByTestId('investor')).toHaveTextContent('lynch')

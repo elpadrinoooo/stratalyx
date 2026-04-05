@@ -3,6 +3,7 @@ import { C, R } from '../constants/colors'
 import { INVESTORS, INV } from '../constants/investors'
 import { useApp } from '../state/context'
 import { useWindowWidth } from '../hooks/useWindowWidth'
+import { useTheme, type ThemeMode } from '../hooks/useTheme'
 import type { Screen } from '../types'
 
 interface Props {
@@ -18,8 +19,15 @@ const SCREENS: { label: string; screen: Screen }[] = [
   { label: 'Comparisons', screen: 'Comparisons' },
 ]
 
+const THEME_OPTIONS: { mode: ThemeMode; icon: string; label: string }[] = [
+  { mode: 'light',  icon: '☀️', label: 'Light'  },
+  { mode: 'dark',   icon: '🌙', label: 'Dark'   },
+  { mode: 'system', icon: '💻', label: 'System' },
+]
+
 export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
   const { state, dispatch } = useApp()
+  const { mode: themeMode, setTheme } = useTheme()
   const inv = INV[state.investor] ?? INVESTORS[0]
   const width = useWindowWidth()
   const isMobile = width <= 640
@@ -78,6 +86,52 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
     )
   }
 
+  /** Three-segment theme toggle: Light / Dark / System */
+  const themeToggle = (
+    <div
+      role="group"
+      aria-label="Color theme"
+      style={{
+        display: 'flex',
+        background: C.bg2,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.r8,
+        padding: 2,
+        gap: 1,
+      }}
+    >
+      {THEME_OPTIONS.map(({ mode, icon, label }) => {
+        const active = themeMode === mode
+        return (
+          <button
+            key={mode}
+            onClick={() => setTheme(mode)}
+            aria-pressed={active}
+            title={`${label} mode`}
+            style={{
+              background: active ? C.bg1 : 'transparent',
+              border: active ? `1px solid ${C.border}` : '1px solid transparent',
+              borderRadius: R.r6,
+              color: active ? C.t1 : C.t3,
+              cursor: 'pointer',
+              fontSize: isMobile ? 13 : 12,
+              fontWeight: active ? 600 : 400,
+              padding: isMobile ? '4px 6px' : '3px 7px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+              lineHeight: 1,
+              transition: 'background 0.15s',
+            }}
+          >
+            <span style={{ fontSize: 12 }}>{icon}</span>
+            {!isMobile && <span>{label}</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
+
   const logoBtn = (
     <button
       onClick={() => dispatch({ type: 'SET_SCREEN', payload: 'Screener' })}
@@ -121,12 +175,13 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
         <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {logoBtn}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {themeToggle}
             {fmpBtn}
             {analyzeBtn}
           </div>
         </div>
         {/* Row 2: scrollable tab strip (scrollbar hidden) */}
-        <div style={{ overflowX: 'auto', borderTop: `1px solid ${C.border}44`, scrollbarWidth: 'none' } as React.CSSProperties}>
+        <div style={{ overflowX: 'auto', borderTop: `1px solid ${C.border44}`, scrollbarWidth: 'none' } as React.CSSProperties}>
           <div style={{ display: 'flex', gap: 2, padding: '5px 14px 6px', width: 'max-content' }}>
             {SCREENS.map(({ label, screen }) => tabBtn(screen, label))}
           </div>
@@ -167,6 +222,8 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
 
       {/* RIGHT */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {themeToggle}
+
         {fmpBtn}
 
         {/* Active investor pill */}

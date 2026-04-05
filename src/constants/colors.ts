@@ -1,41 +1,44 @@
-/** Design token object — all colours in the app come from here. Never hardcode hex in components. */
+/** Design token object — all colours resolve via CSS custom properties.
+ *  Never hardcode hex values in components; always use tokens from here. */
 export const C = {
   // Backgrounds — 4 levels of depth
-  bg0: '#07080c',   // page background
-  bg1: '#0d0f16',   // card / panel background
-  bg2: '#12151f',   // inset / secondary panel
-  bg3: '#181c27',   // tertiary inset / pill background
+  bg0: 'var(--c-bg0)',
+  bg1: 'var(--c-bg1)',
+  bg2: 'var(--c-bg2)',
+  bg3: 'var(--c-bg3)',
 
   // Borders
-  border: '#232840',
+  border:      'var(--c-border)',
+  border44:    'var(--c-border-44)',  // border at ~27 % opacity
+  border88:    'var(--c-border-88)',  // border at ~53 % opacity
 
   // Accent — indigo
-  accent:  '#6366f1',
-  accentM: 'rgba(99,102,241,.12)',   // accent background tint
-  accentB: 'rgba(99,102,241,.28)',   // accent border
+  accent:  'var(--c-accent)',
+  accentM: 'var(--c-accentM)',
+  accentB: 'var(--c-accentB)',
 
   // Semantic — gain (green)
-  gain:   '#10b981',
-  gainBg: 'rgba(16,185,129,.08)',
-  gainB:  'rgba(16,185,129,.25)',
+  gain:   'var(--c-gain)',
+  gainBg: 'var(--c-gainBg)',
+  gainB:  'var(--c-gainB)',
 
   // Semantic — loss (red)
-  loss:   '#ef4444',
-  lossBg: 'rgba(239,68,68,.08)',
-  lossB:  'rgba(239,68,68,.25)',
+  loss:   'var(--c-loss)',
+  lossBg: 'var(--c-lossBg)',
+  lossB:  'var(--c-lossB)',
 
   // Semantic — warning (amber)
-  warn:   '#f59e0b',
-  warnBg: 'rgba(245,158,11,.08)',
-  warnB:  'rgba(245,158,11,.25)',
+  warn:   'var(--c-warn)',
+  warnBg: 'var(--c-warnBg)',
+  warnB:  'var(--c-warnB)',
 
   // Text — 4 levels of hierarchy
-  t1: '#f0f2f8',   // primary text
-  t2: '#9ba3be',   // secondary text
-  t3: '#5a6280',   // tertiary / label text
-  t4: '#2e3554',   // muted / disabled text
+  t1: 'var(--c-t1)',
+  t2: 'var(--c-t2)',
+  t3: 'var(--c-t3)',
+  t4: 'var(--c-t4)',
 
-  // Typography
+  // Typography (not theme-dependent)
   sans: "-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif",
   mono: "'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace",
 } as const
