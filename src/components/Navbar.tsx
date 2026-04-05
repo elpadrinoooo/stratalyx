@@ -12,6 +12,7 @@ interface Props {
 }
 
 const SCREENS: { label: string; screen: Screen }[] = [
+  { label: 'Markets',       screen: 'Markets' },
   { label: 'Screener',      screen: 'Screener' },
   { label: 'Strategies',    screen: 'Strategies' },
   { label: 'Watchlist',     screen: 'Watchlist' },

@@ -14,6 +14,7 @@ import { HistoryScreen } from './screens/HistoryScreen'
 import { ComparisonsScreen } from './screens/ComparisonsScreen'
 import { MarketEventsScreen } from './screens/MarketEventsScreen'
 import { NewsScreen } from './screens/NewsScreen'
+import { MarketsScreen } from './screens/MarketsScreen'
 
 const SESSION_KEY = 'stratalyx_fmp_key'
 
@@ -119,6 +120,7 @@ function AppShell() {
       )}
 
       <main>
+        {screen === 'Markets'     && <ErrorBoundary><MarketsScreen fmpKey={fmpKey} onOpenFmpModal={() => setFmpModalOpen(true)} /></ErrorBoundary>}
         {screen === 'Screener'    && <ErrorBoundary><ScreenerScreen    fmpKeySet={!!fmpKey} onOpenFmpModal={() => setFmpModalOpen(true)} /></ErrorBoundary>}
         {screen === 'Strategies'  && <ErrorBoundary><StrategiesScreen /></ErrorBoundary>}
         {screen === 'Watchlist'   && <ErrorBoundary><WatchlistScreen /></ErrorBoundary>}

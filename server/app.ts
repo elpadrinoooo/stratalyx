@@ -17,7 +17,8 @@ const MAX_TOKENS = 2000
 // ── In-memory FMP cache (1 hour TTL) ─────────────────────────────────────────
 interface CacheEntry {
   data: unknown
-  ts: number
+  ts:   number
+  ttl?: number    // optional per-entry override; falls back to CACHE_TTL_MS
 }
 export const fmpCache = new Map<string, CacheEntry>()
 const CACHE_TTL_MS = 60 * 60 * 1000  // 1 hour
@@ -25,15 +26,15 @@ const CACHE_TTL_MS = 60 * 60 * 1000  // 1 hour
 function getCached(key: string): unknown | null {
   const entry = fmpCache.get(key)
   if (!entry) return null
-  if (Date.now() - entry.ts > CACHE_TTL_MS) {
+  if (Date.now() - entry.ts > (entry.ttl ?? CACHE_TTL_MS)) {
     fmpCache.delete(key)
     return null
   }
   return entry.data
 }
 
-function setCache(key: string, data: unknown): void {
-  fmpCache.set(key, { data, ts: Date.now() })
+function setCache(key: string, data: unknown, ttl?: number): void {
+  fmpCache.set(key, { data, ts: Date.now(), ...(ttl !== undefined && { ttl }) })
 }
 
 // ── App ───────────────────────────────────────────────────────────────────────
@@ -535,6 +536,58 @@ app.get('/news', fmpLimiter, async (req: Request, res: Response) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     res.status(502).json({ error: 'Failed to fetch news', detail: message })
+  }
+})
+
+// ── Market movers (gainers + losers) ─────────────────────────────────────────
+interface FMPMoverRaw {
+  ticker?: string; symbol?: string; companyName?: string; name?: string
+  price?: number; change?: number; changesPercentage?: number; volume?: number
+}
+interface Mover {
+  symbol: string; name: string; price: number
+  change: number; changesPercentage: number; volume: number
+}
+
+app.get('/market-movers', fmpLimiter, async (req: Request, res: Response) => {
+  const clientKey = typeof req.headers['x-fmp-key'] === 'string' ? req.headers['x-fmp-key'] : ''
+  const key = FMP_KEY || clientKey
+  if (!key) { res.status(503).json({ error: 'No FMP API key available — enter your key via the Live Data button' }); return }
+
+  const cacheKey = 'market-movers'
+  const cached = getCached(cacheKey)
+  if (cached !== null) { res.set('X-Cache', 'HIT').json(cached); return }
+
+  const base = 'https://financialmodelingprep.com/api/v3'
+  try {
+    const [gr, lr] = await Promise.allSettled([
+      fetch(`${base}/stock/gainers?apikey=${key}`),
+      fetch(`${base}/stock/losers?apikey=${key}`),
+    ])
+    type FetchResult = PromiseSettledResult<Awaited<ReturnType<typeof fetch>>>
+    const parse = async (r: FetchResult): Promise<FMPMoverRaw[]> => {
+      if (r.status === 'rejected' || !r.value.ok) return []
+      const d = await r.value.json() as unknown
+      if (Array.isArray(d)) return d as FMPMoverRaw[]
+      if (d !== null && typeof d === 'object') {
+        const k = Object.keys(d as object)[0]
+        const v = (d as Record<string, unknown>)[k]
+        return Array.isArray(v) ? v as FMPMoverRaw[] : []
+      }
+      return []
+    }
+    const [rawG, rawL] = await Promise.all([parse(gr), parse(lr)])
+    const toMover = (r: FMPMoverRaw): Mover => ({
+      symbol: r.ticker ?? r.symbol ?? '', name: r.companyName ?? r.name ?? '',
+      price: r.price ?? 0, change: r.change ?? 0,
+      changesPercentage: r.changesPercentage ?? 0, volume: r.volume ?? 0,
+    })
+    const payload = { gainers: rawG.slice(0, 10).map(toMover), losers: rawL.slice(0, 10).map(toMover) }
+    setCache(cacheKey, payload, 5 * 60 * 1000)
+    res.set('X-Cache', 'MISS').json(payload)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    res.status(502).json({ error: 'Failed to fetch market movers', detail: message })
   }
 })
 
