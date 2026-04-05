@@ -1,8 +1,8 @@
 # Stratalyx — Business Strategy
 
-**Version:** 1.0.0
-**Last Updated:** March 2026
-**Status:** Pre-Launch Planning
+**Version:** 1.1.0
+**Last Updated:** April 2026
+**Status:** Pre-Launch — Core Infrastructure Complete
 **Classification:** Internal — Founder Reference
 
 ---
@@ -82,12 +82,13 @@ After achieving 100 paying subscribers and validating product-market fit, open s
 - Monthly churn (Pro): 6% initially, target <4% after retention features (notifications) ship
 - Average revenue per user (blended monthly + annual): ~$16.50/month
 
-| Milestone | Free users | Paying | MRR | ARR |
-|-----------|-----------|--------|-----|-----|
-| Month 3 | 1,000 | 20 | $380 | $4,560 |
-| Month 6 | 3,000 | 90 | $1,710 | $20,520 |
-| Month 12 | 10,000 | 300 | $5,700 | $68,400 |
-| Month 24 | 35,000 | 1,000 | $19,000 | $228,000 |
+| Milestone | Free users | Paying | MRR | ARR | Driver |
+|-----------|-----------|--------|-----|-----|--------|
+| Month 3 | 1,000 | 20 | $380 | $4,560 | Reddit + Twitter/X launch |
+| Month 6 | 3,000 | 90 | $1,710 | $20,520 | SEO articles beginning to rank |
+| Month 12 | 10,000 | 300 | $5,700 | $68,400 | Affiliate partnerships active |
+| Month 24 | 40,000 | 1,200 | $22,800 | $274K | SEO compounding + public analysis pages |
+| Month 36 | 120,000 | 4,000 | $74,000 | $888K | Platform + community flywheel |
 
 **LTV calculation:**
 - Monthly Pro at $19: 18-month avg retention × $19 = $342 LTV
@@ -154,6 +155,15 @@ with no additional effort. Paid acquisition stops the moment you stop paying. Co
 
 ### 2.4 First 90 Days — Concrete Calendar
 
+**Pre-launch infrastructure (April 2026 — complete before Day 1):**
+- [x] Share infrastructure: path-based URLs, OG meta tags, social preview cards
+- [x] Affiliate link system: `affiliate.json` + `/api/link` redirect proxy
+- [x] Admin dashboard: password-protected, affiliate editor, export tooling
+- [x] Markets, News, Market Events screens — product has content depth before launch
+- [ ] 🔴 Legal: BUY/HOLD/AVOID → framework alignment language reframe (blocking)
+- [ ] 🔴 Legal: 2-hour attorney consultation (blocking before first payment)
+- [ ] 🔴 Legal: ToS and Privacy Policy (blocking)
+
 **Days 1–14:**
 - [ ] Deploy to production (Vercel + Railway)
 - [ ] Set up PostHog analytics + Sentry error monitoring
@@ -176,6 +186,7 @@ with no additional effort. Paid acquisition stops the moment you stop paying. Co
 - [ ] Write and publish 5 more SEO articles (10 total)
 - [ ] First 3–5 active affiliate partnerships
 - [ ] Launch annual pricing
+- [ ] Data flywheel storage (Supabase) live — begin accumulating analysis records
 - [ ] Target: 1,000 free users, 30 paying subscribers, $500–$600 MRR
 
 ---
@@ -195,16 +206,23 @@ with no additional effort. Paid acquisition stops the moment you stop paying. Co
 
 ### 3.2 Our Actual Moat (Honest Assessment)
 
-**Today (thin):**
+**Today (thin, but shipping fast):**
 - Curated, validated investor framework prompts — 2-week lead time to replicate
 - Clean UX built specifically for this use case — 3-month lead time to replicate
-- Brand/trust if built early — the only durable moat
+- Share infrastructure live: path-based URLs, OG meta tags, social preview cards — network effects beginning
+- Affiliate link tracking in place — revenue sharing machinery ready before it's needed
+- Brand/trust if built early — the only durable moat for a tool anyone can technically clone
 
-**Tomorrow (buildable):**
-- SEO authority on investor framework content (18–24 months to build, nearly impossible to fast-follow)
-- Historical analysis data (what stocks scored what under which frameworks over time)
-- Community and social proof (users sharing Stratalyx analyses on Reddit/Twitter)
-- Contributor ecosystem (open source frameworks attract validators and extenders)
+**Building now (medium term, 6–12 months):**
+- **Data flywheel** — every analysis run stored with `{ ticker, investor_id, score, verdict, price_at_analysis, timestamp }`. After 50K+ analyses: proprietary dataset showing how legendary frameworks perform vs. actual stock returns. No competitor can backfill this.
+- **SEO authority** on investor framework content (18–24 months to build; nearly impossible to fast-follow once indexed)
+- **Community and social proof** — users sharing Stratalyx analyses on Twitter/X, Reddit, and LinkedIn creates ambient brand awareness that compounds without ad spend
+- **Accuracy tracking** — 90-day retrospectives comparing predictions vs. actual price performance builds trust that no static competitor page can replicate
+
+**Long term (24+ months, very hard to replicate):**
+- Contributor ecosystem — open source engine attracts framework validators, academics, and developers
+- Track record database — "Stratalyx predicted [TICKER] alignment under Graham 18 months before it ran +140%" becomes a marketing asset
+- Community annotations — users validating/challenging framework signals becomes a feedback loop that improves model calibration
 
 ### 3.3 Positioning Statement
 
@@ -212,6 +230,23 @@ with no additional effort. Paid acquisition stops the moment you stop paying. Co
 professional data terminal, **Stratalyx** is the investor-lens analysis tool that **applies
 legendary frameworks to any stock with live financial data** — unlike generic AI tools, which
 hallucinate, or data platforms, which require you to build your own analysis logic.
+
+### 3.4 Multi-LLM Decision (April 2026)
+
+**Decision:** Multi-LLM model selection will NOT be a user-facing feature.
+
+**Rationale:**
+- The AI model powering the analysis is an engineering detail, not a user value proposition
+- Offering model choice adds UI complexity, pricing complexity ("which tier gets GPT-4?"), and
+  support burden ("why does Claude give a different score than GPT?")
+- Users care about the framework output quality, not which LLM generated it
+- Competitors who sell "use any AI model" are solving an engineer's problem, not an investor's
+
+**Implementation:** Lock to `claude-haiku-4-5-20251001` server-side (already done). Remove any
+provider/model picker UI if it exists. Upgrade the model version server-side when quality/cost
+warrants it — no user-facing change required.
+
+**Marketing reframe:** "Powered by AI" is sufficient. No need to name the provider.
 
 ---
 
@@ -321,9 +356,38 @@ Monthly analysis count incremented → potential upsell trigger
 | First paying customer | $19 | Proof that someone will pay — keep going |
 | 10 paying subscribers | $190/mo | Real signal — start SEO content investment |
 | 50 paying subscribers | $950/mo | Validate channel — double down on what worked |
-| 100 paying subscribers | $1,900/mo | Consider open sourcing core engine |
+| 100 paying subscribers | $1,900/mo | Open source core engine; build contributor flywheel |
 | Break-even (covers API costs + domain) | ~$50/mo | Already profitable at 3 subscribers |
 | Covers founder's time at $20/hr (20hr/wk) | ~$1,600/mo | ~84 subscribers |
 | Ramen profitable (founder full-time) | ~$3,000/mo | ~158 subscribers |
 | Hire first part-time content writer | ~$5,000/mo | ~263 subscribers |
 | Raise pre-seed or stay bootstrapped decision | ~$10,000/mo | ~526 subscribers |
+
+### Extended Path to $10M ARR
+
+The path from ramen-profitable to $10M ARR runs through three unlocks — each one requires the
+previous to be stable and generating compounding returns before investment in the next.
+
+| Phase | ARR | Primary driver | Key unlock |
+|-------|-----|----------------|------------|
+| Organic | $0–$100K | Reddit + Twitter/X + SEO long-tail | First 500 paying users; product-market fit confirmed |
+| Content compounding | $100K–$500K | SEO cornerstones ranking + backlinks | Framework content attracting 10K+ organic visits/month |
+| Platform | $500K–$2M | Public analysis pages (S&P 500 × 11 frameworks) | 50K+ pre-generated analysis pages driving long-tail search |
+| Community | $2M–$5M | Community annotations + data flywheel credibility | Stratalyx dataset cited in financial media; accuracy track record published |
+| B2B | $5M–$10M | Newsletter licensing + API + Teams tier | "Powered by Stratalyx" appearing in 10+ financial publications |
+
+**Realistic ARR projections (conservative):**
+
+| Year | Free users | Paying | Blended ARPU | ARR |
+|------|-----------|--------|--------------|-----|
+| Year 1 | 10,000 | 300 | $16.50/mo | ~$60K |
+| Year 2 | 40,000 | 1,200 | $17/mo | ~$244K |
+| Year 3 | 120,000 | 4,000 | $17.50/mo | ~$840K |
+| Year 4 | 300,000 | 12,000 | $18/mo | ~$2.6M |
+| Year 5 | 600,000 | 30,000 + B2B | $18.50/mo + B2B | ~$10M |
+
+**Key assumptions behind Year 5:**
+- SEO public pages generating 200K+ organic visits/month by Year 3
+- 15+ active B2B licensing partnerships contributing ~$2M ARR by Year 5
+- Annual plan adoption at 40%+ by Year 3 (reduces blended churn to <3%)
+- Affiliate program driving 20% of new paying subscribers at zero marginal CAC

@@ -507,7 +507,7 @@ function ResultSection({
   const copyExport = () => {
     const r = result
     const text = `# ${r.companyName} (${r.ticker}) — ${r.investorName} Framework Analysis
-Verdict: ${r.verdict} | Score: ${r.strategyScore}/10
+Framework Alignment: ${verdictLabel(r.verdict)} | Score: ${r.strategyScore}/10
 Intrinsic Value: $${r.intrinsicValueLow}–$${r.intrinsicValueHigh} | Margin of Safety: ${r.marginOfSafety}%
 
 ## Investment Thesis

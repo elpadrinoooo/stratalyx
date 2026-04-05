@@ -1,6 +1,6 @@
 # Stratalyx — Implementation TODO
 
-**Last Updated:** March 2026
+**Last Updated:** April 2026
 **Purpose:** Prioritised checklist of every action required to go from local build to
 revenue-generating product. Ordered by phase and priority within each phase.
 
@@ -16,6 +16,26 @@ Items marked `🔴 BLOCKING` must be completed before taking any money.
 
 ---
 
+## Recently Completed (April 2026)
+
+- [x] `[CODE]` **Markets dashboard** — index sparklines, top movers, market status, ad placeholders
+- [x] `[CODE]` **News screen** — FMP-powered news feed with thumbnails, source tags, market sentiment
+- [x] `[CODE]` **Market Events screen** — earnings calendar, economic events, IPO pipeline
+- [x] `[CODE]` **Path-based share URLs with OG meta tags** — `/share/:ticker/:investorId` and
+      `/share/comparison/:ticker/:investors` serve HTML with injected `og:title`, `og:description`,
+      `og:image`, `og:url`, `twitter:card` for real social preview cards
+- [x] `[CODE]` **Comparisons share button** — per-comparison link copied to clipboard
+- [x] `[CODE]` **Affiliate link system** — `server/affiliate.json` + `/api/link?url=` redirect route;
+      all investor source links now route through the proxy for tracking
+- [x] `[CODE]` **Admin dashboard** — password-protected screen (via `?admin=1`); affiliate map editor
+      with live save to disk; accessible via `ADMIN_PASSWORD` env var
+- [x] `[CODE]` **Export for NotebookLM** — admin-only 📋 Export button in AnalyzerModal; copies
+      formatted markdown of the full analysis result to clipboard
+- [x] `[CODE]` **OG default image** — `public/og-default.svg` served at `/og-default.png`
+- [x] `[CODE]` **React Error Boundaries** — `<ErrorBoundary>` wraps all screens and AnalyzerModal
+
+---
+
 ## PHASE 0 — Pre-Launch: Compliance + Deploy
 ### (Complete before charging a single user)
 
@@ -26,39 +46,29 @@ Items marked `🔴 BLOCKING` must be completed before taking any money.
       registration? What changes are required? Cost: ~$600–$1,000. Non-optional.
       Look for: securities law specialist, fintech experience, SEC/FINRA background.
 
-- [ ] `[CODE]` 🔴 **Reframe all BUY/HOLD/AVOID verdict language throughout the product**
-      - `BUY` → `Strong Framework Alignment`
-      - `HOLD` → `Mixed Framework Signals`
-      - `AVOID` → `Weak Framework Alignment`
-      - Files to change: `src/engine/sanitise.ts`, `src/screens/AnalyzerModal.tsx`,
-        `src/screens/HistoryScreen.tsx`, `src/screens/WatchlistScreen.tsx`,
-        `src/screens/ComparisonsScreen.tsx`, `src/types/analysis.ts` (Verdict type)
-      - Update all tests that assert on `BUY`/`HOLD`/`AVOID` text
+- [x] `[CODE]` 🔴 ~~**Reframe all BUY/HOLD/AVOID verdict language**~~ **DONE** — internal enum values
+      kept for type safety; all UI display goes through `verdictLabel()` in `src/engine/utils.ts`:
+      BUY → "Strong Framework Alignment", HOLD → "Mixed Framework Signals",
+      AVOID → "Weak Framework Alignment". Admin export text also updated (April 2026).
 
-- [ ] `[CODE]` 🔴 **Add legal disclaimer box to AnalyzerModal above the Run button**
-      Text: "Stratalyx applies documented public investment frameworks for educational purposes
-      only. All outputs are AI-generated and do not constitute personalised investment advice or
-      a recommendation to buy or sell any security. Stratalyx is not a registered investment
-      adviser. Always consult a qualified financial adviser."
-      Style: amber info box, small text, non-dismissible.
+- [x] `[CODE]` 🔴 ~~**Add legal disclaimer box to AnalyzerModal above the Run button**~~ **DONE** —
+      amber box below the input row; non-dismissible. Also a second disclaimer at line ~330 shown
+      during history/comparison view in the modal.
 
-- [ ] `[CODE]` 🔴 **Add disclaimer footer to every analysis result card**
-      Small grey text at the bottom of every result: "Educational framework analysis only.
-      Not investment advice."
+- [x] `[CODE]` 🔴 ~~**Add disclaimer footer to every analysis result card**~~ **DONE** — grey text at
+      bottom of result section: "Educational framework analysis only — not investment advice.
+      AI outputs may be inaccurate or incomplete. Stratalyx is not a registered investment adviser."
 
-- [ ] `[CODE]` 🔴 **Add disclaimer to shareable analysis URLs**
-      When `#/analysis/TICKER/investorId` is resolved on mount, show a one-time banner:
-      "This is an educational framework analysis. Not personalised investment advice."
+- [x] `[CODE]` 🔴 ~~**Add disclaimer to shareable analysis URLs**~~ **DONE** — share banner shown on
+      mount for both analysis and comparison share links; shows on every share URL load.
 
-- [ ] `[CODE]` 🔴 **Add affiliation disclaimer to Strategies Library**
-      Under each investor's name/header: "Framework criteria are based on publicly documented
-      writings, letters, and interviews. Not affiliated with or endorsed by [Investor Name] or
-      their firm."
+- [x] `[CODE]` 🔴 ~~**Add affiliation disclaimer to Strategies Library**~~ **DONE** — "Framework
+      criteria are based on publicly documented writings... Not affiliated with or endorsed by
+      [Investor Name] or their firm." shown under each investor header.
 
-- [ ] `[CODE]` 🔴 **Change first-person LLM voice to third-person in prompts**
-      Audit `src/engine/prompt.ts` — ensure investor context (`ctx` field) frames the output as
-      "Under [Investor]'s framework..." not "I, [Investor], would..."
-      Review all 11 investor `ctx` strings in `src/constants/investors.ts`.
+- [x] `[CODE]` 🔴 ~~**Change first-person LLM voice to third-person in prompts**~~ **DONE** — prompt
+      explicitly instructs "Write all output in third person... Do not write as if you are
+      [investor name]." All 11 investor `ctx` strings are third-person ("Apply X's framework...").
 
 - [ ] `[LEGAL]` 🔴 **Draft Terms of Service**
       Must include: educational purpose only, no investment advice, not an RIA, no liability for
@@ -104,9 +114,7 @@ Items marked `🔴 BLOCKING` must be completed before taking any money.
         `upgrade_modal_shown`, `paywall_hit`
       - Do NOT track: ticker symbols in personally identifiable context
 
-- [ ] `[OPS]` **Add React Error Boundaries**
-      Wrap all 5 screens and AnalyzerModal with Error Boundary components (TD-02 in tech debt).
-      Display graceful error UI instead of white screen crash.
+- [x] `[OPS]` ~~**Add React Error Boundaries**~~ **DONE** — all screens + AnalyzerModal wrapped (TD-02 cleared).
 
 - [ ] `[OPS]` **Smoke test production deployment**
       - Run 3 analyses end-to-end on production
@@ -166,6 +174,13 @@ Items marked `🔴 BLOCKING` must be completed before taking any money.
       - Increment on every successful analysis
       - Reset on first day of each calendar month
       - Check limit before running analysis (return 402 if free user at limit)
+
+- [ ] `[CODE]` **Data flywheel — analysis storage infrastructure** ← strategic moat
+      - On every analysis run: store `{ ticker, investor_id, score, verdict, price_at_analysis,
+        key_signals, timestamp, user_id }` in Supabase `analyses` table
+      - Anonymous analysis (no auth): store with `user_id = null`
+      - Enables: accuracy retrospectives, aggregate scoring trends, SEO page data
+      - This is the core proprietary dataset — more runs = more accurate framework benchmarks
 
 ### Billing (Stripe)
 
@@ -243,11 +258,41 @@ Items marked `🔴 BLOCKING` must be completed before taking any money.
       Show: "Score changed from 7.1 → 8.4 since your last analysis on [date] at $[price]"
       Store: `previous_score`, `previous_price`, `previous_date` in analysis record
 
-- [ ] `[CODE]` **Portfolio analysis mode**
+- [ ] `[CODE]` **Portfolio analysis mode** ← highest-value retention feature (founder assessment)
       - New screen or modal: "Analyze my portfolio"
       - Input: up to 10 ticker symbols
       - Output: per-stock framework scores + portfolio aggregate alignment score
       - CTA: "Analyze underperforming holdings in detail"
+
+- [ ] `[CODE]` **Price alert system** ← top engagement driver between investment decisions
+      - Watch a stock at a specific price level: "Alert me when AAPL drops below $180"
+      - Notify via email: re-runs analysis at alert trigger, shows score change
+      - Requires: Supabase alert table + daily price cron job
+
+- [ ] `[CODE]` **Shareable analysis image cards**
+      - Client-side PNG export of analysis result using `html-to-image`
+      - 1200×630 branded card with: score, verdict, ticker, investor, top 3 signals
+      - Download + share button in AnalyzerModal result section
+      - Drives organic social sharing (Twitter/X, LinkedIn, Reddit)
+
+- [ ] `[CODE]` **Analysis accuracy dashboard** (data flywheel prerequisite)
+      - Store every analysis run in Supabase: `ticker`, `investor_id`, `score`, `verdict`,
+        `price_at_analysis`, `timestamp`
+      - 90-day retrospective: compare original verdict vs. actual stock performance
+      - Display in History screen as "accuracy tracking" — builds trust and legitimacy
+      - Admin view: aggregate accuracy metrics across all users and frameworks
+
+- [ ] `[CODE]` **Remove multi-LLM selector as user-facing feature**
+      - Lock to `claude-haiku-4-5-20251001` server-side (already done)
+      - Remove any provider/model picker UI from AnalyzerModal and settings
+      - Rationale: multi-LLM is an engineering detail, not a user value proposition;
+        complicates pricing and support; adds no meaningful output quality difference
+
+- [ ] `[CODE]` **Screener batch mode**
+      - Allow running a framework filter across all stocks in a watchlist or preset list
+      - Example: "Show all S&P 500 stocks scoring >7/10 under Graham's criteria"
+      - Output: sortable table of ticker / score / key pass-fail signals
+      - Phase 1: manual list of 100 large-caps; Phase 2: FMP screener endpoint
 
 - [ ] `[DESIGN]` **Mobile UX audit**
       - Test all screens at 375px (iPhone SE) and 390px (iPhone 14)
@@ -255,7 +300,7 @@ Items marked `🔴 BLOCKING` must be completed before taking any money.
       - Ensure touch targets are 44×44px minimum
       - Verify analysis output is readable without scrolling (score + signals above fold)
 
-- [ ] `[CODE]` **React Error Boundaries on all screens** (if not done in Phase 0)
+- [x] `[CODE]` ~~**React Error Boundaries on all screens**~~ **DONE** (Phase 0)
 
 ---
 
@@ -263,6 +308,20 @@ Items marked `🔴 BLOCKING` must be completed before taking any money.
 ### (Complete within months 3–6)
 
 ### Distribution
+
+- [ ] `[CODE]` **SEO public analysis pages** ← compound organic growth engine
+      - Pre-generate static pages: `/analysis/AAPL/buffett`, `/analysis/MSFT/graham`, etc.
+      - Cover all S&P 500 stocks × all 11 investor frameworks = ~5,500 pages
+      - Each page: OG meta, article schema markup, full framework analysis output
+      - Refresh weekly via cron; store results in Supabase for deduplication
+      - Submit `sitemap.xml` to Google Search Console
+      - Target: "AAPL warren buffett analysis", "NVDA benjamin graham score" long-tail keywords
+
+- [ ] `[CODE]` **Community annotations on analysis results**
+      - Users can upvote/downvote specific framework signals: "I agree this moat is wide"
+      - Annotations stored in Supabase: `analysis_id`, `signal_index`, `vote`, `user_id`
+      - Aggregate displayed on result cards: "12 investors agree with this signal"
+      - Differentiator: turns Stratalyx into a community platform, not just a tool
 
 - [ ] `[CONTENT]` **Write 10 SEO cornerstone articles**
       Priority order (by estimated search volume):
@@ -321,7 +380,9 @@ Items marked `🔴 BLOCKING` must be completed before taking any money.
 - [ ] `[CODE]` Custom investor framework builder (user-defined criteria + weights)
 - [ ] `[CODE]` Historical analysis replay (backtesting a framework on past data)
 - [ ] `[BIZ]` Teams tier launch ($49/seat/month)
-- [ ] `[BIZ]` B2B outreach to financial newsletter platforms and brokerage APIs
+- [ ] `[BIZ]` **B2B licensing to financial newsletters** — "powered by Stratalyx" white-label
+      offering; flat $500–$2,000/month per newsletter; target: The Motley Fool, Seeking Alpha
+      contributors, Substack finance writers with >10k subscribers
 - [ ] `[CODE]` Batch analysis (run a strategy across all watchlist stocks at once)
 
 ---
@@ -329,7 +390,7 @@ Items marked `🔴 BLOCKING` must be completed before taking any money.
 ## Technical Debt (Address alongside features, not as separate sprints)
 
 - [ ] `[CODE]` TD-01: Migrate inline styles to CSS Modules (tackle during Phase 2 mobile audit)
-- [ ] `[CODE]` TD-02: React Error Boundaries — wrap all screens (Phase 0)
+- [x] `[CODE]` ~~TD-02: React Error Boundaries — wrap all screens~~ **DONE** (April 2026)
 - [ ] `[CODE]` TD-03: Move FMP cache to Redis for multi-user production (Phase 1)
 - [ ] `[CODE]` TD-05: Remove in-app FMP key modal for production (use `.env` exclusively)
 - [ ] `[CODE]` TD-06: Accessibility audit — WCAG AA compliance (Phase 1)
@@ -338,9 +399,12 @@ Items marked `🔴 BLOCKING` must be completed before taking any money.
 
 ## Quick Wins (Can be done any time, < 2 hours each)
 
-- [ ] `[CODE]` Add `<meta>` description and Open Graph tags for social sharing
+- [x] `[CODE]` ~~Add `<meta>` description and Open Graph tags for social sharing~~ **DONE** — path-based share routes with full OG injection (April 2026)
+- [ ] `[DESIGN]` **Real OG image** — replace `og-default.svg` placeholder with a proper 1200×630
+      PNG (use Figma or Canva); current SVG works but won't render in some Twitter/Slack previews
 - [ ] `[CODE]` Add favicon (use the Stratalyx logo or a simple hexagon)
-- [ ] `[CODE]` Add `robots.txt` and `sitemap.xml` for SEO
+- [ ] `[CODE]` Add `robots.txt` and `sitemap.xml` for SEO — required before submitting to Google
+      Search Console; blocks crawlers from /api/* routes; sitemap lists all share URLs
 - [ ] `[CODE]` Add loading skeleton for the full-market stock list fetch
 - [ ] `[CODE]` Add "Copy to clipboard" button on analysis thesis paragraph
 - [ ] `[CODE]` Show analysis timestamp on result cards ("Analyzed 3 days ago")
