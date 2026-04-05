@@ -10,7 +10,7 @@ import { WLBtn } from '../components/WLBtn'
 import { ScoreBar } from '../components/ScoreBar'
 import { LiveBadge } from '../components/LiveBadge'
 import { TickerLogo } from '../components/TickerLogo'
-import { pegColor, scColor, vColor, verdictLabel } from '../engine/utils'
+import { pegColor, scColor, vColor, verdictLabel, timeAgo } from '../engine/utils'
 
 export function WatchlistScreen() {
   const { state, dispatch } = useApp()
@@ -195,6 +195,7 @@ export function WatchlistScreen() {
                     )}
                     <div style={{ color: C.t2, fontSize: 13, marginTop: 2 }}>{stock.name}</div>
                     {stock.sector && <div style={{ color: C.t3, fontSize: 12, marginTop: 1 }}>{stock.sector}</div>}
+                    {result?.timestamp && <div style={{ color: C.t4, fontSize: 11, marginTop: 2 }}>Analyzed {timeAgo(result.timestamp)}</div>}
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>

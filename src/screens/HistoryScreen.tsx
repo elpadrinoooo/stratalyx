@@ -6,7 +6,7 @@ import { Tag } from '../components/Tag'
 import { ScoreBar } from '../components/ScoreBar'
 import { LiveBadge } from '../components/LiveBadge'
 import { TickerLogo } from '../components/TickerLogo'
-import { scColor, vColor, verdictLabel } from '../engine/utils'
+import { scColor, vColor, verdictLabel, timeAgo } from '../engine/utils'
 
 type Tab = 'active' | 'archived'
 
@@ -139,7 +139,7 @@ export function HistoryScreen() {
           {sorted.map((result) => {
             const key = archiveKey(result)
             const inv = INV[result.investorId]
-            const date = new Date(result.timestamp).toLocaleDateString()
+            const date = timeAgo(result.timestamp)
             const isArchived = archivedSet.has(key)
 
             return (

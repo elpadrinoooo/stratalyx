@@ -7,6 +7,7 @@ import { useWindowWidth } from '../hooks/useWindowWidth'
 import { useStockList } from '../hooks/useStockList'
 import { Tag } from '../components/Tag'
 import { WLBtn } from '../components/WLBtn'
+import { Skeleton } from '../components/Skeleton'
 import { pegColor, scColor } from '../engine/utils'
 import type { Stock } from '../types'
 
@@ -142,7 +143,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
             {!isMobile && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 180 }}>
                 {[
-                  { icon: '🧠', text: '11 investor frameworks' },
+                  { icon: '🧠', text: '22 investor frameworks' },
                   { icon: '⚡', text: 'Live FMP financial data' },
                   { icon: '🤖', text: 'Multi-LLM: Gemini & Claude' },
                   { icon: '📊', text: 'Score, verdict & full thesis' },
@@ -345,6 +346,14 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
                 </div>
               )
             })}
+            {stocksLoading && Array.from({ length: 6 }).map((_, i) => (
+              <div key={`skel-${i}`} style={{ borderBottom: `1px solid ${C.border}`, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <Skeleton h={14} />
+                </div>
+                <Skeleton h={10} />
+              </div>
+            ))}
           </div>
         ) : (
           /* ── Desktop table ── */
@@ -426,6 +435,17 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
                     </tr>
                   )
                 })}
+                {stocksLoading && Array.from({ length: 6 }).map((_, i) => (
+                  <tr key={`skel-${i}`} style={{ borderBottom: `1px solid ${C.border}` }}>
+                    <td style={{ padding: '10px 6px 10px 10px' }}><Skeleton h={16} /></td>
+                    <td style={{ padding: '10px 10px' }}><Skeleton h={14} /></td>
+                    <td style={{ padding: '10px 10px' }}><Skeleton h={14} /></td>
+                    <td style={{ padding: '10px 10px' }}><Skeleton h={14} /></td>
+                    <td style={{ padding: '10px 10px' }}><Skeleton h={14} /></td>
+                    <td style={{ padding: '10px 10px' }}><Skeleton h={14} /></td>
+                    <td style={{ padding: '10px 10px' }}><Skeleton h={14} /></td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

@@ -504,6 +504,7 @@ function ResultSection({
   }
 
   const [exported, setExported] = useState(false)
+  const [thesisCopied, setThesisCopied] = useState(false)
   const copyExport = () => {
     const r = result
     const text = `# ${r.companyName} (${r.ticker}) — ${r.investorName} Framework Analysis
@@ -846,8 +847,27 @@ Generated: ${new Date(r.timestamp).toLocaleDateString()}`
             marginBottom: 12,
           }}
         >
-          <div style={{ ...labelStyle, color: inv.color }}>
-            {inv.name} thesis · {result.isLive ? 'Based on live financial data' : 'AI estimated'}
+          <div style={{ ...labelStyle, color: inv.color, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{inv.name} thesis · {result.isLive ? 'Based on live financial data' : 'AI estimated'}</span>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(result.thesis)
+                  .then(() => { setThesisCopied(true); setTimeout(() => setThesisCopied(false), 2000) })
+                  .catch(() => dispatch({ type: 'TOAST', payload: { message: 'Could not copy thesis', type: 'error' } }))
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: thesisCopied ? C.gain : inv.color,
+                cursor: 'pointer',
+                fontSize: 11,
+                fontWeight: 600,
+                opacity: thesisCopied ? 1 : 0.7,
+                padding: '2px 6px',
+              }}
+            >
+              {thesisCopied ? '✓ Copied' : '⎘ Copy'}
+            </button>
           </div>
           <p style={{ color: C.t2, fontSize: 14, lineHeight: 1.7, fontStyle: 'italic', margin: 0 }}>
             "{result.thesis}"
