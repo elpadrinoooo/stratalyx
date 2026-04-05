@@ -263,7 +263,6 @@ Source: ${article.site}`,
               src={article.image}
               alt=""
               referrerPolicy="no-referrer"
-              crossOrigin="anonymous"
               onError={() => setImgErr(true)}
               style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block', flexShrink: 0 }}
             />
@@ -426,7 +425,6 @@ function NewsCard({
           src={article.image}
           alt=""
           referrerPolicy="no-referrer"
-          crossOrigin="anonymous"
           onError={() => setImgErr(true)}
           style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block', flexShrink: 0 }}
         />
