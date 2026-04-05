@@ -73,12 +73,12 @@ function PerfBar({ value, label }: { value: number | undefined; label: string })
   const pctWidth = `${(Math.abs(value) / MAX_ABS_PCT) * 100}%`
   const color    = value >= 0 ? 'var(--c-gain)' : 'var(--c-loss)'
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-      <span style={{ color: C.t4, fontSize: 10, fontWeight: 600, width: 44, flexShrink: 0 }}>{label}</span>
-      <div style={{ flex: 1, background: C.bg2, borderRadius: R.r99, height: 5, overflow: 'hidden', minWidth: 60 }}>
-        <div style={{ height: '100%', width: pctWidth, background: color, borderRadius: R.r99, transition: 'width .4s' }} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+      <span style={{ color: C.t4, fontSize: 10, fontWeight: 600, width: 52, flexShrink: 0 }}>{label}</span>
+      <div style={{ flex: 1, background: C.bg2, borderRadius: R.r99, height: 7, overflow: 'hidden', minWidth: 60 }}>
+        <div style={{ height: '100%', width: pctWidth, background: color, borderRadius: R.r99, transition: 'width .5s ease' }} />
       </div>
-      <span style={{ color, fontFamily: C.mono, fontSize: 12, fontWeight: 700, width: 44, textAlign: 'right', flexShrink: 0 }}>
+      <span style={{ color, fontFamily: C.mono, fontSize: 12, fontWeight: 700, width: 48, textAlign: 'right', flexShrink: 0 }}>
         {pct(value)}
       </span>
     </div>
@@ -88,28 +88,34 @@ function PerfBar({ value, label }: { value: number | undefined; label: string })
 // ── event card ────────────────────────────────────────────────────────────────
 
 function EventCard({ event }: { event: MarketEvent }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen]       = useState(false)
+  const [hovered, setHovered] = useState(false)
   const meta     = TYPE_META[event.type]
   const duration = durationLabel(event)
 
+  // Primary index figure shown as large callout
+  const primaryPct = event.sp500 ?? event.dow ?? event.nasdaq
+
   return (
     <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         background: C.bg1,
-        border: `1px solid ${C.border}`,
+        border: `1px solid ${hovered ? meta.border : C.border}`,
+        borderLeft: `4px solid ${meta.color}`,
         borderRadius: R.r12,
         overflow: 'hidden',
+        transition: 'border-color .15s, box-shadow .15s',
+        boxShadow: hovered ? `0 4px 16px rgba(0,0,0,.18)` : 'none',
       }}
     >
-      {/* Colored top bar */}
-      <div style={{ height: 3, background: meta.color }} />
-
       <div style={{ padding: '14px 16px' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+        {/* Header: badges + title + big % callout */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* Badges row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 5 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
               <span
                 style={{
                   background: meta.bg, border: `1px solid ${meta.border}`,
@@ -133,10 +139,29 @@ function EventCard({ event }: { event: MarketEvent }) {
               )}
               <span style={{ color: C.t4, fontSize: 11 }}>{dateRange(event)}</span>
             </div>
-            <h3 style={{ margin: 0, color: C.t1, fontSize: 15, fontWeight: 700, lineHeight: 1.3 }}>
+            <h3 style={{ margin: 0, color: C.t1, fontSize: 17, fontWeight: 700, lineHeight: 1.25, letterSpacing: '-.01em' }}>
               {event.title}
             </h3>
           </div>
+
+          {/* Big % callout */}
+          {primaryPct !== undefined && (
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{
+                color: pctColor(primaryPct),
+                fontFamily: C.mono,
+                fontSize: 24,
+                fontWeight: 800,
+                lineHeight: 1,
+                letterSpacing: '-.02em',
+              }}>
+                {pct(primaryPct)}
+              </div>
+              <div style={{ color: C.t4, fontSize: 9, marginTop: 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                {event.sp500 !== undefined ? 'S&P 500' : event.dow !== undefined ? 'Dow Jones' : 'Nasdaq'}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Performance bars */}
@@ -146,11 +171,11 @@ function EventCard({ event }: { event: MarketEvent }) {
               background: C.bg2,
               border: `1px solid ${C.border}`,
               borderRadius: R.r8,
-              padding: '8px 10px',
+              padding: '10px 12px',
               display: 'flex',
               flexDirection: 'column',
-              gap: 5,
-              marginBottom: 10,
+              gap: 7,
+              marginBottom: 12,
             }}
           >
             <PerfBar value={event.sp500}  label="S&P 500" />
@@ -160,72 +185,84 @@ function EventCard({ event }: { event: MarketEvent }) {
         )}
 
         {/* Cause */}
-        <p style={{ margin: '0 0 10px', color: C.t3, fontSize: 13, lineHeight: 1.65 }}>
+        <p style={{ margin: '0 0 12px', color: C.t3, fontSize: 13, lineHeight: 1.7 }}>
           {event.cause}
         </p>
 
-        {/* Toggle */}
+        {/* Full-width chevron toggle */}
         <button
           onClick={() => setOpen((x) => !x)}
           style={{
-            background: 'none',
-            border: `1px solid ${C.border}`,
-            borderRadius: R.r6,
+            background: open ? meta.bg : C.bg2,
+            border: `1px solid ${open ? meta.border : C.border}`,
+            borderRadius: R.r8,
             color: open ? meta.color : C.t3,
             cursor: 'pointer',
             fontSize: 11,
             fontWeight: 600,
-            padding: '4px 10px',
+            padding: '7px 12px',
             display: 'flex',
             alignItems: 'center',
-            gap: 5,
-            transition: 'color .15s',
+            justifyContent: 'space-between',
+            width: '100%',
+            transition: 'color .15s, background .15s, border-color .15s',
+            letterSpacing: '.02em',
           }}
         >
-          {open ? 'Show less ▲' : 'Full details ▼'}
+          <span>{open ? 'Hide details' : 'Full details'}</span>
+          <span style={{ fontSize: 13, transition: 'transform .2s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+            ▾
+          </span>
         </button>
 
-        {/* Expanded */}
+        {/* Expanded panel */}
         {open && (
           <div
             style={{
               marginTop: 12,
               borderTop: `1px solid ${C.border}`,
-              paddingTop: 12,
+              paddingTop: 14,
               display: 'flex',
               flexDirection: 'column',
-              gap: 12,
+              gap: 14,
             }}
           >
             <div>
-              <div style={{ color: meta.color, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 5 }}>
+              <div style={{ color: meta.color, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.09em', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ display: 'inline-block', width: 3, height: 10, background: meta.color, borderRadius: 2 }} />
                 Market Impact
               </div>
-              <p style={{ margin: 0, color: C.t2, fontSize: 13, lineHeight: 1.7 }}>{event.impact}</p>
+              <p style={{ margin: 0, color: C.t2, fontSize: 13, lineHeight: 1.75 }}>{event.impact}</p>
             </div>
 
             <div>
-              <div style={{ color: 'var(--c-gain)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 5 }}>
+              <div style={{ color: 'var(--c-gain)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.09em', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ display: 'inline-block', width: 3, height: 10, background: 'var(--c-gain)', borderRadius: 2 }} />
                 Recovery
               </div>
-              <p style={{ margin: 0, color: C.t2, fontSize: 13, lineHeight: 1.7 }}>{event.recovery}</p>
+              <p style={{ margin: 0, color: C.t2, fontSize: 13, lineHeight: 1.75 }}>{event.recovery}</p>
             </div>
 
             {event.sources.length > 0 && (
               <div>
-                <div style={{ color: C.t4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
+                <div style={{ color: C.t4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.09em', marginBottom: 8 }}>
                   Sources
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {event.sources.map((s) => (
                     <a
                       key={s.url}
                       href={s.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: 'var(--c-accent)', fontSize: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}
+                      style={{
+                        color: C.accent, fontSize: 12, textDecoration: 'none',
+                        display: 'flex', alignItems: 'center', gap: 7,
+                        background: C.bg2, border: `1px solid ${C.border}`,
+                        borderRadius: R.r6, padding: '5px 10px',
+                      }}
                     >
-                      <span style={{ fontSize: 10, opacity: 0.7 }}>↗</span>
+                      <span style={{ fontSize: 11, opacity: 0.6 }}>↗</span>
                       {s.title}
                     </a>
                   ))}
@@ -286,26 +323,35 @@ function RecordStrip() {
     },
   ]
 
+  const ICONS = ['↘', '↗', '⚡']
+
   return (
     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
-      {records.map((r) => (
+      {records.map((r, i) => (
         <div
           key={r.label}
           style={{
-            background: r.bg,
-            border: `1px solid ${r.border}`,
+            background: C.bg1,
+            border: `1px solid ${C.border}`,
+            borderLeft: `3px solid ${r.color}`,
             borderRadius: R.r10,
-            padding: '10px 14px',
+            padding: '12px 16px',
             flex: '1 1 160px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
           }}
         >
-          <div style={{ color: C.t4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 3 }}>
-            {r.label}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ color: C.t4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em' }}>
+              {r.label}
+            </div>
+            <span style={{ color: r.color, fontSize: 14, lineHeight: 1, opacity: 0.7 }}>{ICONS[i]}</span>
           </div>
-          <div style={{ color: r.color, fontSize: 22, fontWeight: 800, fontFamily: C.mono, lineHeight: 1.1, marginBottom: 2 }}>
+          <div style={{ color: r.color, fontSize: 26, fontWeight: 800, fontFamily: C.mono, lineHeight: 1.15 }}>
             {r.value}
           </div>
-          <div style={{ color: C.t3, fontSize: 11 }}>{r.sub}</div>
+          <div style={{ color: C.t3, fontSize: 11, fontWeight: 500 }}>{r.sub}</div>
         </div>
       ))}
     </div>
@@ -327,77 +373,79 @@ function Timeline({ events }: { events: MarketEvent[] }) {
   }, [events])
 
   return (
-    <div style={{ position: 'relative', paddingLeft: 52 }}>
-      {/* Vertical spine */}
+    <div style={{ position: 'relative', paddingLeft: 60 }}>
+      {/* Vertical spine — accent color for visual connection to timeline theme */}
       <div
         style={{
           position: 'absolute',
-          left: 22,
+          left: 26,
           top: 8,
           bottom: 8,
-          width: 2,
-          background: C.border,
-          borderRadius: 1,
+          width: 3,
+          background: C.accentB,
+          borderRadius: 2,
         }}
       />
 
       {byYear.map(([year, evts]) => (
-        <div key={year} style={{ marginBottom: 24 }}>
-          {/* Year label + dot */}
-          <div style={{ position: 'relative', marginBottom: 10 }}>
+        <div key={year} style={{ marginBottom: 28 }}>
+          {/* Year badge */}
+          <div style={{ position: 'relative', marginBottom: 12, height: 24 }}>
             <div
               style={{
                 position: 'absolute',
-                left: -38,
+                left: -46,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                width: 32,
-                height: 20,
+                width: 40,
+                height: 22,
                 background: C.bg2,
-                border: `1px solid ${C.border}`,
+                border: `1px solid ${C.accentB}`,
                 borderRadius: R.r4,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: 700,
-                color: C.t3,
+                color: C.accent,
                 fontFamily: C.mono,
+                letterSpacing: '-.02em',
               }}
             >
               {year}
             </div>
-            {/* Connector tick */}
+            {/* Connector tick from spine to badge */}
             <div
               style={{
                 position: 'absolute',
-                left: -8,
+                left: -6,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                width: 8,
+                width: 6,
                 height: 1,
-                background: C.border,
+                background: C.accentB,
               }}
             />
           </div>
 
           {/* Cards for this year */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {evts.map((e) => {
               const meta = TYPE_META[e.type]
               return (
-                <div key={e.id} style={{ position: 'relative' }}>
-                  {/* Dot on spine */}
+                <div key={e.id} id={`event-${e.id}`} style={{ position: 'relative' }}>
+                  {/* Dot on spine — larger with white ring */}
                   <div
                     style={{
                       position: 'absolute',
-                      left: -34,
-                      top: 16,
-                      width: 10,
-                      height: 10,
+                      left: -40,
+                      top: 18,
+                      width: 14,
+                      height: 14,
                       borderRadius: '50%',
                       background: meta.color,
-                      border: `2px solid ${C.bg1}`,
+                      border: `3px solid ${C.bg0}`,
+                      boxShadow: `0 0 0 1px ${meta.color}`,
                       zIndex: 1,
                     }}
                   />
@@ -405,11 +453,12 @@ function Timeline({ events }: { events: MarketEvent[] }) {
                   <div
                     style={{
                       position: 'absolute',
-                      left: -24,
-                      top: 20,
-                      width: 24,
+                      left: -26,
+                      top: 24,
+                      width: 26,
                       height: 1,
-                      background: C.border,
+                      background: meta.color,
+                      opacity: 0.4,
                     }}
                   />
                   <EventCard event={e} />
@@ -499,8 +548,8 @@ function LongTermChart() {
         )}
       </div>
 
-      <ResponsiveContainer width="100%" height={160}>
-        <LineChart
+      <ResponsiveContainer width="100%" height={200}>
+        <AreaChart
           data={LONG_TERM_DATA}
           onMouseMove={(s) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -510,6 +559,12 @@ function LongTermChart() {
           onMouseLeave={() => setHovered(null)}
           margin={{ top: 4, right: 10, left: 10, bottom: 0 }}
         >
+          <defs>
+            <linearGradient id="ltGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%"  stopColor={C.accent} stopOpacity={0.18} />
+              <stop offset="95%" stopColor={C.accent} stopOpacity={0}    />
+            </linearGradient>
+          </defs>
           <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
           <XAxis
             dataKey="t"
@@ -534,11 +589,9 @@ function LongTermChart() {
             axisLine={false}
             tickLine={false}
             tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`}
-            width={30}
+            width={34}
           />
-          <Tooltip
-            content={() => null}
-          />
+          <Tooltip content={() => null} />
           {/* Event reference lines */}
           {MARKET_EVENTS.map((e) => (
             <ReferenceLine
@@ -547,33 +600,34 @@ function LongTermChart() {
               stroke={e.type === 'crash' || e.type === 'bear' ? 'var(--c-loss)' : e.type === 'bull' || e.type === 'recovery' ? 'var(--c-gain)' : 'var(--c-warn)'}
               strokeWidth={1}
               strokeDasharray="2 4"
-              strokeOpacity={0.5}
+              strokeOpacity={0.45}
             />
           ))}
-          <Line
+          <Area
             type="monotone"
             dataKey="value"
             stroke={C.accent}
-            strokeWidth={2}
+            strokeWidth={2.5}
+            fill="url(#ltGrad)"
             dot={false}
-            activeDot={{ r: 4, fill: C.accent }}
+            activeDot={{ r: 4, fill: C.accent, strokeWidth: 0 }}
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
 
-      <div style={{ display: 'flex', gap: 14, marginTop: 6, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 16, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         {[
           { color: 'var(--c-loss)', label: 'Crash / Bear' },
           { color: 'var(--c-warn)', label: 'Crisis' },
           { color: 'var(--c-gain)', label: 'Bull / Recovery' },
         ].map((l) => (
           <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 14, height: 1, background: l.color, opacity: 0.7 }} />
+            <div style={{ width: 16, height: 2, background: l.color, opacity: 0.7, borderRadius: 1 }} />
             <span style={{ color: C.t4, fontSize: 10 }}>{l.label}</span>
           </div>
         ))}
-        <span style={{ color: C.t4, fontSize: 10, marginLeft: 'auto' }}>
-          Approximate reference data — not for trading use
+        <span style={{ color: C.t4, fontSize: 10, marginLeft: 'auto', fontStyle: 'italic' }}>
+          Approximate reference — not for trading use
         </span>
       </div>
     </div>
@@ -1015,14 +1069,36 @@ export function MarketEventsScreen() {
   return (
     <div style={{ padding: 18, maxWidth: 1100, margin: '0 auto' }}>
       {/* ── Page header ── */}
-      <div style={{ color: C.accent, fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 2 }}>
-        Research Library
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ color: C.accent, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 6 }}>
+          Research Library
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
+          <h1 style={{ margin: 0, color: C.t1, fontSize: 28, fontWeight: 800, letterSpacing: '-.01em', lineHeight: 1.1 }}>
+            Market Events
+          </h1>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            {[
+              { count: MARKET_EVENTS.filter(e => e.type === 'crash').length,  label: 'Crashes',   color: 'var(--c-loss)' },
+              { count: MARKET_EVENTS.filter(e => e.type === 'bear').length,   label: 'Bears',     color: 'var(--c-warn)' },
+              { count: MARKET_EVENTS.filter(e => e.type === 'crisis').length, label: 'Crises',    color: 'var(--c-warn)' },
+              { count: MARKET_EVENTS.filter(e => e.type === 'bull' || e.type === 'recovery').length, label: 'Bull Runs', color: 'var(--c-gain)' },
+            ].map((s) => (
+              <div
+                key={s.label}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r8, padding: '4px 10px' }}
+              >
+                <span style={{ color: s.color, fontFamily: C.mono, fontWeight: 800, fontSize: 15, lineHeight: 1 }}>{s.count}</span>
+                <span style={{ color: C.t4, fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.05em', marginTop: 1 }}>{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p style={{ margin: 0, color: C.t3, fontSize: 13, lineHeight: 1.65, maxWidth: 640 }}>
+          {MARKET_EVENTS.length} major macro events from 1907 to today — documented with causes, index-level impact,
+          and recovery data, sourced from official and institutional references.
+        </p>
       </div>
-      <h1 style={{ margin: '0 0 4px', color: C.t1, fontSize: 22, fontWeight: 800 }}>Market Events</h1>
-      <p style={{ margin: '0 0 18px', color: C.t2, fontSize: 14, lineHeight: 1.6, maxWidth: 680 }}>
-        Major macro events that moved the entire market — documented with causes, index-level impact,
-        and recovery data. All sourced from official and institutional references.
-      </p>
 
       {/* ── Long-term reference chart ── */}
       <LongTermChart />
@@ -1030,8 +1106,22 @@ export function MarketEventsScreen() {
       {/* ── Record callouts ── */}
       <RecordStrip />
 
-      {/* ── Controls row ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+      {/* ── Controls row — sticky ── */}
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+        background: C.bg0,
+        borderBottom: `1px solid ${C.border}`,
+        marginBottom: 18,
+        marginLeft: -18,
+        marginRight: -18,
+        paddingLeft: 18,
+        paddingRight: 18,
+        paddingTop: 10,
+        paddingBottom: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
+      }}>
         {/* Filter chips */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {FILTERS.map(({ label, value }) => {
