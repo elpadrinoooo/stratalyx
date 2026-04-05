@@ -291,7 +291,11 @@ app.get('/history/:ticker', async (req: Request, res: Response) => {
     const data = await upstream.json() as {
       chart?: {
         result?: Array<{
-          meta?: { regularMarketPrice?: number; currency?: string }
+          meta?: {
+            regularMarketPrice?: number
+            chartPreviousClose?: number
+            currency?: string
+          }
           timestamp?: number[]
           indicators?: {
             quote?: Array<{ close?: (number | null)[] }>
@@ -313,8 +317,13 @@ app.get('/history/:ticker', async (req: Request, res: Response) => {
       .map((ts, i) => ({ t: ts * 1000, p: closes[i] }))
       .filter((pt): pt is { t: number; p: number } => pt.p !== null && pt.p > 0)
 
-    const payload = { ticker, range, points, currency: result.meta?.currency ?? 'USD' }
-    setCache(cacheKey, payload)
+    const payload = {
+      ticker, range, points,
+      currency:      result.meta?.currency          ?? 'USD',
+      previousClose: result.meta?.chartPreviousClose ?? 0,
+    }
+    // 1d charts need fresh data during trading hours; longer ranges are stable
+    setCache(cacheKey, payload, range === '1d' ? 5 * 60 * 1000 : undefined)
     res.set('X-Cache', 'MISS')
     res.json(payload)
   } catch (err) {
