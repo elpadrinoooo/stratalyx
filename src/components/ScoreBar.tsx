@@ -5,12 +5,18 @@ interface Props {
   score: number
   color: string
   max?: number
+  label?: string
 }
 
-export function ScoreBar({ score, color, max = 10 }: Props) {
+export function ScoreBar({ score, color, max = 10, label = 'Score' }: Props) {
   const pct = `${((score / max) * 100).toFixed(1)}%`
   return (
     <div
+      role="progressbar"
+      aria-valuenow={score}
+      aria-valuemin={0}
+      aria-valuemax={max}
+      aria-label={`${label}: ${score} out of ${max}`}
       style={{
         background: C.bg2,
         borderRadius: R.r99,

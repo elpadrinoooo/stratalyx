@@ -89,18 +89,24 @@ export function PriceChart({ ticker, ivLow, ivHigh, currentPrice }: Props) {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    const controller = new AbortController()
     setLoading(true)
     setError('')
-    fetch(`/api/history/${encodeURIComponent(ticker)}?range=${range}`)
+    fetch(`/api/history/${encodeURIComponent(ticker)}?range=${range}`, {
+      signal: controller.signal,
+    })
       .then((r) => {
         if (!r.ok) throw new Error('Failed to load chart data')
         return r.json() as Promise<{ points: ChartPoint[] }>
       })
       .then((d) => { setPoints(d.points); setLoading(false) })
       .catch((e: unknown) => {
+        // Ignore abort errors (component unmounted or new request started)
+        if (e instanceof Error && e.name === 'AbortError') return
         setError(e instanceof Error ? e.message : 'Chart unavailable')
         setLoading(false)
       })
+    return () => controller.abort()
   }, [ticker, range])
 
   const prices = points.map((p) => p.p)

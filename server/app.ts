@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import express, { type Request, type Response, type NextFunction } from 'express'
 import cors from 'cors'
+import crypto from 'crypto'
 import { rateLimit } from 'express-rate-limit'
 import fs from 'fs'
 import path from 'path'
@@ -683,6 +684,7 @@ app.get('/og-default.png', (_req: Request, res: Response) => {
 
 // ── Affiliate link redirect ───────────────────────────────────────────────────
 // /api/link?url=<encoded-url> → 302 to destination with affiliate params appended
+// Only allows redirects to domains in the affiliate allowlist to prevent open redirect attacks
 app.get('/link', (req: Request, res: Response) => {
   const raw = typeof req.query['url'] === 'string' ? req.query['url'] : ''
   if (!raw) { res.status(400).end(); return }
@@ -690,6 +692,10 @@ app.get('/link', (req: Request, res: Response) => {
   try { url = new URL(decodeURIComponent(raw)) } catch { res.status(400).end(); return }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') { res.status(400).end(); return }
   const hostname = url.hostname.replace(/^www\./, '')
+  // Only allow redirects to domains in the affiliate map (prevents open redirect vulnerability)
+  if (!Object.hasOwn(affiliateMap, hostname)) {
+    res.status(403).json({ error: 'Domain not in allowlist' }); return
+  }
   const affix = affiliateMap[hostname] ?? ''
   const final = affix ? url.toString() + affix : url.toString()
   res.redirect(302, final)
@@ -770,23 +776,39 @@ app.get('/share/comparison/:ticker/:investors', (req: Request, res: Response) =>
 // ── Admin routes (Basic Auth) ─────────────────────────────────────────────────
 const ADMIN_PASS = process.env['ADMIN_PASSWORD'] ?? ''
 
+/** 10 admin requests per minute per IP to prevent brute-force */
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => IS_TEST,
+  message: { error: 'Too many admin requests — please try again in a minute' },
+})
+
+/** Timing-safe password comparison to prevent timing attacks */
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))
+}
+
 function adminAuth(req: Request, res: Response, next: NextFunction): void {
   if (!ADMIN_PASS) { res.status(503).json({ error: 'Admin not configured — set ADMIN_PASSWORD in .env' }); return }
   const auth = req.headers['authorization'] ?? ''
   const b64  = auth.startsWith('Basic ') ? auth.slice(6) : ''
   const decoded = Buffer.from(b64, 'base64').toString('utf8')
   const pass = decoded.includes(':') ? decoded.split(':').slice(1).join(':') : ''
-  if (pass !== ADMIN_PASS) {
+  if (!safeCompare(pass, ADMIN_PASS)) {
     res.set('WWW-Authenticate', 'Basic realm="Stratalyx Admin"').status(401).end(); return
   }
   next()
 }
 
-app.get('/admin/affiliate', adminAuth, (_req: Request, res: Response) => {
+app.get('/admin/affiliate', adminLimiter, adminAuth, (_req: Request, res: Response) => {
   res.json(affiliateMap)
 })
 
-app.put('/admin/affiliate', adminAuth, express.json(), async (req: Request, res: Response) => {
+app.put('/admin/affiliate', adminLimiter, adminAuth, express.json(), async (req: Request, res: Response) => {
   if (typeof req.body !== 'object' || req.body === null || Array.isArray(req.body)) {
     res.status(400).json({ error: 'Body must be a JSON object' }); return
   }
