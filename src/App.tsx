@@ -12,6 +12,7 @@ import { StrategiesScreen } from './screens/StrategiesScreen'
 import { WatchlistScreen } from './screens/WatchlistScreen'
 import { HistoryScreen } from './screens/HistoryScreen'
 import { ComparisonsScreen } from './screens/ComparisonsScreen'
+import { MarketEventsScreen } from './screens/MarketEventsScreen'
 
 const SESSION_KEY = 'stratalyx_fmp_key'
 
@@ -121,7 +122,8 @@ function AppShell() {
         {screen === 'Strategies'  && <ErrorBoundary><StrategiesScreen /></ErrorBoundary>}
         {screen === 'Watchlist'   && <ErrorBoundary><WatchlistScreen /></ErrorBoundary>}
         {screen === 'History'     && <ErrorBoundary><HistoryScreen /></ErrorBoundary>}
-        {screen === 'Comparisons' && <ErrorBoundary><ComparisonsScreen /></ErrorBoundary>}
+        {screen === 'Comparisons'  && <ErrorBoundary><ComparisonsScreen /></ErrorBoundary>}
+        {screen === 'MarketEvents' && <ErrorBoundary><MarketEventsScreen /></ErrorBoundary>}
       </main>
 
       {state.modalOpen && (

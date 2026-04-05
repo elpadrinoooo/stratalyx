@@ -12,11 +12,12 @@ interface Props {
 }
 
 const SCREENS: { label: string; screen: Screen }[] = [
-  { label: 'Screener',    screen: 'Screener' },
-  { label: 'Strategies',  screen: 'Strategies' },
-  { label: 'Watchlist',   screen: 'Watchlist' },
-  { label: 'History',     screen: 'History' },
-  { label: 'Comparisons', screen: 'Comparisons' },
+  { label: 'Screener',      screen: 'Screener' },
+  { label: 'Strategies',    screen: 'Strategies' },
+  { label: 'Watchlist',     screen: 'Watchlist' },
+  { label: 'History',       screen: 'History' },
+  { label: 'Comparisons',   screen: 'Comparisons' },
+  { label: 'Market Events', screen: 'MarketEvents' },
 ]
 
 const THEME_OPTIONS: { mode: ThemeMode; icon: string; label: string }[] = [

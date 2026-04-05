@@ -10,6 +10,7 @@ import {
   CartesianGrid,
 } from 'recharts'
 import { C, R } from '../constants/colors'
+import { MARKET_EVENTS, type EventType } from '../constants/marketEvents'
 
 type Range = '1mo' | '3mo' | '6mo' | '1y' | '2y' | '5y'
 
@@ -33,6 +34,12 @@ const RANGES: { label: string; value: Range }[] = [
   { label: '2Y',  value: '2y'  },
   { label: '5Y',  value: '5y'  },
 ]
+
+function eventStroke(type: EventType): string {
+  if (type === 'crash' || type === 'bear') return 'var(--c-loss)'
+  if (type === 'crisis') return 'var(--c-warn)'
+  return 'var(--c-gain)'
+}
 
 function formatDate(ts: number, range: Range): string {
   const d = new Date(ts)
@@ -110,6 +117,16 @@ export function PriceChart({ ticker, ivLow, ivHigh, currentPrice }: Props) {
   const lineColor = isUp ? 'var(--c-gain)' : 'var(--c-loss)'
 
   const hasIV  = ivLow > 0 && ivHigh > 0
+
+  // Events whose start date falls within the visible range
+  const tMin = points.length ? points[0].t : 0
+  const tMax = points.length ? points[points.length - 1].t : 0
+  const visibleEvents = tMin > 0
+    ? MARKET_EVENTS.filter((e) => {
+        const t = new Date(e.date).getTime()
+        return t >= tMin && t <= tMax
+      })
+    : []
 
   return (
     <div
@@ -271,6 +288,24 @@ export function PriceChart({ ticker, ivLow, ivHigh, currentPrice }: Props) {
                   strokeWidth={1}
                 />
               )}
+
+              {/* Market event markers */}
+              {visibleEvents.map((e) => (
+                <ReferenceLine
+                  key={e.id}
+                  x={new Date(e.date).getTime()}
+                  stroke={eventStroke(e.type)}
+                  strokeDasharray="3 3"
+                  strokeWidth={1}
+                  strokeOpacity={0.6}
+                  label={{
+                    value: e.shortTitle,
+                    position: 'top',
+                    fill: eventStroke(e.type),
+                    fontSize: 9,
+                  }}
+                />
+              ))}
 
               <Area
                 type="monotone"

@@ -36,7 +36,8 @@ describe('I-27: All 5 investor sidebar cards render', () => {
 
   it(`shows ${INVESTORS.length} Frameworks label`, () => {
     renderWithCtx(<StrategiesScreen />)
-    expect(screen.getByText(`${INVESTORS.length} Frameworks`)).toBeInTheDocument()
+    // Sidebar shows "X of Y frameworks" format
+    expect(screen.getByText(new RegExp(`${INVESTORS.length}.*frameworks`, 'i'))).toBeInTheDocument()
   })
 })
 
@@ -94,7 +95,8 @@ describe('I-30: Tab switching shows correct content', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Formulas$/i }))
 
     const buffett = INVESTORS.find((i) => i.id === 'buffett')!
-    expect(screen.getByText(buffett.equations[0].label)).toBeInTheDocument()
+    // Formula label appears in the card header AND in the variables glossary chips — use getAllByText
+    expect(screen.getAllByText(buffett.equations[0].label).length).toBeGreaterThan(0)
   })
 
   it('Overview tab is active by default and shows philosophy text', () => {

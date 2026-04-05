@@ -7,6 +7,7 @@ import { Tag } from '../components/Tag'
 import { Kpi } from '../components/Kpi'
 import { ScoreBar } from '../components/ScoreBar'
 import { sanitizeTicker, scColor, vColor, verdictLabel } from '../engine/utils'
+import { INVESTOR_SOURCES, SOURCE_TYPE_META } from '../constants/investorSources'
 import type { Investor } from '../types'
 
 type StratTab = 'Overview' | 'Rules' | 'Formulas'
@@ -399,6 +400,66 @@ export function StrategiesScreen() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sources */}
+                {INVESTOR_SOURCES[inv.id]?.length > 0 && (
+                  <div style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r10, padding: '13px 15px', marginBottom: 12 }}>
+                    <div style={{ color: C.t4, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 10 }}>
+                      Primary Sources
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {INVESTOR_SOURCES[inv.id].map((s, i) => {
+                        const meta = SOURCE_TYPE_META[s.type]
+                        const inner = (
+                          <div
+                            key={i}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              gap: 8,
+                              padding: '6px 8px',
+                              background: C.bg1,
+                              border: `1px solid ${C.border}`,
+                              borderRadius: R.r6,
+                              textDecoration: 'none',
+                            }}
+                          >
+                            <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>{meta.icon}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ color: s.url ? 'var(--c-accent)' : C.t2, fontSize: 13, lineHeight: 1.4, fontWeight: s.url ? 600 : 400 }}>
+                                {s.title}
+                              </div>
+                            </div>
+                            <span
+                              style={{
+                                background: C.bg2,
+                                border: `1px solid ${C.border}`,
+                                borderRadius: R.r4,
+                                color: C.t4,
+                                fontSize: 9,
+                                fontWeight: 700,
+                                padding: '1px 5px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '.05em',
+                                flexShrink: 0,
+                                alignSelf: 'center',
+                              }}
+                            >
+                              {meta.label}
+                            </span>
+                          </div>
+                        )
+                        return s.url ? (
+                          <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'block' }}>
+                            {inner}
+                          </a>
+                        ) : (
+                          <div key={i}>{inner}</div>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
