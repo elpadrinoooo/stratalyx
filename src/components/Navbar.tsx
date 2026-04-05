@@ -53,6 +53,8 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
         key={screen}
         onClick={() => dispatch({ type: 'SET_SCREEN', payload: screen })}
         aria-current={active ? 'page' : undefined}
+        onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.background = C.bg2; (e.currentTarget as HTMLButtonElement).style.color = C.t2 } }}
+        onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = C.t3 } }}
         style={{
           background: active ? C.accentM : 'transparent',
           color:  active ? C.accent : C.t3,
@@ -65,6 +67,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
           display: 'flex',
           alignItems: 'center',
           gap: 5,
+          transition: 'background .15s, color .15s',
         }}
       >
         {label}
@@ -72,7 +75,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
           <span
             style={{
               background: C.accent,
-              color: '#fff',
+              color: 'var(--c-fg-on-accent, #fff)',
               fontSize: 11,
               fontWeight: 700,
               borderRadius: R.r99,
@@ -140,7 +143,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
       aria-label="Stratalyx home"
       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8 }}
     >
-      <div style={{ background: C.accent, borderRadius: R.r8, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+      <div style={{ background: C.accent, borderRadius: R.r8, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'var(--c-fg-on-accent, #fff)', flexShrink: 0 }}>
         S
       </div>
       <div style={{ fontWeight: 700, fontSize: 15, color: C.t1 }}>Stratalyx.ai</div>
@@ -151,7 +154,9 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
     <button
       onClick={onOpenFmpModal}
       aria-label={fmpKeySet ? 'Live data enabled — manage FMP key' : 'Add FMP API key for live data'}
-      style={{ display: 'flex', alignItems: 'center', gap: 5, background: fmpKeySet ? C.gainBg : C.warnBg, border: `1px solid ${fmpKeySet ? C.gainB : C.warnB}`, borderRadius: R.r8, padding: '5px 9px', cursor: 'pointer' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.8' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+      style={{ display: 'flex', alignItems: 'center', gap: 5, background: fmpKeySet ? C.gainBg : C.warnBg, border: `1px solid ${fmpKeySet ? C.gainB : C.warnB}`, borderRadius: R.r8, padding: '5px 9px', cursor: 'pointer', transition: 'opacity .15s' }}
     >
       <div style={{ width: 6, height: 6, borderRadius: '50%', background: fmpKeySet ? C.gain : C.warn }} />
       <span style={{ fontSize: 12, fontWeight: 600, color: fmpKeySet ? C.gain : C.warn }}>
@@ -164,7 +169,9 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
     <button
       onClick={() => dispatch({ type: 'OPEN_MODAL', payload: '' })}
       aria-label="Analyze stock"
-      style={{ background: C.accent, color: '#fff', border: 'none', borderRadius: R.r8, padding: isMobile ? '6px 10px' : '6px 13px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.85' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+      style={{ background: C.accent, color: 'var(--c-fg-on-accent, #fff)', border: 'none', borderRadius: R.r8, padding: isMobile ? '6px 10px' : '6px 13px', fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'opacity .15s' }}
     >
       {isMobile ? '+' : 'Analyze Stock'}
     </button>

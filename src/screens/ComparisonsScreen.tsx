@@ -89,7 +89,7 @@ export function ComparisonsScreen() {
             ))}
             <button
               onClick={() => dispatch({ type: 'OPEN_MODAL', payload: 'AAPL' })}
-              style={{ background: C.accent, color: '#fff', border: 'none', borderRadius: R.r8, padding: '9px 20px', fontWeight: 600, fontSize: 14, cursor: 'pointer', marginTop: 4 }}
+              style={{ background: C.accent, color: 'var(--c-fg-on-accent, #fff)', border: 'none', borderRadius: R.r8, padding: '9px 20px', fontWeight: 600, fontSize: 14, cursor: 'pointer', marginTop: 4 }}
             >
               Try it with AAPL →
             </button>
@@ -252,7 +252,10 @@ export function ComparisonsScreen() {
           const price  = a.marketPrice || b.marketPrice
 
           return (
-            <div key={comp.id} style={{ background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r12, overflow: 'hidden', opacity: isArchived ? 0.75 : 1 }}>
+            <div key={comp.id}
+              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = C.border88; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px rgba(0,0,0,.18)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = C.border; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}
+              style={{ background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r12, overflow: 'hidden', opacity: isArchived ? 0.75 : 1, transition: 'border-color .15s, box-shadow .15s' }}>
 
               {/* ── Card header ── */}
               <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>

@@ -174,7 +174,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(0,0,0,.8)',
+        background: 'rgba(0,0,0,.82)',
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'center',
@@ -218,6 +218,8 @@ export function AnalyzerModal({ fmpKey }: Props) {
           <button
             onClick={() => dispatch({ type: 'CLOSE_MODAL' })}
             aria-label="Close analyzer modal"
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg2; (e.currentTarget as HTMLButtonElement).style.color = C.t1 }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg3; (e.currentTarget as HTMLButtonElement).style.color = C.t2 }}
             style={{
               background: C.bg3,
               border: `1px solid ${C.border}`,
@@ -226,6 +228,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
               padding: '5px 10px',
               fontSize: 14,
               cursor: 'pointer',
+              transition: 'background .12s, color .12s',
             }}
           >
             ✕ Close
@@ -339,6 +342,8 @@ export function AnalyzerModal({ fmpKey }: Props) {
               value={ticker}
               onChange={(e) => setTicker(e.target.value.toUpperCase())}
               onKeyDown={handleKeyDown}
+              onFocus={e => { (e.target as HTMLInputElement).style.borderColor = C.accent }}
+              onBlur={e => { (e.target as HTMLInputElement).style.borderColor = C.border }}
               placeholder="Enter any ticker — NVDA, TSLA, BRK.B, PLTR…"
               style={{
                 flex: 1,
@@ -350,6 +355,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
                 fontSize: 15,
                 outline: 'none',
                 fontFamily: C.sans,
+                transition: 'border-color .15s',
               }}
             />
             <button
@@ -357,7 +363,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
               disabled={phase === 'running' || !ticker.trim()}
               style={{
                 background: C.accent,
-                color: '#fff',
+                color: 'var(--c-fg-on-accent, #fff)',
                 border: 'none',
                 borderRadius: R.r8,
                 padding: '8px 18px',

@@ -7,6 +7,14 @@ interface Props {
   onDismiss: (id: string) => void
 }
 
+// Inject keyframe once
+if (typeof document !== 'undefined' && !document.getElementById('toast-anim')) {
+  const s = document.createElement('style')
+  s.id = 'toast-anim'
+  s.textContent = '@keyframes toastIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}'
+  document.head.appendChild(s)
+}
+
 function typeColor(type: ToastType['type']): string {
   if (type === 'success') return C.gain
   if (type === 'error')   return C.loss
@@ -34,6 +42,7 @@ export function Toast({ toast, onDismiss }: Props) {
         gap: 10,
         minWidth: 200,
         maxWidth: 300,
+        animation: 'toastIn .2s ease',
       }}
     >
       <span style={{ fontSize: 14, color: C.t2, flex: 1 }}>{toast.message}</span>

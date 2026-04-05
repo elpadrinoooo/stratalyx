@@ -4,6 +4,7 @@ import { STOCKS } from '../constants/stocks'
 import { INV, INVESTORS } from '../constants/investors'
 import { useApp } from '../state/context'
 import { useWatchlist } from '../hooks/useWatchlist'
+import { useWindowWidth } from '../hooks/useWindowWidth'
 import { Tag } from '../components/Tag'
 import { WLBtn } from '../components/WLBtn'
 import { ScoreBar } from '../components/ScoreBar'
@@ -15,6 +16,7 @@ export function WatchlistScreen() {
   const { state, dispatch } = useApp()
   const { watchlist, toggle } = useWatchlist()
   const inv = INV[state.investor] ?? INVESTORS[0]
+  const isMobile = useWindowWidth() <= 640
 
   const watchedStocks = STOCKS.filter((s) => watchlist.includes(s.ticker))
     .concat(
@@ -84,7 +86,7 @@ export function WatchlistScreen() {
                   </button>
                   <button
                     onClick={() => dispatch({ type: 'OPEN_MODAL', payload: stock.ticker })}
-                    style={{ background: C.accent, color: '#fff', border: 'none', borderRadius: R.r6, fontSize: 12, fontWeight: 600, padding: '4px 10px', cursor: 'pointer' }}
+                    style={{ background: C.accent, color: 'var(--c-fg-on-accent, #fff)', border: 'none', borderRadius: R.r6, fontSize: 12, fontWeight: 600, padding: '4px 10px', cursor: 'pointer' }}
                   >
                     Analyze
                   </button>
@@ -168,11 +170,14 @@ export function WatchlistScreen() {
           return (
             <div
               key={stock.ticker}
+              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = C.border88; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px rgba(0,0,0,.18)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = C.border; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}
               style={{
                 background: C.bg1,
                 border: `1px solid ${C.border}`,
                 borderRadius: R.r12,
                 overflow: 'hidden',
+                transition: 'border-color .15s, box-shadow .15s',
               }}
             >
               {/* Card header */}
@@ -199,7 +204,7 @@ export function WatchlistScreen() {
               </div>
 
               {/* Metrics strip */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isMobile ? 2 : 4},1fr)`, borderBottom: `1px solid ${C.border}` }}>
                 {[
                   { label: 'P/E',  value: result ? result.pe.toFixed(1)     : '—', color: C.t1 },
                   { label: 'PEG',  value: result ? result.peg.toFixed(1)    : '—', color: result ? pegColor(result.peg) : C.t3 },
@@ -259,7 +264,7 @@ export function WatchlistScreen() {
                     style={{
                       width: '100%',
                       background: C.accent,
-                      color: '#fff',
+                      color: 'var(--c-fg-on-accent, #fff)',
                       border: 'none',
                       borderRadius: R.r8,
                       fontSize: 13,

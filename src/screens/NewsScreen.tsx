@@ -153,8 +153,8 @@ ${article.text || '(No article body available — rewrite based on the headline 
     <div
       onClick={e => e.target === e.currentTarget && onClose()}
       style={{
-        position: 'fixed', inset: 0, zIndex: 100,
-        background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)',
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,.72)', backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 16,
       }}
@@ -178,7 +178,10 @@ ${article.text || '(No article body available — rewrite based on the headline 
             </div>
             <h2 style={{ margin: 0, color: C.t1, fontSize: 16, fontWeight: 700, lineHeight: 1.4 }}>{article.title}</h2>
           </div>
-          <button onClick={onClose} style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t3, cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '4px 9px', flexShrink: 0 }}>×</button>
+          <button onClick={onClose}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg3; (e.currentTarget as HTMLButtonElement).style.color = C.t1 }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg2; (e.currentTarget as HTMLButtonElement).style.color = C.t3 }}
+            style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t3, cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '4px 9px', flexShrink: 0, transition: 'background .12s, color .12s' }}>×</button>
         </div>
 
         {/* Body */}
@@ -255,7 +258,7 @@ function NewsCard({
           style={{ width: '100%', height: 130, objectFit: 'cover', display: 'block', flexShrink: 0 }} />
       ) : (
         <div style={{ width: '100%', height: 130, background: fallbackBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <span style={{ color: '#fff', fontSize: 26, fontWeight: 800, fontFamily: 'monospace', opacity: 0.4 }}>
+          <span style={{ color: 'var(--c-fg-on-accent, #fff)', fontSize: 26, fontWeight: 800, fontFamily: 'monospace', opacity: 0.4 }}>
             {article.site.slice(0, 2).toUpperCase()}
           </span>
         </div>
@@ -532,14 +535,15 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
 
       {/* Search bar */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-        <div ref={searchRef} style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+        <div ref={searchRef} style={{ position: 'relative', flex: 1, minWidth: isMobile ? 0 : 200 }}>
           <input
             value={tickerInput}
             onChange={e => { setTickerInput(e.target.value.toUpperCase()); setShowSugg(true) }}
             onKeyDown={e => { if (e.key === 'Enter') handleSearch(); if (e.key === 'Escape') setShowSugg(false) }}
-            onFocus={() => suggestions.length > 0 && setShowSugg(true)}
+            onFocus={e => { suggestions.length > 0 && setShowSugg(true); (e.target as HTMLInputElement).style.borderColor = C.accent }}
+            onBlur={e => { (e.target as HTMLInputElement).style.borderColor = C.border }}
             placeholder="Search by ticker or company name…"
-            style={{ width: '100%', boxSizing: 'border-box', background: C.bg0, border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t1, fontSize: 14, padding: '8px 12px', outline: 'none' }}
+            style={{ width: '100%', boxSizing: 'border-box', background: C.bg0, border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t1, fontSize: 14, padding: '8px 12px', outline: 'none', transition: 'border-color .15s' }}
           />
           {showSugg && suggestions.length > 0 && (
             <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r8, marginTop: 4, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,.3)' }}>
@@ -557,7 +561,7 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
           )}
         </div>
         <button onClick={handleSearch} disabled={!tickerInput.trim() || loading}
-          style={{ background: C.accent, border: 'none', borderRadius: R.r8, color: '#fff', cursor: tickerInput.trim() && !loading ? 'pointer' : 'not-allowed', fontSize: 13, fontWeight: 700, padding: '8px 18px', whiteSpace: 'nowrap', opacity: tickerInput.trim() && !loading ? 1 : 0.5 }}>
+          style={{ background: C.accent, border: 'none', borderRadius: R.r8, color: 'var(--c-fg-on-accent, #fff)', cursor: tickerInput.trim() && !loading ? 'pointer' : 'not-allowed', fontSize: 13, fontWeight: 700, padding: '8px 18px', whiteSpace: 'nowrap', opacity: tickerInput.trim() && !loading ? 1 : 0.5 }}>
           {loading ? 'Loading…' : 'Search'}
         </button>
         {activeTicker && (

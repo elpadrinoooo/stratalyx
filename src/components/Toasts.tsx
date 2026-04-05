@@ -16,7 +16,7 @@ export function Toasts() {
         position: 'fixed',
         bottom: 20,
         right: 20,
-        zIndex: 9999,
+        zIndex: 10100,
         display: 'flex',
         flexDirection: 'column',
         gap: 8,

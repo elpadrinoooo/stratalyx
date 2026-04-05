@@ -1275,7 +1275,7 @@ function StockScanner() {
         <button
           onClick={handleScan}
           disabled={!input.trim() || loading}
-          style={{ background: C.accent, border: 'none', borderRadius: R.r8, color: '#fff', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', fontSize: 13, fontWeight: 700, padding: '8px 18px', opacity: input.trim() && !loading ? 1 : 0.5, whiteSpace: 'nowrap' }}
+          style={{ background: C.accent, border: 'none', borderRadius: R.r8, color: 'var(--c-fg-on-accent, #fff)', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', fontSize: 13, fontWeight: 700, padding: '8px 18px', opacity: input.trim() && !loading ? 1 : 0.5, whiteSpace: 'nowrap' }}
         >
           {loading ? 'Loading…' : 'Scan'}
         </button>
@@ -1558,7 +1558,7 @@ export function MarketEventsScreen() {
           Research Library
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
-          <h1 style={{ margin: 0, color: C.t1, fontSize: 28, fontWeight: 800, letterSpacing: '-.01em', lineHeight: 1.1 }}>
+          <h1 style={{ margin: 0, color: C.t1, fontSize: isMobile ? 20 : 28, fontWeight: 800, letterSpacing: '-.01em', lineHeight: 1.1 }}>
             Market Events
           </h1>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
@@ -1824,7 +1824,7 @@ export function MarketEventsScreen() {
             borderRadius: '50%',
             width: 42,
             height: 42,
-            color: '#fff',
+            color: 'var(--c-fg-on-accent, #fff)',
             cursor: 'pointer',
             fontSize: 18,
             display: 'flex',

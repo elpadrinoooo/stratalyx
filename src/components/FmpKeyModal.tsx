@@ -30,7 +30,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
         position: 'fixed',
         inset: 0,
         zIndex: 10000,
-        background: 'rgba(0,0,0,.85)',
+        background: 'rgba(0,0,0,.82)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -68,6 +68,8 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
           <button
             onClick={onClose}
             aria-label="Close FMP key modal"
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg2; (e.currentTarget as HTMLButtonElement).style.color = C.t1 }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg3; (e.currentTarget as HTMLButtonElement).style.color = C.t2 }}
             style={{
               background: C.bg3,
               border: `1px solid ${C.border}`,
@@ -76,6 +78,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
               padding: '5px 9px',
               cursor: 'pointer',
               fontSize: 14,
+              transition: 'background .12s, color .12s',
             }}
           >
             ✕
@@ -122,6 +125,8 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="Paste your FMP API key here…"
+          onFocus={e => { (e.target as HTMLInputElement).style.border = `1px solid ${C.accent}` }}
+          onBlur={e => { (e.target as HTMLInputElement).style.border = `1px solid ${C.border}` }}
           style={{
             width: '100%',
             background: C.bg3,
@@ -133,6 +138,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
             fontFamily: C.mono,
             outline: 'none',
             boxSizing: 'border-box',
+            transition: 'border-color .15s',
           }}
         />
 
@@ -143,7 +149,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
             style={{
               flex: 1,
               background: C.accent,
-              color: '#fff',
+              color: 'var(--c-fg-on-accent, #fff)',
               border: 'none',
               borderRadius: R.r8,
               padding: '9px 0',

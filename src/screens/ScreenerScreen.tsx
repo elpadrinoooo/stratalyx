@@ -235,6 +235,8 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
           placeholder="Search ticker or company…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onFocus={e => { (e.target as HTMLInputElement).style.borderColor = C.accent }}
+          onBlur={e => { (e.target as HTMLInputElement).style.borderColor = C.border }}
           style={{
             flex: isMobile ? '1 1 100%' : '0 0 200px',
             background: C.bg2,
@@ -245,6 +247,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
             fontSize: 14,
             outline: 'none',
             fontFamily: C.sans,
+            transition: 'border-color .15s',
           }}
         />
         {/* Sort control */}
@@ -263,7 +266,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
             marginLeft: isMobile ? 0 : 'auto',
             flex: isMobile ? '1 1 100%' : undefined,
             background: C.accent,
-            color: '#fff',
+            color: 'var(--c-fg-on-accent, #fff)',
             border: 'none',
             borderRadius: R.r8,
             padding: '7px 13px',

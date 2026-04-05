@@ -145,6 +145,8 @@ export function HistoryScreen() {
             return (
               <div
                 key={key}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = C.border88; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px rgba(0,0,0,.18)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = C.border; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}
                 style={{
                   background: C.bg1,
                   border: `1px solid ${C.border}`,
@@ -152,6 +154,7 @@ export function HistoryScreen() {
                   padding: 14,
                   opacity: isArchived ? 0.7 : 1,
                   position: 'relative',
+                  transition: 'border-color .15s, box-shadow .15s',
                 }}
               >
                 {/* Top row */}
@@ -198,6 +201,8 @@ export function HistoryScreen() {
                         dispatch({ type: 'TOAST', payload: { message: `${result.ticker} archived`, type: 'info' } })
                       }}
                       title="Move to archive"
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.border88; (e.currentTarget as HTMLButtonElement).style.color = C.t2 }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.border; (e.currentTarget as HTMLButtonElement).style.color = C.t3 }}
                       style={{
                         flex: 1,
                         background: 'transparent',
@@ -208,6 +213,7 @@ export function HistoryScreen() {
                         fontSize: 11,
                         fontWeight: 600,
                         padding: '4px 8px',
+                        transition: 'border-color .12s, color .12s',
                       }}
                     >
                       Archive
@@ -220,6 +226,8 @@ export function HistoryScreen() {
                         dispatch({ type: 'TOAST', payload: { message: `${result.ticker} restored`, type: 'success' } })
                       }}
                       title="Restore to active"
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = C.accentM }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
                       style={{
                         flex: 1,
                         background: 'transparent',
@@ -230,6 +238,7 @@ export function HistoryScreen() {
                         fontSize: 11,
                         fontWeight: 600,
                         padding: '4px 8px',
+                        transition: 'background .12s',
                       }}
                     >
                       Restore
@@ -245,6 +254,8 @@ export function HistoryScreen() {
                       }
                     }}
                     title="Delete permanently"
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.lossB; (e.currentTarget as HTMLButtonElement).style.color = C.loss }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.border; (e.currentTarget as HTMLButtonElement).style.color = C.t4 }}
                     style={{
                       background: 'transparent',
                       border: `1px solid ${C.border}`,
@@ -254,6 +265,7 @@ export function HistoryScreen() {
                       fontSize: 11,
                       fontWeight: 600,
                       padding: '4px 8px',
+                      transition: 'border-color .12s, color .12s',
                     }}
                   >
                     Delete

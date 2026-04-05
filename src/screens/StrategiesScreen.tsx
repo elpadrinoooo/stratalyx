@@ -45,6 +45,8 @@ function InvestorCard({
   return (
     <button
       onClick={onClick}
+      onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.background = C.bg2; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 8px rgba(0,0,0,.12)' } }}
+      onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.background = C.bg1; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none' } }}
       style={{
         background: active ? inv.color + '18' : C.bg1,
         border: `1px solid ${active ? inv.color + '55' : C.border}`,
@@ -53,6 +55,7 @@ function InvestorCard({
         cursor: 'pointer',
         textAlign: 'left',
         width: '100%',
+        transition: 'background .15s, box-shadow .15s',
       }}
     >
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 7 }}>
@@ -285,7 +288,7 @@ export function StrategiesScreen() {
                 }}
                 style={{
                   background: inv.color,
-                  color: '#fff',
+                  color: 'var(--c-fg-on-accent, #fff)',
                   border: 'none',
                   borderRadius: R.r8,
                   padding: '8px 16px',
@@ -496,7 +499,7 @@ export function StrategiesScreen() {
                       disabled={!quickTicker.trim()}
                       style={{
                         background: quickTicker.trim() ? inv.color : C.bg3,
-                        color: quickTicker.trim() ? '#fff' : C.t4,
+                        color: quickTicker.trim() ? 'var(--c-fg-on-accent, #fff)' : C.t4,
                         border: 'none',
                         borderRadius: R.r6,
                         padding: '6px 14px',
