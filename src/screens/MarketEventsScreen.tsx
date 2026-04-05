@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   ResponsiveContainer,
-  LineChart,
   AreaChart,
   Area,
   Line,
@@ -10,6 +9,7 @@ import {
   Tooltip,
   ReferenceLine,
   CartesianGrid,
+  Brush,
 } from 'recharts'
 import { C, R } from '../constants/colors'
 import { MARKET_EVENTS, type EventType, type MarketEvent } from '../constants/marketEvents'
@@ -398,139 +398,6 @@ function RecordStrip() {
   )
 }
 
-// ── event scrubber ────────────────────────────────────────────────────────────
-
-const SCRUB_MIN = new Date('1905-01-01').getTime()
-const SCRUB_MAX = new Date('2025-06-01').getTime()
-const SCRUB_RANGE = SCRUB_MAX - SCRUB_MIN
-
-function scrubPos(e: MarketEvent): number {
-  return ((new Date(e.date).getTime() - SCRUB_MIN) / SCRUB_RANGE) * 100
-}
-
-const SCRUB_YEAR_TICKS = [1910, 1930, 1950, 1970, 1990, 2010]
-
-function EventScrubber({
-  visibleIds,
-  onSelect,
-}: {
-  visibleIds: Set<string>
-  onSelect: (id: string) => void
-}) {
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
-  const hoveredEvent = hoveredId ? MARKET_EVENTS.find((e) => e.id === hoveredId) ?? null : null
-
-  return (
-    <div
-      style={{
-        background: C.bg1,
-        border: `1px solid ${C.border}`,
-        borderRadius: R.r10,
-        padding: '12px 16px 20px',
-        marginBottom: 18,
-      }}
-    >
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, minHeight: 18 }}>
-        <span style={{ color: C.t4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em' }}>
-          Timeline Overview — click any dot to jump
-        </span>
-        {hoveredEvent ? (
-          <span style={{ color: TYPE_META[hoveredEvent.type].color, fontSize: 11, fontWeight: 700, transition: 'color .1s' }}>
-            {hoveredEvent.title}
-            <span style={{ color: C.t4, fontWeight: 400, marginLeft: 5 }}>
-              {new Date(hoveredEvent.date).getFullYear()}
-              {hoveredEvent.sp500 !== undefined && ` · ${pct(hoveredEvent.sp500)} S&P`}
-            </span>
-          </span>
-        ) : (
-          <span style={{ color: C.t4, fontSize: 10, fontStyle: 'italic' }}>Hover a dot to preview</span>
-        )}
-      </div>
-
-      {/* Track */}
-      <div style={{ position: 'relative', height: 28, paddingBottom: 16 }}>
-        {/* Base line */}
-        <div style={{
-          position: 'absolute', left: 0, right: 0, top: 10,
-          height: 2, background: C.border, borderRadius: 1,
-        }} />
-
-        {/* Year ticks */}
-        {SCRUB_YEAR_TICKS.map((yr) => {
-          const pos = ((new Date(`${yr}-01-01`).getTime() - SCRUB_MIN) / SCRUB_RANGE) * 100
-          return (
-            <React.Fragment key={yr}>
-              <div style={{
-                position: 'absolute', left: `${pos}%`, top: 6,
-                width: 1, height: 8, background: C.border,
-                transform: 'translateX(-50%)',
-              }} />
-              <span style={{
-                position: 'absolute', left: `${pos}%`, top: 18,
-                transform: 'translateX(-50%)',
-                color: C.t4, fontSize: 9, fontFamily: C.mono, fontWeight: 600,
-                whiteSpace: 'nowrap',
-              }}>
-                {yr}
-              </span>
-            </React.Fragment>
-          )
-        })}
-
-        {/* Event dots */}
-        {MARKET_EVENTS.map((e) => {
-          const meta   = TYPE_META[e.type]
-          const isVis  = visibleIds.has(e.id)
-          const isHov  = hoveredId === e.id
-          const pos    = scrubPos(e)
-          return (
-            <div
-              key={e.id}
-              onMouseEnter={() => setHoveredId(e.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              onClick={() => onSelect(e.id)}
-              title={e.title}
-              style={{
-                position: 'absolute',
-                left: `${pos}%`,
-                top: 4,
-                transform: `translate(-50%, 0) scale(${isHov ? 1.9 : 1})`,
-                width: 12,
-                height: 12,
-                borderRadius: '50%',
-                background: isVis ? meta.color : C.bg2,
-                border: `2px solid ${isVis ? meta.color : C.border}`,
-                cursor: 'pointer',
-                transition: 'transform .15s, opacity .15s, box-shadow .15s',
-                opacity: isVis ? 1 : 0.2,
-                zIndex: isHov ? 4 : 1,
-                boxShadow: isHov ? `0 0 0 4px ${meta.bg}, 0 3px 10px rgba(0,0,0,.25)` : 'none',
-              }}
-            />
-          )
-        })}
-      </div>
-
-      {/* Era labels */}
-      <div style={{ display: 'flex', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
-        {[
-          { color: 'var(--c-loss)', label: 'Crash' },
-          { color: 'var(--c-warn)', label: 'Bear / Crisis' },
-          { color: 'var(--c-gain)', label: 'Bull / Recovery' },
-        ].map((l) => (
-          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: l.color }} />
-            <span style={{ color: C.t4, fontSize: 9 }}>{l.label}</span>
-          </div>
-        ))}
-        <span style={{ color: C.t4, fontSize: 9, marginLeft: 'auto', fontStyle: 'italic' }}>
-          Dimmed = hidden by current filter
-        </span>
-      </div>
-    </div>
-  )
-}
 
 // ── timeline ──────────────────────────────────────────────────────────────────
 
@@ -658,162 +525,550 @@ function Timeline({ events, isMobile, onScanClick }: { events: MarketEvent[]; is
   )
 }
 
-// ── long-term market chart ────────────────────────────────────────────────────
+// ── combined timeline chart ───────────────────────────────────────────────────
 
-/** Approximate DJIA closing values at key turning points 1900–2024 */
+/**
+ * DJIA approximate reference data — 78 turning-point rows so each crash/bull
+ * renders as a clear spike or dip rather than a smooth interpolated slope.
+ */
 const LONG_TERM_DATA: { t: number; value: number }[] = [
-  { t: new Date('1900-01-01').getTime(), value: 66   },
-  { t: new Date('1906-01-19').getTime(), value: 103  },
-  { t: new Date('1907-11-15').getTime(), value: 53   },
-  { t: new Date('1916-11-21').getTime(), value: 110  },
-  { t: new Date('1921-08-24').getTime(), value: 63   },
-  { t: new Date('1929-09-03').getTime(), value: 381  },
-  { t: new Date('1932-07-08').getTime(), value: 41   },
-  { t: new Date('1937-03-10').getTime(), value: 194  },
-  { t: new Date('1938-03-31').getTime(), value: 100  },
-  { t: new Date('1942-04-28').getTime(), value: 93   },
-  { t: new Date('1946-05-29').getTime(), value: 212  },
-  { t: new Date('1966-01-18').getTime(), value: 995  },
-  { t: new Date('1970-05-26').getTime(), value: 631  },
-  { t: new Date('1973-01-11').getTime(), value: 1051 },
-  { t: new Date('1974-10-04').getTime(), value: 570  },
-  { t: new Date('1980-04-21').getTime(), value: 891  },
-  { t: new Date('1982-08-12').getTime(), value: 776  },
-  { t: new Date('1987-08-25').getTime(), value: 2722 },
-  { t: new Date('1987-10-19').getTime(), value: 1739 },
-  { t: new Date('1990-07-16').getTime(), value: 2999 },
-  { t: new Date('1990-10-11').getTime(), value: 2365 },
-  { t: new Date('1994-01-31').getTime(), value: 3978 },
-  { t: new Date('1998-07-17').getTime(), value: 9338 },
-  { t: new Date('1998-10-08').getTime(), value: 7539 },
-  { t: new Date('2000-01-14').getTime(), value: 11722 },
-  { t: new Date('2002-10-09').getTime(), value: 7286 },
-  { t: new Date('2007-10-09').getTime(), value: 14164 },
-  { t: new Date('2009-03-09').getTime(), value: 6547 },
-  { t: new Date('2013-03-05').getTime(), value: 14254 },
-  { t: new Date('2020-02-12').getTime(), value: 29551 },
-  { t: new Date('2020-03-23').getTime(), value: 18591 },
-  { t: new Date('2021-11-08').getTime(), value: 36432 },
-  { t: new Date('2022-10-13').getTime(), value: 28725 },
-  { t: new Date('2024-03-21').getTime(), value: 39511 },
+  { t: new Date('1900-01-01').getTime(), value: 66 },
+  { t: new Date('1903-11-09').getTime(), value: 42 },   // 1903 crash low
+  { t: new Date('1906-01-19').getTime(), value: 103 },  // Banker's Panic pre-peak
+  { t: new Date('1907-11-15').getTime(), value: 53 },   // Banker's Panic trough
+  { t: new Date('1909-10-15').getTime(), value: 100 },  // recovery
+  { t: new Date('1916-11-21').getTime(), value: 110 },  // WWI high
+  { t: new Date('1917-12-19').getTime(), value: 65 },   // WWI trough
+  { t: new Date('1919-11-03').getTime(), value: 119 },  // post-WWI peak
+  { t: new Date('1921-08-24').getTime(), value: 63 },   // post-WWI recession low
+  { t: new Date('1925-02-10').getTime(), value: 159 },  // Roaring 20s
+  { t: new Date('1928-01-03').getTime(), value: 300 },  // late 20s bull
+  { t: new Date('1929-09-03').getTime(), value: 381 },  // Great Crash peak
+  { t: new Date('1929-11-13').getTime(), value: 198 },  // first leg down
+  { t: new Date('1930-04-17').getTime(), value: 279 },  // dead cat bounce
+  { t: new Date('1931-07-08').getTime(), value: 145 },  // continued decline
+  { t: new Date('1932-07-08').getTime(), value: 41 },   // Great Depression trough
+  { t: new Date('1933-07-18').getTime(), value: 111 },  // New Deal bounce
+  { t: new Date('1934-07-26').getTime(), value: 85 },   // pullback
+  { t: new Date('1937-03-10').getTime(), value: 194 },  // recession peak
+  { t: new Date('1938-03-31').getTime(), value: 98 },   // recession trough
+  { t: new Date('1939-09-12').getTime(), value: 155 },  // pre-WWII
+  { t: new Date('1942-04-28').getTime(), value: 92 },   // WWII low
+  { t: new Date('1945-12-10').getTime(), value: 192 },  // V-Day recovery
+  { t: new Date('1946-05-29').getTime(), value: 212 },  // post-war peak
+  { t: new Date('1949-06-13').getTime(), value: 161 },  // post-war adjustment
+  { t: new Date('1953-09-14').getTime(), value: 255 },  // 50s dip
+  { t: new Date('1956-04-06').getTime(), value: 521 },  // 50s bull
+  { t: new Date('1957-10-22').getTime(), value: 420 },  // Sputnik / recession
+  { t: new Date('1961-12-12').getTime(), value: 734 },  // early 60s
+  { t: new Date('1966-01-18').getTime(), value: 995 },  // mid-60s peak
+  { t: new Date('1966-10-07').getTime(), value: 744 },  // mid-60s trough
+  { t: new Date('1968-12-03').getTime(), value: 985 },  // late 60s recovery
+  { t: new Date('1970-05-26').getTime(), value: 631 },  // 1970 recession low
+  { t: new Date('1972-01-11').getTime(), value: 889 },  // early 70s bull
+  { t: new Date('1973-01-11').getTime(), value: 1051 }, // oil crisis peak
+  { t: new Date('1974-10-04').getTime(), value: 570 },  // oil crisis trough
+  { t: new Date('1976-09-21').getTime(), value: 1015 }, // recovery
+  { t: new Date('1980-02-13').getTime(), value: 891 },  // pre-Volcker peak
+  { t: new Date('1980-08-12').getTime(), value: 730 },  // Volcker trough
+  { t: new Date('1981-04-27').getTime(), value: 1024 }, // bounce
+  { t: new Date('1982-08-12').getTime(), value: 776 },  // double-dip trough
+  { t: new Date('1985-01-14').getTime(), value: 1286 }, // mid-80s bull
+  { t: new Date('1987-08-25').getTime(), value: 2722 }, // Black Monday peak
+  { t: new Date('1987-10-19').getTime(), value: 1739 }, // Black Monday crash
+  { t: new Date('1989-07-17').getTime(), value: 2660 }, // recovery
+  { t: new Date('1990-07-16').getTime(), value: 2999 }, // Gulf War peak
+  { t: new Date('1990-10-11').getTime(), value: 2365 }, // Gulf War trough
+  { t: new Date('1991-12-31').getTime(), value: 3169 }, // recovery
+  { t: new Date('1994-01-31').getTime(), value: 3978 }, // rate-hike scare peak
+  { t: new Date('1994-04-04').getTime(), value: 3593 }, // rate-hike trough
+  { t: new Date('1996-01-10').getTime(), value: 5395 }, // dot-com bull
+  { t: new Date('1997-08-06').getTime(), value: 8259 }, // Asian crisis pre-peak
+  { t: new Date('1998-07-17').getTime(), value: 9338 }, // LTCM pre-peak
+  { t: new Date('1998-10-08').getTime(), value: 7539 }, // LTCM trough
+  { t: new Date('1999-12-31').getTime(), value: 11497 },// Y2K peak
+  { t: new Date('2000-01-14').getTime(), value: 11722 },// dot-com all-time high
+  { t: new Date('2001-09-21').getTime(), value: 8236 }, // 9/11 low
+  { t: new Date('2002-10-09').getTime(), value: 7286 }, // dot-com trough
+  { t: new Date('2003-10-27').getTime(), value: 9801 }, // recovery
+  { t: new Date('2006-05-10').getTime(), value: 11642 },// housing bubble
+  { t: new Date('2007-10-09').getTime(), value: 14164 },// GFC peak
+  { t: new Date('2008-09-29').getTime(), value: 10365 },// Lehman shock
+  { t: new Date('2009-03-09').getTime(), value: 6547 }, // GFC trough
+  { t: new Date('2010-04-26').getTime(), value: 11205 },// recovery
+  { t: new Date('2011-10-03').getTime(), value: 10655 },// EU debt crisis
+  { t: new Date('2013-03-05').getTime(), value: 14254 },// new ATH
+  { t: new Date('2015-08-25').getTime(), value: 15666 },// China selloff
+  { t: new Date('2016-02-11').getTime(), value: 15660 },// oil crash trough
+  { t: new Date('2018-01-26').getTime(), value: 26616 },// Trump bull peak
+  { t: new Date('2018-12-26').getTime(), value: 21792 },// Q4 2018 selloff
+  { t: new Date('2019-12-27').getTime(), value: 28645 },// 2019 peak
+  { t: new Date('2020-02-12').getTime(), value: 29551 },// pre-COVID peak
+  { t: new Date('2020-03-23').getTime(), value: 18591 },// COVID trough
+  { t: new Date('2020-11-09').getTime(), value: 29157 },// vaccine rally
+  { t: new Date('2021-11-08').getTime(), value: 36432 },// 2021 peak
+  { t: new Date('2022-10-13').getTime(), value: 28725 },// 2022 trough
+  { t: new Date('2023-07-19').getTime(), value: 35630 },// 2023 recovery
+  { t: new Date('2024-03-21').getTime(), value: 39511 },// recent
 ]
 
 function fmtYear(t: number) {
   return new Date(t).getFullYear().toString()
 }
 
-function LongTermChart() {
-  const [hovered, setHovered] = useState<{ value: number; year: string } | null>(null)
+/** Find nearest data-array index for a given date string */
+function dateToIdx(dateStr: string): number {
+  const target = new Date(dateStr).getTime()
+  let best = 0, bestDiff = Infinity
+  LONG_TERM_DATA.forEach((d, i) => {
+    const diff = Math.abs(d.t - target)
+    if (diff < bestDiff) { bestDiff = diff; best = i }
+  })
+  return best
+}
+
+/** Recent timeframes — always end at the latest data point */
+const RECENT_TF = [
+  { id: '5y',  label: '5Y',  si: dateToIdx('2019-01-01'), ei: LONG_TERM_DATA.length - 1 },
+  { id: '10y', label: '10Y', si: dateToIdx('2014-01-01'), ei: LONG_TERM_DATA.length - 1 },
+  { id: '20y', label: '20Y', si: dateToIdx('2004-01-01'), ei: LONG_TERM_DATA.length - 1 },
+  { id: '50y', label: '50Y', si: dateToIdx('1974-01-01'), ei: LONG_TERM_DATA.length - 1 },
+  { id: 'all', label: 'All', si: 0,                       ei: LONG_TERM_DATA.length - 1 },
+]
+
+/** Historical era zoom windows */
+const ERA_PRESETS = [
+  { id: 'era1', label: '1920s–40s', si: dateToIdx('1919-11-03'), ei: dateToIdx('1946-05-29') },
+  { id: 'era2', label: '1960s–80s', si: dateToIdx('1961-12-12'), ei: dateToIdx('1989-07-17') },
+  { id: 'era3', label: '2000s–10s', si: dateToIdx('1999-12-31'), ei: dateToIdx('2013-03-05') },
+]
+
+const ALL_PRESETS = [...RECENT_TF, ...ERA_PRESETS]
+
+function CombinedTimelineChart({
+  visibleIds,
+  onSelect,
+}: {
+  visibleIds: Set<string>
+  onSelect: (id: string) => void
+}) {
+  const [hoveredId, setHoveredId]    = useState<string | null>(null)
+  const [chartHov, setChartHov]      = useState<{ t: number; value: number } | null>(null)
+  const [activePreset, setActivePreset] = useState<string>('all')
+  const [brushSI, setBrushSI]        = useState(0)
+  const [brushEI, setBrushEI]        = useState(LONG_TERM_DATA.length - 1)
+  const [logScale, setLogScale]      = useState(false)
+  const containerRef                  = useRef<HTMLDivElement>(null)
+  const [innerW, setInnerW]          = useState(700)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    const ro = new ResizeObserver(([e]) => setInnerW(e.contentRect.width))
+    ro.observe(containerRef.current)
+    return () => ro.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const id = 'evt-pulse-style'
+    if (document.getElementById(id)) return
+    const s = document.createElement('style')
+    s.id = id
+    s.textContent = `@keyframes evtPulse{0%{transform:translate(-50%,-50%) scale(1);opacity:.7}100%{transform:translate(-50%,-50%) scale(3.8);opacity:0}}`
+    document.head.appendChild(s)
+    return () => { document.getElementById(id)?.remove() }
+  }, [])
+
+  function applyPreset(id: string) {
+    const p = ALL_PRESETS.find(z => z.id === id)
+    if (!p) return
+    setActivePreset(id)
+    setBrushSI(p.si)
+    setBrushEI(p.ei)
+  }
+
+  // Visible time range from brush
+  const tMin = LONG_TERM_DATA[brushSI].t
+  const tMax = LONG_TERM_DATA[brushEI].t
+
+  // Chart geometry — MUST match AreaChart margin + YAxis width
+  const ML      = 10 + 34  // margin.left(10) + YAxis width(34) = 44
+  const MR      = 10
+  const MB      = 62        // brush(~30) + x-axis labels(~15) + gaps
+  const CHART_H = 310
+
+  const dataW  = Math.max(1, innerW - ML - MR)
+  const xFor   = (t: number) => ML + ((t - tMin) / Math.max(1, tMax - tMin)) * dataW
+
+  // Only show dots for events in the current zoom window
+  const inRangeEvents = MARKET_EVENTS.filter(e => {
+    const t = new Date(e.date).getTime()
+    return t >= tMin && t <= tMax
+  })
+
+  // Dynamic x-axis ticks based on visible span
+  const xTicks = useMemo(() => {
+    const startY = new Date(tMin).getFullYear()
+    const endY   = new Date(tMax).getFullYear()
+    const span   = endY - startY
+    const step   = span <= 15 ? 3 : span <= 30 ? 5 : span <= 60 ? 10 : 20
+    const years: number[] = []
+    for (let y = Math.ceil(startY / step) * step; y <= endY; y += step) {
+      years.push(new Date(`${y}-01-01`).getTime())
+    }
+    return years
+  }, [tMin, tMax])
+
+  const hoveredEvent = hoveredId ? MARKET_EVENTS.find(e => e.id === hoveredId) ?? null : null
+  const hoveredX     = hoveredEvent ? xFor(new Date(hoveredEvent.date).getTime()) : 0
+
+  // Period stats derived from the visible slice
+  const visibleSlice = LONG_TERM_DATA.slice(brushSI, brushEI + 1)
+  const vStart       = visibleSlice[0]?.value ?? 1
+  const vEnd         = visibleSlice[visibleSlice.length - 1]?.value ?? 1
+  const periodRet    = ((vEnd - vStart) / vStart) * 100
+  const peak         = visibleSlice.length > 0 ? visibleSlice.reduce((a, b) => b.value > a.value ? b : a) : { t: 0, value: 0 }
+  const trough       = visibleSlice.length > 0 ? visibleSlice.reduce((a, b) => b.value < a.value ? b : a) : { t: 0, value: 0 }
 
   return (
-    <div
-      style={{
-        background: C.bg1,
-        border: `1px solid ${C.border}`,
-        borderRadius: R.r12,
-        padding: '16px 16px 10px',
-        marginBottom: 20,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+    <div style={{ background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r12, padding: '16px 16px 10px', marginBottom: 20 }}>
+
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
         <div>
           <div style={{ color: C.t4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 3 }}>
-            Long-Term Market History
+            Long-Term Market History · Hover dots · Click to jump
           </div>
-          <div style={{ color: C.t1, fontSize: 14, fontWeight: 700 }}>
-            Dow Jones Industrial Average — Approximate Reference (1900–2024)
+          <div style={{ color: C.t1, fontSize: 15, fontWeight: 700 }}>
+            Dow Jones Industrial Average
+            <span style={{ color: C.t3, fontSize: 12, fontWeight: 400, marginLeft: 8 }}>Approximate turning-point data, 1900–2024</span>
           </div>
         </div>
-        {hovered && (
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ color: C.t4, fontSize: 10, fontWeight: 600 }}>{hovered.year}</div>
-            <div style={{ color: C.t1, fontSize: 15, fontWeight: 700, fontFamily: C.mono }}>
-              {hovered.value.toLocaleString()}
+        {/* Live hover readout */}
+        <div style={{ textAlign: 'right', minWidth: 100 }}>
+          {chartHov ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+              <div style={{ color: C.t4, fontSize: 10 }}>
+                {new Date(chartHov.t).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+              </div>
+              <div style={{ color: C.t1, fontSize: 20, fontWeight: 800, fontFamily: C.mono, lineHeight: 1 }}>
+                {chartHov.value.toLocaleString()}
+              </div>
+              <div style={{ color: C.t4, fontSize: 9, textTransform: 'uppercase', letterSpacing: '.05em' }}>DJIA</div>
             </div>
+          ) : hoveredEvent ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+              <div style={{ color: TYPE_META[hoveredEvent.type].color, fontSize: 12, fontWeight: 700, lineHeight: 1.2 }}>{hoveredEvent.shortTitle}</div>
+              <div style={{ color: C.t4, fontSize: 11 }}>
+                {new Date(hoveredEvent.date).getFullYear()}
+                {hoveredEvent.sp500 !== undefined && ` · ${pct(hoveredEvent.sp500)} S&P`}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {/* ── Toolbar: timeframes + historical eras + log scale ── */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Recent timeframes */}
+        <div style={{ display: 'flex', gap: 4 }}>
+          {RECENT_TF.map(z => {
+            const active = activePreset === z.id
+            return (
+              <button key={z.id} onClick={() => applyPreset(z.id)} style={{
+                background: active ? C.accentM : C.bg2,
+                border: `1px solid ${active ? C.accentB : C.border}`,
+                borderRadius: R.r6, color: active ? C.accent : C.t3,
+                cursor: 'pointer', fontSize: 11, fontWeight: active ? 700 : 500,
+                padding: '3px 10px', transition: 'all .1s',
+              }}>{z.label}</button>
+            )
+          })}
+        </div>
+        <div style={{ width: 1, height: 16, background: C.border, flexShrink: 0 }} />
+        {/* Historical eras */}
+        <div style={{ display: 'flex', gap: 3 }}>
+          {ERA_PRESETS.map(z => {
+            const active = activePreset === z.id
+            return (
+              <button key={z.id} onClick={() => applyPreset(z.id)} style={{
+                background: active ? C.bg2 : 'transparent',
+                border: `1px solid ${active ? C.border : 'transparent'}`,
+                borderRadius: R.r6, color: active ? C.t2 : C.t4,
+                cursor: 'pointer', fontSize: 10, fontWeight: active ? 600 : 400,
+                padding: '3px 8px',
+              }}>{z.label}</button>
+            )
+          })}
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 5, alignItems: 'center' }}>
+          <span style={{ color: C.t4, fontSize: 10 }}>
+            {new Date(tMin).getFullYear()}–{new Date(tMax).getFullYear()}
+          </span>
+          <button onClick={() => setLogScale(x => !x)} title="Equalises relative % moves across eras" style={{
+            background: logScale ? C.accentM : C.bg2,
+            border: `1px solid ${logScale ? C.accentB : C.border}`,
+            borderRadius: R.r6, color: logScale ? C.accent : C.t3,
+            cursor: 'pointer', fontSize: 11, fontWeight: logScale ? 700 : 400, padding: '3px 9px',
+          }}>Log</button>
+        </div>
+      </div>
+
+      {/* ── Period stats strip ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 12 }}>
+        {[
+          {
+            label: 'Period Return',
+            value: `${periodRet > 0 ? '+' : ''}${periodRet.toFixed(1)}%`,
+            color: periodRet >= 0 ? 'var(--c-gain)' : 'var(--c-loss)',
+            sub: `${new Date(tMin).getFullYear()} → ${new Date(tMax).getFullYear()}`,
+          },
+          {
+            label: 'DJIA High',
+            value: peak.value >= 1000 ? `${(peak.value / 1000).toFixed(1)}k` : peak.value.toLocaleString(),
+            color: 'var(--c-gain)',
+            sub: new Date(peak.t).getFullYear().toString(),
+          },
+          {
+            label: 'DJIA Low',
+            value: trough.value >= 1000 ? `${(trough.value / 1000).toFixed(1)}k` : trough.value.toLocaleString(),
+            color: 'var(--c-loss)',
+            sub: new Date(trough.t).getFullYear().toString(),
+          },
+          {
+            label: 'Events Visible',
+            value: inRangeEvents.length.toString(),
+            color: C.accent,
+            sub: `of ${MARKET_EVENTS.length} total`,
+          },
+        ].map(s => (
+          <div key={s.label} style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r8, padding: '8px 10px' }}>
+            <div style={{ color: C.t4, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>{s.label}</div>
+            <div style={{ color: s.color, fontSize: 16, fontWeight: 800, fontFamily: C.mono, lineHeight: 1.1 }}>{s.value}</div>
+            <div style={{ color: C.t4, fontSize: 10, marginTop: 2 }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Chart + dot overlay ── */}
+      <div ref={containerRef} style={{ position: 'relative' }}>
+        <ResponsiveContainer width="100%" height={CHART_H}>
+          <AreaChart
+            data={LONG_TERM_DATA}
+            onMouseMove={(s) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const p = (s as any)?.activePayload?.[0]?.payload as { t: number; value: number } | undefined
+              if (p) setChartHov(p)
+            }}
+            onMouseLeave={() => setChartHov(null)}
+            margin={{ top: 8, right: MR, left: 10, bottom: MB }}
+          >
+            <defs>
+              <linearGradient id="ltGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor={C.accent} stopOpacity={0.18} />
+                <stop offset="95%" stopColor={C.accent} stopOpacity={0}    />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+            <XAxis
+              dataKey="t"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={fmtYear}
+              tick={{ fill: C.t4, fontSize: 9 }}
+              axisLine={false}
+              tickLine={false}
+              ticks={xTicks}
+            />
+            <YAxis
+              tick={{ fill: C.t4, fontSize: 9 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`}
+              width={34}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              scale={logScale ? ('log' as any) : 'linear'}
+              domain={logScale ? [1, 'auto'] : undefined}
+              allowDataOverflow={false}
+            />
+            <Tooltip content={() => null} />
+            {/* Event reference lines — hovered one lights up */}
+            {MARKET_EVENTS.map((e) => {
+              const isHov    = hoveredId === e.id
+              const evtColor = e.type === 'crash' || e.type === 'bear'
+                ? 'var(--c-loss)'
+                : e.type === 'bull' || e.type === 'recovery'
+                  ? 'var(--c-gain)'
+                  : 'var(--c-warn)'
+              return (
+                <ReferenceLine
+                  key={e.id}
+                  x={new Date(e.date).getTime()}
+                  stroke={evtColor}
+                  strokeWidth={isHov ? 2 : 1}
+                  strokeDasharray={isHov ? undefined : '2 4'}
+                  strokeOpacity={isHov ? 0.85 : 0.35}
+                />
+              )
+            })}
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={C.accent}
+              strokeWidth={2.5}
+              fill="url(#ltGrad)"
+              dot={false}
+              activeDot={{ r: 4, fill: C.accent, strokeWidth: 0 }}
+            />
+            {/* Interactive brush — drag handles to zoom */}
+            <Brush
+              dataKey="t"
+              height={28}
+              stroke={C.border}
+              fill={C.bg0}
+              startIndex={brushSI}
+              endIndex={brushEI}
+              onChange={(range) => {
+                const { startIndex: si, endIndex: ei } = range as { startIndex?: number; endIndex?: number }
+                if (typeof si === 'number' && typeof ei === 'number') {
+                  setBrushSI(si)
+                  setBrushEI(ei)
+                  setActivePreset('') // clear preset highlight on manual drag
+                }
+              }}
+              tickFormatter={fmtYear}
+              travellerWidth={8}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+
+        {/* Event dots — aligned to x-axis baseline (above brush) */}
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: MB, height: 0, pointerEvents: 'none' }}>
+          {inRangeEvents.map((e) => {
+            const meta  = TYPE_META[e.type]
+            const isVis = visibleIds.has(e.id)
+            const isHov = hoveredId === e.id
+            const x     = xFor(new Date(e.date).getTime())
+            return (
+              <div
+                key={e.id}
+                onMouseEnter={() => setHoveredId(e.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                onClick={() => onSelect(e.id)}
+                title={e.title}
+                style={{
+                  position: 'absolute',
+                  left: x,
+                  top: 0,
+                  transform: `translate(-50%, -50%) scale(${isHov ? 2.2 : 1})`,
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: isVis ? meta.color : C.bg2,
+                  border: `2px solid ${isVis ? meta.color : C.border}`,
+                  cursor: 'pointer',
+                  transition: 'transform .2s cubic-bezier(.4,0,.2,1), box-shadow .2s, opacity .15s',
+                  opacity: isVis ? 1 : 0.18,
+                  zIndex: isHov ? 10 : 2,
+                  boxShadow: isHov ? `0 0 0 5px ${meta.bg}, 0 4px 14px rgba(0,0,0,.35)` : 'none',
+                  pointerEvents: 'auto',
+                }}
+              >
+                {isHov && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: '50%',
+                      top: '50%',
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      border: `2px solid ${meta.color}`,
+                      animation: 'evtPulse .85s ease-out infinite',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Flowing tooltip */}
+        {hoveredEvent && (
+          <div
+            style={{
+              position: 'absolute',
+              left: hoveredX,
+              bottom: MB + 18,
+              transform: 'translateX(-50%)',
+              transition: 'left .18s cubic-bezier(.4,0,.2,1)',
+              zIndex: 20,
+              pointerEvents: 'none',
+              minWidth: 130,
+              maxWidth: 190,
+            }}
+          >
+            <div
+              style={{
+                background: C.bg1,
+                border: `1px solid ${TYPE_META[hoveredEvent.type].border}`,
+                borderRadius: R.r8,
+                padding: '8px 10px',
+                boxShadow: `0 6px 24px rgba(0,0,0,.35), 0 0 0 1px ${TYPE_META[hoveredEvent.type].border}`,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+                <span
+                  style={{
+                    background: TYPE_META[hoveredEvent.type].bg,
+                    border: `1px solid ${TYPE_META[hoveredEvent.type].border}`,
+                    borderRadius: R.r99,
+                    color: TYPE_META[hoveredEvent.type].color,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    padding: '1px 6px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '.05em',
+                  }}
+                >
+                  {TYPE_META[hoveredEvent.type].label}
+                </span>
+                <span style={{ color: C.t4, fontSize: 10, fontFamily: C.mono }}>
+                  {new Date(hoveredEvent.date).getFullYear()}
+                </span>
+              </div>
+              <div style={{ color: C.t1, fontSize: 12, fontWeight: 700, lineHeight: 1.3, marginBottom: 4 }}>
+                {hoveredEvent.shortTitle}
+              </div>
+              {(hoveredEvent.sp500 ?? hoveredEvent.dow) !== undefined && (
+                <div style={{ color: pctColor(hoveredEvent.sp500 ?? hoveredEvent.dow), fontFamily: C.mono, fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
+                  {pct(hoveredEvent.sp500 ?? hoveredEvent.dow)}
+                  <span style={{ color: C.t4, fontSize: 9, fontWeight: 400, marginLeft: 3 }}>
+                    {hoveredEvent.sp500 !== undefined ? 'S&P' : 'Dow'}
+                  </span>
+                </div>
+              )}
+              <div style={{ color: C.t4, fontSize: 10, fontStyle: 'italic' }}>Click to jump ↓</div>
+            </div>
+            <div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: `5px solid ${TYPE_META[hoveredEvent.type].border}`, margin: '0 auto' }} />
           </div>
         )}
       </div>
 
-      <ResponsiveContainer width="100%" height={200}>
-        <AreaChart
-          data={LONG_TERM_DATA}
-          onMouseMove={(s) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const p = (s as any)?.activePayload?.[0]?.payload as { t: number; value: number } | undefined
-            if (p) setHovered({ value: p.value, year: fmtYear(p.t) })
-          }}
-          onMouseLeave={() => setHovered(null)}
-          margin={{ top: 4, right: 10, left: 10, bottom: 0 }}
-        >
-          <defs>
-            <linearGradient id="ltGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor={C.accent} stopOpacity={0.18} />
-              <stop offset="95%" stopColor={C.accent} stopOpacity={0}    />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-          <XAxis
-            dataKey="t"
-            type="number"
-            domain={['dataMin', 'dataMax']}
-            tickFormatter={fmtYear}
-            tick={{ fill: C.t4, fontSize: 9 }}
-            axisLine={false}
-            tickLine={false}
-            ticks={[
-              new Date('1900-01-01').getTime(),
-              new Date('1920-01-01').getTime(),
-              new Date('1940-01-01').getTime(),
-              new Date('1960-01-01').getTime(),
-              new Date('1980-01-01').getTime(),
-              new Date('2000-01-01').getTime(),
-              new Date('2020-01-01').getTime(),
-            ]}
-          />
-          <YAxis
-            tick={{ fill: C.t4, fontSize: 9 }}
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`}
-            width={34}
-          />
-          <Tooltip content={() => null} />
-          {/* Event reference lines */}
-          {MARKET_EVENTS.map((e) => (
-            <ReferenceLine
-              key={e.id}
-              x={new Date(e.date).getTime()}
-              stroke={e.type === 'crash' || e.type === 'bear' ? 'var(--c-loss)' : e.type === 'bull' || e.type === 'recovery' ? 'var(--c-gain)' : 'var(--c-warn)'}
-              strokeWidth={1}
-              strokeDasharray="2 4"
-              strokeOpacity={0.45}
-            />
-          ))}
-          <Area
-            type="monotone"
-            dataKey="value"
-            stroke={C.accent}
-            strokeWidth={2.5}
-            fill="url(#ltGrad)"
-            dot={false}
-            activeDot={{ r: 4, fill: C.accent, strokeWidth: 0 }}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-
-      <div style={{ display: 'flex', gap: 16, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      {/* ── Legend ── */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
         {[
           { color: 'var(--c-loss)', label: 'Crash / Bear' },
           { color: 'var(--c-warn)', label: 'Crisis' },
           { color: 'var(--c-gain)', label: 'Bull / Recovery' },
         ].map((l) => (
           <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 16, height: 2, background: l.color, opacity: 0.7, borderRadius: 1 }} />
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: l.color }} />
             <span style={{ color: C.t4, fontSize: 10 }}>{l.label}</span>
           </div>
         ))}
         <span style={{ color: C.t4, fontSize: 10, marginLeft: 'auto', fontStyle: 'italic' }}>
-          Approximate reference — not for trading use
+          Drag the brush handles below the chart to zoom · Approximate reference
         </span>
       </div>
     </div>
@@ -865,39 +1120,75 @@ function FlowingEventLabel({ viewBox, event, index, color }: EventLabelProps) {
   )
 }
 
+type ScanRange = '1y' | '2y' | '3y' | '5y'
+
+interface IndexPoints { spy: PricePoint[]; dia: PricePoint[]; qqq: PricePoint[] }
+
+/** Align an index price series to the given timestamps using sorted pointer */
+function alignSeries(pts: PricePoint[], timestamps: number[]): (number | null)[] {
+  if (!pts.length) return timestamps.map(() => null)
+  const sorted = [...pts].sort((a, b) => a.t - b.t)
+  const out: (number | null)[] = []
+  let j = 0
+  for (const ts of timestamps) {
+    while (j < sorted.length - 1 && Math.abs(sorted[j + 1].t - ts) <= Math.abs(sorted[j].t - ts)) j++
+    out.push(sorted[j].p)
+  }
+  return out
+}
+
 function StockScanner() {
-  const [input, setInput]     = useState('')
-  const [ticker, setTicker]   = useState<string | null>(null)
-  const [points, setPoints]   = useState<PricePoint[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
+  const [input, setInput]       = useState('')
+  const [ticker, setTicker]     = useState<string | null>(null)
+  const [points, setPoints]     = useState<PricePoint[]>([])
+  const [idxPts, setIdxPts]     = useState<IndexPoints>({ spy: [], dia: [], qqq: [] })
+  const [range, setRange]       = useState<ScanRange>('5y')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
   const [showChart, setShowChart] = useState(false)
+
+  const doFetch = useCallback((t: string, r: ScanRange) => {
+    setLoading(true)
+    setError('')
+    setPoints([])
+    setIdxPts({ spy: [], dia: [], qqq: [] })
+    setShowChart(false)
+
+    const fetchTicker = fetch(`/api/history/${encodeURIComponent(t)}?range=${r}`)
+      .then(res => { if (!res.ok) throw new Error(`Could not load data for ${t}`); return res.json() as Promise<{ points: PricePoint[] }> })
+    const fetchSpy = fetch(`/api/history/SPY?range=${r}`).then(res => res.ok ? res.json() as Promise<{ points: PricePoint[] }> : { points: [] }).catch(() => ({ points: [] as PricePoint[] }))
+    const fetchDia = fetch(`/api/history/DIA?range=${r}`).then(res => res.ok ? res.json() as Promise<{ points: PricePoint[] }> : { points: [] }).catch(() => ({ points: [] as PricePoint[] }))
+    const fetchQqq = fetch(`/api/history/QQQ?range=${r}`).then(res => res.ok ? res.json() as Promise<{ points: PricePoint[] }> : { points: [] }).catch(() => ({ points: [] as PricePoint[] }))
+
+    Promise.all([fetchTicker, fetchSpy, fetchDia, fetchQqq])
+      .then(([main, spy, dia, qqq]) => {
+        setPoints(main.points)
+        setIdxPts({ spy: spy.points, dia: dia.points, qqq: qqq.points })
+        setLoading(false)
+      })
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e.message : 'Failed to load data')
+        setLoading(false)
+      })
+  }, [])
 
   const handleScan = useCallback(() => {
     const t = sanitizeTicker(input)
     if (!t) return
     setTicker(t)
-    setLoading(true)
-    setError('')
-    setPoints([])
-    setShowChart(false)
-    fetch(`/api/history/${encodeURIComponent(t)}?range=5y`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`Could not load data for ${t}`)
-        return r.json() as Promise<{ points: PricePoint[] }>
-      })
-      .then((d) => { setPoints(d.points); setLoading(false) })
-      .catch((e: unknown) => {
-        setError(e instanceof Error ? e.message : 'Failed to load data')
-        setLoading(false)
-      })
-  }, [input])
+    doFetch(t, range)
+  }, [input, range, doFetch])
 
-  // Compute visible events (within the fetched date window)
-  const { rows, visibleEvents, chartData } = useMemo(() => {
-    if (!points.length) return { rows: [], visibleEvents: [], chartData: [] }
-    const minT = points[0].t
-    const maxT = points[points.length - 1].t
+  const handleRangeChange = useCallback((newRange: ScanRange) => {
+    setRange(newRange)
+    if (ticker) doFetch(ticker, newRange)
+  }, [ticker, doFetch])
+
+  // Compute visible events and chart data
+  const { rows, visibleEvents, chartData, stats } = useMemo(() => {
+    if (!points.length) return { rows: [], visibleEvents: [], chartData: [], stats: null }
+    const minT      = points[0].t
+    const maxT      = points[points.length - 1].t
     const basePrice = points[0].p
 
     const inWindow = MARKET_EVENTS.filter((e) => {
@@ -913,18 +1204,45 @@ function StockScanner() {
         const endT   = e.endDate ? new Date(e.endDate).getTime() : startT + 30 * 86_400_000
         const pStart = findPrice(points, startT)
         const pEnd   = findPrice(points, endT)
-        const chg    = pctChange(pStart, pEnd)
-        return { event: e, change: chg }
+        return { event: e, change: pctChange(pStart, pEnd) }
       })
 
-    // Normalised chart data: index = 100 at first point
-    const cd = points.map((pt) => ({
-      t: pt.t,
-      value: (pt.p / basePrice) * 100,
+    // Normalised to 100 at first point
+    const normPts = points.map(pt => ({ t: pt.t, norm: (pt.p / basePrice) * 100 }))
+
+    // Align index series to main ticker timestamps
+    const timestamps = points.map(p => p.t)
+    const spyAligned = alignSeries(idxPts.spy, timestamps)
+    const diaAligned = alignSeries(idxPts.dia, timestamps)
+    const qqqAligned = alignSeries(idxPts.qqq, timestamps)
+
+    // Normalize indices to 100 at their own first-window price
+    const spyBase = spyAligned.find(v => v !== null) ?? null
+    const diaBase = diaAligned.find(v => v !== null) ?? null
+    const qqqBase = qqqAligned.find(v => v !== null) ?? null
+
+    const cd = normPts.map((pt, i) => ({
+      t:     pt.t,
+      value: pt.norm,
+      spy:   spyBase && spyAligned[i] != null ? ((spyAligned[i] as number) / spyBase) * 100 : null,
+      dia:   diaBase && diaAligned[i] != null ? ((diaAligned[i] as number) / diaBase) * 100 : null,
+      qqq:   qqqBase && qqqAligned[i] != null ? ((qqqAligned[i] as number) / qqqBase) * 100 : null,
     }))
 
-    return { rows: tableRows, visibleEvents: inWindow, chartData: cd }
-  }, [points])
+    // Stats
+    const values    = normPts.map(p => p.norm)
+    const totalRet  = values[values.length - 1] - 100
+    let peak        = 100, maxGain = 0, maxDraw = 0
+    for (const v of values) {
+      if (v > peak) peak = v
+      const gain = v - 100
+      if (gain > maxGain) maxGain = gain
+      const draw = ((peak - v) / peak) * 100
+      if (draw > maxDraw) maxDraw = draw
+    }
+
+    return { rows: tableRows, visibleEvents: inWindow, chartData: cd, stats: { totalRet, maxGain, maxDraw, evtCount: inWindow.length } }
+  }, [points, idxPts])
 
   const fmtChg = (v: number | null) => {
     if (v === null) return <span style={{ color: C.t4 }}>—</span>
@@ -932,70 +1250,66 @@ function StockScanner() {
     return <span style={{ color: c, fontFamily: C.mono, fontWeight: 700 }}>{v > 0 ? '+' : ''}{v.toFixed(1)}%</span>
   }
 
-  const isUp = chartData.length > 1 && chartData[chartData.length - 1].value >= 100
+  const isUp      = chartData.length > 1 && chartData[chartData.length - 1].value >= 100
   const lineColor = isUp ? 'var(--c-gain)' : 'var(--c-loss)'
 
   return (
-    <div
-      style={{
-        background: C.bg1,
-        border: `1px solid ${C.border}`,
-        borderRadius: R.r12,
-        padding: '16px',
-        marginTop: 24,
-      }}
-    >
+    <div style={{ background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r12, padding: '16px', marginTop: 24 }}>
       {/* Header */}
       <div style={{ color: C.t4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 4 }}>
-        Stock vs Events Scanner
+        Stock vs Events Cross-Analyzer
       </div>
       <p style={{ margin: '0 0 12px', color: C.t3, fontSize: 13, lineHeight: 1.6 }}>
-        Enter any ticker to compare its performance against S&P 500 and Nasdaq during major market events.
-        Cross-analyze on a chart with all event markers overlaid.
+        Enter any ticker to overlay it against S&P 500, Dow Jones, and Nasdaq — all normalised to 100 — with market events overlaid.
       </p>
 
-      {/* Input row */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+      {/* Input row + timeframes */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value.toUpperCase())}
           onKeyDown={(e) => e.key === 'Enter' && handleScan()}
-          placeholder="e.g. AAPL, MSFT, SPY, QQQ"
-          style={{
-            flex: 1,
-            background: C.bg0,
-            border: `1px solid ${C.border}`,
-            borderRadius: R.r8,
-            color: C.t1,
-            fontSize: 14,
-            fontFamily: C.mono,
-            padding: '8px 12px',
-            outline: 'none',
-          }}
+          placeholder="e.g. AAPL, TSLA, BRK.B"
+          style={{ flex: 1, minWidth: 140, background: C.bg0, border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t1, fontSize: 14, fontFamily: C.mono, padding: '8px 12px', outline: 'none' }}
         />
         <button
           onClick={handleScan}
           disabled={!input.trim() || loading}
-          style={{
-            background: C.accent,
-            border: 'none',
-            borderRadius: R.r8,
-            color: '#fff',
-            cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
-            fontSize: 13,
-            fontWeight: 700,
-            padding: '8px 18px',
-            opacity: input.trim() && !loading ? 1 : 0.5,
-            whiteSpace: 'nowrap',
-          }}
+          style={{ background: C.accent, border: 'none', borderRadius: R.r8, color: '#fff', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', fontSize: 13, fontWeight: 700, padding: '8px 18px', opacity: input.trim() && !loading ? 1 : 0.5, whiteSpace: 'nowrap' }}
         >
           {loading ? 'Loading…' : 'Scan'}
         </button>
+        {/* Timeframe buttons */}
+        <div style={{ display: 'flex', gap: 3 }}>
+          {(['1y','2y','3y','5y'] as ScanRange[]).map(r => {
+            const active = range === r
+            return (
+              <button key={r} onClick={() => handleRangeChange(r)} style={{ background: active ? C.accentM : C.bg2, border: `1px solid ${active ? C.accentB : C.border}`, borderRadius: R.r6, color: active ? C.accent : C.t3, cursor: 'pointer', fontSize: 11, fontWeight: active ? 700 : 500, padding: '5px 10px' }}>
+                {r.toUpperCase()}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div style={{ color: 'var(--c-loss)', fontSize: 13, marginBottom: 12 }}>{error}</div>
+      {error && <div style={{ color: 'var(--c-loss)', fontSize: 13, marginBottom: 12 }}>{error}</div>}
+
+      {/* Stats strip — shown once loaded */}
+      {stats && ticker && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 14 }}>
+          {[
+            { label: 'Total Return', value: `${stats.totalRet > 0 ? '+' : ''}${stats.totalRet.toFixed(1)}%`, color: stats.totalRet >= 0 ? 'var(--c-gain)' : 'var(--c-loss)', sub: `${ticker} · ${range.toUpperCase()}` },
+            { label: 'Max Gain',     value: `+${stats.maxGain.toFixed(1)}%`,  color: 'var(--c-gain)', sub: 'vs period open' },
+            { label: 'Max Drawdown', value: `-${stats.maxDraw.toFixed(1)}%`,  color: 'var(--c-loss)', sub: 'peak-to-trough' },
+            { label: 'Events in Period', value: stats.evtCount.toString(),    color: C.accent,        sub: `of ${MARKET_EVENTS.length} total` },
+          ].map(s => (
+            <div key={s.label} style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r8, padding: '8px 10px' }}>
+              <div style={{ color: C.t4, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>{s.label}</div>
+              <div style={{ color: s.color, fontSize: 16, fontWeight: 800, fontFamily: C.mono, lineHeight: 1.1 }}>{s.value}</div>
+              <div style={{ color: C.t4, fontSize: 10, marginTop: 2 }}>{s.sub}</div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Results */}
@@ -1004,27 +1318,13 @@ function StockScanner() {
           {/* Toggle: Chart vs Table */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
             <div style={{ color: C.t2, fontSize: 13, fontWeight: 600 }}>
-              {ticker} — {visibleEvents.length} events in the last 5 years
+              {ticker} — {visibleEvents.length} event{visibleEvents.length !== 1 ? 's' : ''} in the last {range.toUpperCase()}
             </div>
             <div style={{ display: 'flex', background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r8, padding: 2, gap: 1 }}>
-              {[{ id: false, label: 'Table' }, { id: true, label: '📈 Cross-Analyze Chart' }].map(({ id, label }) => {
+              {[{ id: false, label: 'Table' }, { id: true, label: 'Cross-Analyze Chart' }].map(({ id, label }) => {
                 const active = showChart === id
                 return (
-                  <button
-                    key={String(id)}
-                    onClick={() => setShowChart(id)}
-                    style={{
-                      background: active ? C.bg1 : 'transparent',
-                      border: active ? `1px solid ${C.border}` : '1px solid transparent',
-                      borderRadius: R.r6,
-                      color: active ? C.t1 : C.t3,
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      fontWeight: active ? 700 : 400,
-                      padding: '4px 12px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
+                  <button key={String(id)} onClick={() => setShowChart(id)} style={{ background: active ? C.bg1 : 'transparent', border: active ? `1px solid ${C.border}` : '1px solid transparent', borderRadius: R.r6, color: active ? C.t1 : C.t3, cursor: 'pointer', fontSize: 12, fontWeight: active ? 700 : 400, padding: '4px 12px', whiteSpace: 'nowrap' }}>
                     {label}
                   </button>
                 )
@@ -1035,96 +1335,84 @@ function StockScanner() {
           {/* ── Cross-Analyze Chart ── */}
           {showChart && (
             <div style={{ marginBottom: 16 }}>
-              {/* Legend strip */}
-              <div style={{ display: 'flex', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <div style={{ width: 20, height: 2, background: lineColor }} />
-                  <span style={{ color: C.t3, fontSize: 11, fontWeight: 600 }}>{ticker} (indexed to 100)</span>
-                </div>
+              {/* Legend */}
+              <div style={{ display: 'flex', gap: 10, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                 {[
-                  { color: 'var(--c-loss)', label: 'Crash / Bear event' },
-                  { color: 'var(--c-warn)', label: 'Crisis event' },
-                  { color: 'var(--c-gain)', label: 'Bull / Recovery event' },
+                  { color: lineColor,   label: ticker,        dash: false, width: 2 },
+                  { color: '#4A9EFF',   label: 'SPY (S&P 500)', dash: false, width: 1.5 },
+                  { color: '#F59E0B',   label: 'DIA (Dow)',    dash: false, width: 1.5 },
+                  { color: '#A855F7',   label: 'QQQ (Nasdaq)', dash: false, width: 1.5 },
                 ].map((l) => (
                   <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <div style={{ width: 14, height: 1, background: l.color, opacity: 0.7 }} />
-                    <span style={{ color: C.t4, fontSize: 10 }}>{l.label}</span>
+                    <svg width={20} height={4}><line x1={0} y1={2} x2={20} y2={2} stroke={l.color} strokeWidth={l.width} /></svg>
+                    <span style={{ color: C.t3, fontSize: 11, fontWeight: 600, fontFamily: C.mono }}>{l.label}</span>
                   </div>
                 ))}
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                  {[
+                    { color: 'var(--c-loss)', label: 'Crash/Bear' },
+                    { color: 'var(--c-warn)', label: 'Crisis' },
+                    { color: 'var(--c-gain)', label: 'Bull/Recovery' },
+                  ].map((l) => (
+                    <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ width: 1, height: 12, background: l.color, opacity: 0.7 }} />
+                      <span style={{ color: C.t4, fontSize: 9 }}>{l.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <ResponsiveContainer width="100%" height={260}>
+              <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={chartData} margin={{ top: 100, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="scannerGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={lineColor} stopOpacity={0.25} />
-                      <stop offset="95%" stopColor={lineColor} stopOpacity={0}    />
+                      <stop offset="5%"  stopColor={lineColor} stopOpacity={0.2} />
+                      <stop offset="95%" stopColor={lineColor} stopOpacity={0}   />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                  <XAxis
-                    dataKey="t"
-                    type="number"
-                    domain={['dataMin', 'dataMax']}
-                    tickFormatter={(t: number) => new Date(t).toLocaleDateString(undefined, { month: 'short', year: '2-digit' })}
-                    tick={{ fill: C.t4, fontSize: 9 }}
-                    axisLine={false}
-                    tickLine={false}
-                    scale="time"
-                  />
-                  <YAxis
-                    tick={{ fill: C.t4, fontSize: 9 }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(v: number) => `${v.toFixed(0)}`}
-                    width={32}
-                  />
+                  <XAxis dataKey="t" type="number" domain={['dataMin','dataMax']} scale="time" tickFormatter={(t: number) => new Date(t).toLocaleDateString(undefined, { month: 'short', year: '2-digit' })} tick={{ fill: C.t4, fontSize: 9 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: C.t4, fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v.toFixed(0)}`} width={32} />
+                  <ReferenceLine y={100} stroke={C.border} strokeDasharray="4 4" strokeOpacity={0.6} />
                   <Tooltip
-                    contentStyle={{ background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12 }}
+                    contentStyle={{ background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 11 }}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     labelFormatter={(t: any) => new Date(t as number).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    formatter={(v: any) => [`${(v as number).toFixed(1)}`, ticker ?? '']}
+                    formatter={(v: any, name: any) => {
+                      if (v == null) return [null, name]
+                      const num = v as number
+                      const ret = num - 100
+                      return [`${num.toFixed(1)} (${ret >= 0 ? '+' : ''}${ret.toFixed(1)}%)`, name]
+                    }}
                   />
-                  {/* Flowing event reference lines */}
+                  {/* Event reference lines */}
                   {visibleEvents.map((e, i) => {
-                    const evtColor = e.type === 'crash' || e.type === 'bear'
-                      ? 'var(--c-loss)'
-                      : e.type === 'bull' || e.type === 'recovery'
-                        ? 'var(--c-gain)'
-                        : 'var(--c-warn)'
+                    const evtColor = e.type === 'crash' || e.type === 'bear' ? 'var(--c-loss)' : e.type === 'bull' || e.type === 'recovery' ? 'var(--c-gain)' : 'var(--c-warn)'
                     return (
                       <ReferenceLine
                         key={e.id}
                         x={new Date(e.date).getTime()}
                         stroke={evtColor}
                         strokeWidth={1.5}
-                        strokeOpacity={0.7}
+                        strokeOpacity={0.65}
                         label={(props: { viewBox?: { x: number; y: number; width: number; height: number } }) => (
-                          <FlowingEventLabel
-                            viewBox={props.viewBox}
-                            event={e}
-                            index={i}
-                            color={evtColor}
-                          />
+                          <FlowingEventLabel viewBox={props.viewBox} event={e} index={i} color={evtColor} />
                         )}
                       />
                     )
                   })}
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke={lineColor}
-                    strokeWidth={2}
-                    fill="url(#scannerGrad)"
-                    dot={false}
-                    activeDot={{ r: 4, fill: lineColor }}
-                  />
+                  {/* Ticker area (filled) */}
+                  <Area type="monotone" dataKey="value" name={ticker ?? ''} stroke={lineColor} strokeWidth={2} fill="url(#scannerGrad)" dot={false} activeDot={{ r: 4, fill: lineColor }} />
+                  {/* Index overlays */}
+                  <Line type="monotone" dataKey="spy" name="SPY (S&P 500)" stroke="#4A9EFF" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} connectNulls />
+                  <Line type="monotone" dataKey="dia" name="DIA (Dow)" stroke="#F59E0B" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} connectNulls />
+                  <Line type="monotone" dataKey="qqq" name="QQQ (Nasdaq)" stroke="#A855F7" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} connectNulls />
                 </AreaChart>
               </ResponsiveContainer>
 
               <div style={{ color: C.t4, fontSize: 10, marginTop: 4, textAlign: 'right' }}>
-                Price normalised — {ticker} starts at index 100 · Dashed lines mark event start dates · Not investment advice
+                All series normalised to 100 at period open · Dashed line = breakeven · Not investment advice
               </div>
             </div>
           )}
@@ -1136,18 +1424,7 @@ function StockScanner() {
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${C.border}` }}>
                     {['Event', 'Period', 'S&P 500', 'Nasdaq', ticker].map((h) => (
-                      <th
-                        key={h}
-                        style={{
-                          color: C.t4,
-                          fontWeight: 700,
-                          fontSize: 10,
-                          textTransform: 'uppercase',
-                          letterSpacing: '.06em',
-                          textAlign: h === 'Event' || h === 'Period' ? 'left' : 'right',
-                          padding: '4px 8px 8px',
-                        }}
-                      >
+                      <th key={h} style={{ color: C.t4, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', textAlign: h === 'Event' || h === 'Period' ? 'left' : 'right', padding: '4px 8px 8px' }}>
                         {h}
                       </th>
                     ))}
@@ -1160,35 +1437,21 @@ function StockScanner() {
                       <tr key={e.id} style={{ borderBottom: `1px solid ${C.border}` }}>
                         <td style={{ padding: '8px 8px', color: C.t1, fontWeight: 600 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span
-                              style={{
-                                display: 'inline-block', width: 6, height: 6,
-                                borderRadius: '50%', background: meta.color, flexShrink: 0,
-                              }}
-                            />
+                            <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: meta.color, flexShrink: 0 }} />
                             {e.title}
                           </div>
                         </td>
-                        <td style={{ padding: '8px 8px', color: C.t4, fontSize: 11, whiteSpace: 'nowrap' }}>
-                          {dateRange(e)}
-                        </td>
-                        <td style={{ padding: '8px 8px', textAlign: 'right' }}>
-                          {fmtChg(e.sp500 ?? null)}
-                        </td>
-                        <td style={{ padding: '8px 8px', textAlign: 'right' }}>
-                          {fmtChg(e.nasdaq ?? null)}
-                        </td>
-                        <td style={{ padding: '8px 8px', textAlign: 'right' }}>
-                          {fmtChg(change)}
-                        </td>
+                        <td style={{ padding: '8px 8px', color: C.t4, fontSize: 11, whiteSpace: 'nowrap' }}>{dateRange(e)}</td>
+                        <td style={{ padding: '8px 8px', textAlign: 'right' }}>{fmtChg(e.sp500 ?? null)}</td>
+                        <td style={{ padding: '8px 8px', textAlign: 'right' }}>{fmtChg(e.nasdaq ?? null)}</td>
+                        <td style={{ padding: '8px 8px', textAlign: 'right' }}>{fmtChg(change)}</td>
                       </tr>
                     )
                   })}
                 </tbody>
               </table>
               <div style={{ color: C.t4, fontSize: 10, marginTop: 8, lineHeight: 1.6 }}>
-                {ticker} performance computed from Yahoo Finance price history.
-                S&P 500 / Nasdaq figures are documented event-period returns. Not investment advice.
+                {ticker} performance from Yahoo Finance price history · S&P 500 / Nasdaq figures are documented event-period returns · Not investment advice
               </div>
             </div>
           )}
@@ -1321,14 +1584,11 @@ export function MarketEventsScreen() {
         </p>
       </div>
 
-      {/* ── Long-term reference chart ── */}
-      <LongTermChart />
+      {/* ── Combined timeline chart + event dots ── */}
+      <CombinedTimelineChart visibleIds={visibleIds} onSelect={scrollToEvent} />
 
       {/* ── Record callouts ── */}
       <RecordStrip />
-
-      {/* ── Interactive event scrubber ── */}
-      <EventScrubber visibleIds={visibleIds} onSelect={scrollToEvent} />
 
       {/* ── Controls row — sticky ── */}
       <div style={{

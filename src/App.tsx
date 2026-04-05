@@ -13,6 +13,7 @@ import { WatchlistScreen } from './screens/WatchlistScreen'
 import { HistoryScreen } from './screens/HistoryScreen'
 import { ComparisonsScreen } from './screens/ComparisonsScreen'
 import { MarketEventsScreen } from './screens/MarketEventsScreen'
+import { NewsScreen } from './screens/NewsScreen'
 
 const SESSION_KEY = 'stratalyx_fmp_key'
 
@@ -124,6 +125,7 @@ function AppShell() {
         {screen === 'History'     && <ErrorBoundary><HistoryScreen /></ErrorBoundary>}
         {screen === 'Comparisons'  && <ErrorBoundary><ComparisonsScreen /></ErrorBoundary>}
         {screen === 'MarketEvents' && <ErrorBoundary><MarketEventsScreen /></ErrorBoundary>}
+        {screen === 'News'         && <ErrorBoundary><NewsScreen fmpKey={fmpKey} /></ErrorBoundary>}
       </main>
 
       {state.modalOpen && (

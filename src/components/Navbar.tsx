@@ -18,6 +18,7 @@ const SCREENS: { label: string; screen: Screen }[] = [
   { label: 'History',       screen: 'History' },
   { label: 'Comparisons',   screen: 'Comparisons' },
   { label: 'Market Events', screen: 'MarketEvents' },
+  { label: 'News',          screen: 'News' },
 ]
 
 const THEME_OPTIONS: { mode: ThemeMode; icon: string; label: string }[] = [

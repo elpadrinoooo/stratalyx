@@ -1,6 +1,6 @@
 import type { AnalysisResult } from './analysis'
 
-export type Screen = 'Screener' | 'Strategies' | 'Watchlist' | 'History' | 'Comparisons' | 'MarketEvents'
+export type Screen = 'Screener' | 'Strategies' | 'Watchlist' | 'History' | 'Comparisons' | 'MarketEvents' | 'News'
 
 export interface Toast {
   id: string

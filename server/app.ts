@@ -3,11 +3,12 @@ import express, { type Request, type Response, type NextFunction } from 'express
 import cors from 'cors'
 import { rateLimit } from 'express-rate-limit'
 
-export const ANTHROPIC_KEY = process.env['ANTHROPIC_API_KEY'] ?? ''
-export const GOOGLE_KEY    = process.env['GOOGLE_API_KEY']    ?? ''
-export const OPENAI_KEY    = process.env['OPENAI_API_KEY']    ?? ''
-export const MISTRAL_KEY   = process.env['MISTRAL_API_KEY']   ?? ''
-export const FMP_KEY       = process.env['FMP_API_KEY']       ?? ''
+export const ANTHROPIC_KEY  = process.env['ANTHROPIC_API_KEY']  ?? ''
+export const GOOGLE_KEY     = process.env['GOOGLE_API_KEY']     ?? ''
+export const OPENAI_KEY     = process.env['OPENAI_API_KEY']     ?? ''
+export const MISTRAL_KEY    = process.env['MISTRAL_API_KEY']    ?? ''
+export const FMP_KEY        = process.env['FMP_API_KEY']        ?? ''
+export const FINNHUB_KEY    = process.env['FINNHUB_API_KEY']    ?? ''
 
 /** Locked model — clients cannot override this */
 const LOCKED_MODEL = 'claude-haiku-4-5-20251001'
@@ -424,6 +425,116 @@ app.post('/mistral', llmLimiter, async (req: Request, res: Response) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     res.status(502).json({ error: 'Failed to reach Mistral API', detail: message })
+  }
+})
+
+// ── Symbol search (Finnhub) ──────────────────────────────────────────────────
+app.get('/search', fmpLimiter, async (req: Request, res: Response) => {
+  if (!FINNHUB_KEY) {
+    res.status(503).json({ results: [] })
+    return
+  }
+
+  const q = typeof req.query['q'] === 'string' ? req.query['q'].trim().slice(0, 50) : ''
+  if (!q) { res.json({ results: [] }); return }
+
+  const cacheKey = `search:${q.toLowerCase()}`
+  const cached = getCached(cacheKey)
+  if (cached !== null) { res.set('X-Cache', 'HIT').json(cached); return }
+
+  try {
+    const upstream = await fetch(`https://finnhub.io/api/v1/search?q=${encodeURIComponent(q)}&token=${FINNHUB_KEY}`)
+    if (!upstream.ok) { res.json({ results: [] }); return }
+
+    const raw = await upstream.json() as { result?: Array<{ symbol: string; description: string; type: string }> }
+    const results = (raw.result ?? [])
+      .filter(r => r.type === 'Common Stock' && !r.symbol.includes('.'))
+      .slice(0, 6)
+      .map(r => ({ symbol: r.symbol, name: r.description }))
+
+    const payload = { results }
+    setCache(cacheKey, payload)
+    res.set('X-Cache', 'MISS').json(payload)
+  } catch {
+    res.json({ results: [] })
+  }
+})
+
+// ── News feed (Finnhub) ───────────────────────────────────────────────────────
+app.get('/news', fmpLimiter, async (req: Request, res: Response) => {
+  if (!FINNHUB_KEY) {
+    res.status(503).json({ error: 'FINNHUB_API_KEY not configured' })
+    return
+  }
+
+  const ticker = typeof req.query['ticker'] === 'string'
+    ? req.query['ticker'].replace(/[^A-Z0-9.]/gi, '').toUpperCase().slice(0, 10)
+    : ''
+  const page = Math.max(0, parseInt(String(req.query['page'] ?? '0'), 10))
+
+  const cacheKey = `finnhub:${ticker || 'general'}:${page}`
+  const cached = getCached(cacheKey)
+  if (cached !== null) {
+    res.set('X-Cache', 'HIT')
+    res.json(cached)
+    return
+  }
+
+  let url: string
+  if (ticker) {
+    // Each page covers a 30-day window, shifted back by page number
+    const to   = new Date(); to.setDate(to.getDate() - page * 30)
+    const from = new Date(to); from.setDate(from.getDate() - 30)
+    const toStr   = to.toISOString().split('T')[0]
+    const fromStr = from.toISOString().split('T')[0]
+    url = `https://finnhub.io/api/v1/company-news?symbol=${encodeURIComponent(ticker)}&from=${fromStr}&to=${toStr}&token=${FINNHUB_KEY}`
+  } else {
+    url = `https://finnhub.io/api/v1/news?category=general&token=${FINNHUB_KEY}`
+  }
+
+  try {
+    const upstream = await fetch(url)
+
+    if (upstream.status === 401 || upstream.status === 403) {
+      res.status(403).json({ error: 'Invalid Finnhub API key' })
+      return
+    }
+    if (!upstream.ok) throw new Error(`Finnhub ${upstream.status}`)
+
+    const raw: unknown = await upstream.json()
+    if (!Array.isArray(raw)) throw new Error('Unexpected Finnhub response format')
+
+    type FinnhubItem = {
+      headline?: string; summary?: string; url?: string; image?: string
+      source?: string; datetime?: number; related?: string
+    }
+
+    const filtered = (raw as FinnhubItem[]).filter(a => a.headline && a.url)
+    const slice    = filtered.slice(page === 0 && !ticker ? 0 : 0, 20)
+
+    const articles = slice.map(a => ({
+      title:         String(a.headline ?? ''),
+      text:          String(a.summary  ?? ''),
+      url:           String(a.url      ?? ''),
+      image:         String(a.image    ?? ''),
+      site:          String(a.source   ?? ''),
+      publishedDate: a.datetime
+        ? new Date(a.datetime * 1000).toISOString()
+        : new Date().toISOString(),
+      tickers: a.related ? a.related.split(',').map(t => t.trim()).filter(Boolean) : [],
+    }))
+
+    // For ticker news: more pages available if this window had articles
+    // For general news: Finnhub returns up to 100 items in one shot — no more pages
+    const hasMore = ticker ? filtered.length >= 20 : false
+
+    const payload = { articles, page, hasMore }
+    setCache(cacheKey, payload)
+    res.set('X-Cache', 'MISS')
+    res.json(payload)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    res.status(502).json({ error: 'Failed to fetch news', detail: message })
   }
 })
 
