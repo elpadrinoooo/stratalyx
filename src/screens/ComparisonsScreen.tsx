@@ -279,6 +279,7 @@ export function ComparisonsScreen() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <Tag color={consensus.color} small>{consensus.label}</Tag>
                   <span style={{ color: C.t4, fontSize: 11 }}>{new Date(comp.timestamp).toLocaleDateString()}</span>
+                  <CompShareButton ticker={comp.ticker} investorIds={comp.investorIds} />
                   <CompActions comp={comp} isArchived={isArchived} dispatch={dispatch} />
                 </div>
               </div>
@@ -379,6 +380,27 @@ export function ComparisonsScreen() {
         })}
       </div>
     </div>
+  )
+}
+
+// ── Share button for a comparison card ──────────────────────────────────────
+function CompShareButton({ ticker, investorIds }: { ticker: string; investorIds: string[] }) {
+  const [copied, setCopied] = useState(false)
+  const copy = () => {
+    const url = `${window.location.origin}/share/comparison/${ticker}/${investorIds.join(',')}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+  return (
+    <button
+      onClick={copy}
+      title="Copy shareable comparison link"
+      style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: R.r6, color: copied ? C.gain : C.t3, fontSize: 11, fontWeight: 600, padding: '3px 8px', cursor: 'pointer' }}
+    >
+      {copied ? '✓ Copied!' : '⬡ Share'}
+    </button>
   )
 }
 

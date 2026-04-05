@@ -11,6 +11,14 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/share': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/og-default.png': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
     },
   },
 })

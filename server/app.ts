@@ -2,6 +2,17 @@ import 'dotenv/config'
 import express, { type Request, type Response, type NextFunction } from 'express'
 import cors from 'cors'
 import { rateLimit } from 'express-rate-limit'
+import fs from 'fs'
+import path from 'path'
+// Load affiliate map — mutable so admin routes can update it in memory
+const affiliateMapPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), 'affiliate.json')
+let affiliateMap: Record<string, string> = {}
+try { affiliateMap = JSON.parse(fs.readFileSync(affiliateMapPath, 'utf8')) } catch { /* no-op */ }
+
+// Load built index.html for OG-tag injection on share routes (production only)
+const distHtmlPath = path.resolve(process.cwd(), 'dist', 'index.html')
+let distHtml: string | null = null
+try { distHtml = fs.readFileSync(distHtmlPath, 'utf8') } catch { /* dev mode — handled via redirect */ }
 
 export const ANTHROPIC_KEY  = process.env['ANTHROPIC_API_KEY']  ?? ''
 export const GOOGLE_KEY     = process.env['GOOGLE_API_KEY']     ?? ''
@@ -43,8 +54,8 @@ export const app = express()
 const CORS_ORIGIN = process.env['CORS_ORIGIN'] ?? 'http://localhost:5173'
 app.use(cors({
   origin: CORS_ORIGIN,
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type', 'x-fmp-key'],
+  methods: ['GET', 'POST', 'PUT'],
+  allowedHeaders: ['Content-Type', 'x-fmp-key', 'Authorization'],
 }))
 
 app.use(express.json({ limit: '1mb' }))
@@ -660,6 +671,140 @@ app.get('/fmp/*', fmpLimiter, async (req: Request, res: Response) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     res.status(502).json({ error: 'Failed to reach FMP API', detail: message })
+  }
+})
+
+// ── Default OG image ─────────────────────────────────────────────────────────
+// Served at /og-default.png so the URL is stable; content is SVG (widely accepted by crawlers)
+const ogImagePath = path.resolve(process.cwd(), 'public', 'og-default.svg')
+app.get('/og-default.png', (_req: Request, res: Response) => {
+  res.set('Content-Type', 'image/svg+xml').set('Cache-Control', 'public, max-age=86400').sendFile(ogImagePath)
+})
+
+// ── Affiliate link redirect ───────────────────────────────────────────────────
+// /api/link?url=<encoded-url> → 302 to destination with affiliate params appended
+app.get('/link', (req: Request, res: Response) => {
+  const raw = typeof req.query['url'] === 'string' ? req.query['url'] : ''
+  if (!raw) { res.status(400).end(); return }
+  let url: URL
+  try { url = new URL(decodeURIComponent(raw)) } catch { res.status(400).end(); return }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') { res.status(400).end(); return }
+  const hostname = url.hostname.replace(/^www\./, '')
+  const affix = affiliateMap[hostname] ?? ''
+  const final = affix ? url.toString() + affix : url.toString()
+  res.redirect(302, final)
+})
+
+// ── Share routes (OG meta tag injection) ─────────────────────────────────────
+// /share/:ticker/:investorId  → serves index.html with injected OG tags (prod)
+//                             → redirects to /?share=TICKER/investorId (dev)
+const INVESTOR_NAMES: Record<string, string> = {
+  buffett: 'Warren Buffett', graham: 'Benjamin Graham', lynch: 'Peter Lynch',
+  munger: 'Charlie Munger', dalio: 'Ray Dalio', ackman: 'Bill Ackman',
+  greenblatt: 'Joel Greenblatt', templeton: 'John Templeton', marks: 'Howard Marks',
+  klarman: 'Seth Klarman', pabrai: 'Mohnish Pabrai', wood: 'Cathie Wood',
+  fisher: 'Philip Fisher', druckenmiller: 'Stan Druckenmiller', soros: 'George Soros',
+  burry: 'Michael Burry', smith: 'Terry Smith', einhorn: 'David Einhorn',
+  miller: 'Bill Miller', watsa: 'Prem Watsa', lilu: 'Li Lu', schloss: 'Walter Schloss',
+}
+
+function injectOgTags(html: string, title: string, desc: string, globals: string, imgUrl: string, canonicalUrl: string): string {
+  const t = title.replace(/"/g, '&quot;')
+  const d = desc.replace(/"/g, '&quot;')
+  return html.replace(
+    '</head>',
+    `<meta property="og:title" content="${t}" />
+<meta property="og:description" content="${d}" />
+<meta property="og:image" content="${imgUrl}" />
+<meta property="og:url" content="${canonicalUrl}" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="${t}" />
+<meta name="twitter:description" content="${d}" />
+<meta name="twitter:image" content="${imgUrl}" />
+<script>${globals}</script>
+</head>`,
+  )
+}
+
+app.get('/share/:ticker/:investorId', (req: Request, res: Response) => {
+  const ticker     = (req.params['ticker']     ?? '').toUpperCase().replace(/[^A-Z0-9.]/g, '').slice(0, 10)
+  const investorId = (req.params['investorId'] ?? '').toLowerCase().replace(/[^a-z]/g, '')
+  if (!ticker || !investorId) { res.status(400).end(); return }
+
+  const name  = INVESTOR_NAMES[investorId] ?? investorId
+  const title = `${ticker} × ${name} | Stratalyx`
+  const desc  = `${name} framework applied to ${ticker} — AI-generated investment analysis. Educational use only.`
+
+  if (distHtml) {
+    const base    = `${req.protocol}://${req.get('host')}`
+    const imgUrl  = `${base}/og-default.png`
+    const canonicalUrl = `${base}/share/${ticker}/${investorId}`
+    const globals = `window.__SHARE_TICKER__=${JSON.stringify(ticker)};window.__SHARE_INVESTOR__=${JSON.stringify(investorId)};`
+    res.set('Content-Type', 'text/html').send(injectOgTags(distHtml, title, desc, globals, imgUrl, canonicalUrl))
+  } else {
+    res.redirect(`/?share=${encodeURIComponent(ticker)}/${encodeURIComponent(investorId)}`)
+  }
+})
+
+app.get('/share/comparison/:ticker/:investors', (req: Request, res: Response) => {
+  const ticker    = (req.params['ticker']    ?? '').toUpperCase().replace(/[^A-Z0-9.]/g, '').slice(0, 10)
+  const investors = (req.params['investors'] ?? '').toLowerCase().replace(/[^a-z,]/g, '')
+  if (!ticker || !investors) { res.status(400).end(); return }
+
+  const names = investors.split(',').map(id => INVESTOR_NAMES[id] ?? id).join(' vs ')
+  const title = `${ticker}: ${names} | Stratalyx`
+  const desc  = `Compare ${names} frameworks on ${ticker} — AI-generated side-by-side analysis. Educational use only.`
+
+  if (distHtml) {
+    const base    = `${req.protocol}://${req.get('host')}`
+    const imgUrl  = `${base}/og-default.png`
+    const canonicalUrl = `${base}/share/comparison/${ticker}/${investors}`
+    const globals = `window.__SHARE_COMPARISON__=${JSON.stringify({ ticker, investors })};`
+    res.set('Content-Type', 'text/html').send(injectOgTags(distHtml, title, desc, globals, imgUrl, canonicalUrl))
+  } else {
+    res.redirect(`/?comparison=${encodeURIComponent(ticker)}/${encodeURIComponent(investors)}`)
+  }
+})
+
+// ── Admin routes (Basic Auth) ─────────────────────────────────────────────────
+const ADMIN_PASS = process.env['ADMIN_PASSWORD'] ?? ''
+
+function adminAuth(req: Request, res: Response, next: NextFunction): void {
+  if (!ADMIN_PASS) { res.status(503).json({ error: 'Admin not configured — set ADMIN_PASSWORD in .env' }); return }
+  const auth = req.headers['authorization'] ?? ''
+  const b64  = auth.startsWith('Basic ') ? auth.slice(6) : ''
+  const decoded = Buffer.from(b64, 'base64').toString('utf8')
+  const pass = decoded.includes(':') ? decoded.split(':').slice(1).join(':') : ''
+  if (pass !== ADMIN_PASS) {
+    res.set('WWW-Authenticate', 'Basic realm="Stratalyx Admin"').status(401).end(); return
+  }
+  next()
+}
+
+app.get('/admin/affiliate', adminAuth, (_req: Request, res: Response) => {
+  res.json(affiliateMap)
+})
+
+app.put('/admin/affiliate', adminAuth, express.json(), async (req: Request, res: Response) => {
+  if (typeof req.body !== 'object' || req.body === null || Array.isArray(req.body)) {
+    res.status(400).json({ error: 'Body must be a JSON object' }); return
+  }
+  // Validate all values are strings
+  for (const [, v] of Object.entries(req.body)) {
+    if (typeof v !== 'string') {
+      res.status(400).json({ error: 'All values must be strings' }); return
+    }
+  }
+  try {
+    const updated = req.body as Record<string, string>
+    await fs.promises.writeFile(affiliateMapPath, JSON.stringify(updated, null, 2), 'utf8')
+    // Update in-memory map
+    Object.keys(affiliateMap).forEach(k => delete affiliateMap[k])
+    Object.assign(affiliateMap, updated)
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to save', detail: String(e) })
   }
 })
 

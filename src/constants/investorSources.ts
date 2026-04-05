@@ -17,7 +17,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'Berkshire Hathaway Annual Shareholder Letters (1977–present)',
       type: 'letter',
-      url: 'https://www.berkshirehathaway.com/letters/letters.html',
+      url: '/api/link?url=' + encodeURIComponent('https://www.berkshirehathaway.com/letters/letters.html'),
       note: 'Annual letters define how Buffett identifies durable moats, evaluates management, and calculates owner earnings — his complete criteria in his own words',
     },
     {
@@ -28,7 +28,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'The Superinvestors of Graham-and-Doddsville — Warren Buffett (1984)',
       type: 'speech',
-      url: 'https://www8.gsb.columbia.edu/sites/valueinvesting/files/files/Buffett1984.pdf',
+      url: '/api/link?url=' + encodeURIComponent('https://www8.gsb.columbia.edu/sites/valueinvesting/files/files/Buffett1984.pdf'),
       note: 'Directly presents Graham-Dodd stock-selection criteria and documents the audited track records of seven value investors trained by Graham',
     },
   ],
@@ -75,13 +75,13 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'Berkshire Hathaway Annual Meeting Transcripts (1994–2023)',
       type: 'speech',
-      url: 'https://www.berkshirehathaway.com/meetings.html',
+      url: '/api/link?url=' + encodeURIComponent('https://www.berkshirehathaway.com/meetings.html'),
       note: 'Annual Q&A transcripts where Munger explains his mental models and evaluates specific industries, moats, and management quality in real investment contexts',
     },
     {
       title: 'The Psychology of Human Misjudgement — Charlie Munger (1995)',
       type: 'speech',
-      url: 'https://fs.blog/the-psychology-of-human-misjudgment/',
+      url: '/api/link?url=' + encodeURIComponent('https://fs.blog/the-psychology-of-human-misjudgment/'),
       note: 'Lists 25 cognitive biases Munger applies as an inversion checklist to stress-test any investment thesis — his primary analytical tool before committing capital',
     },
   ],
@@ -89,7 +89,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'The Little Book That Beats the Market — Joel Greenblatt (2005)',
       type: 'book',
-      url: 'https://www.magicformulainvesting.com',
+      url: '/api/link?url=' + encodeURIComponent('https://www.magicformulainvesting.com'),
       note: 'Chapters 4–7 define the Magic Formula step-by-step: earnings yield (EBIT/EV) and return on capital calculations and how to build the combined ranking screen',
     },
     {
@@ -107,19 +107,19 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'Principles — Ray Dalio (2017)',
       type: 'book',
-      url: 'https://www.principles.com',
+      url: '/api/link?url=' + encodeURIComponent('https://www.principles.com'),
       note: 'Investment principles section describes how Dalio evaluates companies in the context of the long-term debt cycle, productivity trends, and "All Weather" scenario analysis',
     },
     {
       title: 'Principles for Navigating Big Debt Crises — Ray Dalio (2018)',
       type: 'book',
-      url: 'https://www.principles.com/big-debt-crises/',
+      url: '/api/link?url=' + encodeURIComponent('https://www.principles.com/big-debt-crises/'),
       note: 'Framework for assessing how companies hold up across deleveraging phases — essential for Dalio\'s macro overlay on balance sheet resilience and sector selection',
     },
     {
       title: 'How the Economic Machine Works — Ray Dalio (Bridgewater, 2013)',
       type: 'research',
-      url: 'https://www.economicprinciples.org',
+      url: '/api/link?url=' + encodeURIComponent('https://www.economicprinciples.org'),
       note: 'Explains the credit cycle, productivity growth, and deleveraging template that Dalio uses to contextualise every equity position in a macro regime',
     },
   ],
@@ -137,7 +137,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'Oaktree Capital Memos (1990–present)',
       type: 'letter',
-      url: 'https://www.oaktreecapital.com/insights/howard-marks-memos',
+      url: '/api/link?url=' + encodeURIComponent('https://www.oaktreecapital.com/insights/howard-marks-memos'),
       note: 'Seek the "The Most Important Thing" (2003), "Risk" (2014), and "You Bet" memos — they document his investment selection and risk/reward criteria directly',
     },
   ],
@@ -172,7 +172,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'Pabrai Investment Funds Annual Letters',
       type: 'letter',
-      url: 'https://www.pabraifunds.com',
+      url: '/api/link?url=' + encodeURIComponent('https://www.pabraifunds.com'),
       note: 'Annual letters document his cloning methodology, checklist in action, and real-time thesis construction — the best source for seeing his criteria applied to actual stocks',
     },
   ],
@@ -180,13 +180,13 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'ARK Invest Big Ideas Annual Report (2017–present)',
       type: 'research',
-      url: 'https://ark-invest.com/big-ideas/',
+      url: '/api/link?url=' + encodeURIComponent('https://ark-invest.com/big-ideas/'),
       note: 'Annual report defining ARK\'s 5-year disruptive themes with TAM estimates, Wright\'s Law cost-curve projections, and the convergence thesis that drives stock selection',
     },
     {
       title: 'ARK Invest Research Papers and White Papers',
       type: 'research',
-      url: 'https://ark-invest.com/research/',
+      url: '/api/link?url=' + encodeURIComponent('https://ark-invest.com/research/'),
       note: 'White papers detailing individual stock theses within each innovation category — directly shows how stocks are selected, sized, and valued using 5-year price targets',
     },
     {
@@ -226,7 +226,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'Invest Like the Best — Patrick O\'Shaughnessy (Colossus podcast)',
       type: 'interview',
-      url: 'https://www.joincolossus.com/episodes/druckenmiller',
+      url: '/api/link?url=' + encodeURIComponent('https://www.joincolossus.com/episodes/druckenmiller'),
       note: 'In-depth discussion covering how Druckenmiller identifies asymmetric setups, uses 6–18 month catalyst windows, sizes positions with conviction, and exits when the thesis changes',
     },
   ],
@@ -251,7 +251,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'Pershing Square Capital Management — Annual Letters to Investors',
       type: 'letter',
-      url: 'https://pershingsquareholdings.com/performance-and-financials/annual-reports/',
+      url: '/api/link?url=' + encodeURIComponent('https://pershingsquareholdings.com/performance-and-financials/annual-reports/'),
       note: 'Annual letters document each investment thesis: business quality assessment, activist catalyst identification, management evaluation, and position-sizing rationale',
     },
     {
@@ -286,7 +286,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'Fundsmith Annual Reports and Letters to Shareholders',
       type: 'letter',
-      url: 'https://www.fundsmith.eu/fund-literature/annual-letters',
+      url: '/api/link?url=' + encodeURIComponent('https://www.fundsmith.eu/fund-literature/annual-letters'),
       note: 'Annual letters directly explain Smith\'s three-step criteria — buy good businesses, don\'t overpay, do nothing — with specific financial thresholds and real holding examples',
     },
     {
@@ -297,7 +297,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'Fundsmith Annual Shareholder Meetings',
       type: 'speech',
-      url: 'https://www.fundsmith.eu/fund-literature',
+      url: '/api/link?url=' + encodeURIComponent('https://www.fundsmith.eu/fund-literature'),
       note: 'Annual meeting videos and slides document how Smith evaluates new ideas against his quality screen and explains why specific holdings pass or fail his criteria',
     },
   ],
@@ -322,7 +322,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'Miller Value Partners — Annual Letters to Investors',
       type: 'letter',
-      url: 'https://millervalue.com/letters/',
+      url: '/api/link?url=' + encodeURIComponent('https://millervalue.com/letters/'),
       note: 'Annual letters document Miller\'s eclectic value approach: DCF-based intrinsic value, Kelly Criterion sizing, and unconventional valuation of businesses the market misprices',
     },
     {
@@ -340,7 +340,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'Fairfax Financial Holdings — Annual Reports and Letters to Shareholders',
       type: 'letter',
-      url: 'https://www.fairfax.ca/news/financial-reports/',
+      url: '/api/link?url=' + encodeURIComponent('https://www.fairfax.ca/news/financial-reports/'),
       note: 'Annual letters document Watsa\'s combined approach: Graham-Dodd equity selection with macro hedging overlay — how balance sheet resilience and cheap price interact in his screen',
     },
     {
@@ -363,13 +363,13 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'Li Lu — Columbia University Business School Lectures',
       type: 'speech',
-      url: 'https://www8.gsb.columbia.edu/valueinvesting/resources/videos',
+      url: '/api/link?url=' + encodeURIComponent('https://www8.gsb.columbia.edu/valueinvesting/resources/videos'),
       note: 'Video lectures document Li Lu\'s framework for identifying businesses at the early stages of durable competitive advantage — especially his process for evaluating emerging-market companies',
     },
     {
       title: 'Himalaya Capital — Selected investor letters and presentations',
       type: 'letter',
-      url: 'https://www.himalayacapital.com',
+      url: '/api/link?url=' + encodeURIComponent('https://www.himalayacapital.com'),
       note: 'Letters document Li Lu\'s concentrated, long-term approach to selecting businesses in transforming economies — how he evaluates management, moat durability, and reinvestment potential',
     },
   ],
@@ -377,7 +377,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'The Superinvestors of Graham-and-Doddsville — Warren Buffett (1984)',
       type: 'speech',
-      url: 'https://www8.gsb.columbia.edu/sites/valueinvesting/files/files/Buffett1984.pdf',
+      url: '/api/link?url=' + encodeURIComponent('https://www8.gsb.columbia.edu/sites/valueinvesting/files/files/Buffett1984.pdf'),
       note: 'Contains Buffett\'s direct summary of Schloss\'s methodology: buy cheap by net asset value, diversify widely, avoid management meetings, hold until fair value is reached',
     },
     {
@@ -405,7 +405,7 @@ export const INVESTOR_SOURCES: Record<string, InvestorSource[]> = {
     {
       title: 'John Templeton — 16 Investment Principles (Franklin Templeton Legacy)',
       type: 'report',
-      url: 'https://www.templeton.org',
+      url: '/api/link?url=' + encodeURIComponent('https://www.templeton.org'),
       note: 'Templeton Foundation preservation of his 22 investment maxims including his specific criteria for cheap stocks at the global level and his contrarian decision-making framework',
     },
   ],

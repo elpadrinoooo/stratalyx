@@ -15,14 +15,49 @@ import { ComparisonsScreen } from './screens/ComparisonsScreen'
 import { MarketEventsScreen } from './screens/MarketEventsScreen'
 import { NewsScreen } from './screens/NewsScreen'
 import { MarketsScreen } from './screens/MarketsScreen'
+import { AdminScreen } from './screens/AdminScreen'
 
 const SESSION_KEY = 'stratalyx_fmp_key'
 
-/** Parse a share hash like #/analysis/AAPL/buffett → { ticker, investorId } */
-function parseShareHash(): { ticker: string; investorId: string } | null {
-  const m = window.location.hash.match(/^#\/analysis\/([A-Z.]+)\/([a-z]+)$/i)
-  if (!m) return null
-  return { ticker: m[1].toUpperCase(), investorId: m[2].toLowerCase() }
+/** Detect analysis share from server-injected globals, query params, or legacy hash */
+function parseShareSource(): { ticker: string; investorId: string } | null {
+  // Injected by Express /share/:ticker/:investorId route (production)
+  const wt = (window as { __SHARE_TICKER__?: string }).__SHARE_TICKER__
+  const wi = (window as { __SHARE_INVESTOR__?: string }).__SHARE_INVESTOR__
+  if (wt && wi) return { ticker: wt, investorId: wi }
+
+  // Dev fallback: ?share=AAPL/buffett
+  const sp = new URLSearchParams(window.location.search).get('share')
+  if (sp) {
+    const [t, i] = sp.split('/')
+    if (t && i) return { ticker: t.toUpperCase(), investorId: i.toLowerCase() }
+  }
+
+  // Legacy hash support (backward compat)
+  const m = window.location.hash.match(/^#\/analysis\/([A-Za-z0-9.]+)\/([A-Za-z]+)$/)
+  if (m) return { ticker: m[1].toUpperCase(), investorId: m[2].toLowerCase() }
+
+  return null
+}
+
+/** Detect comparison share from server-injected global or query param */
+function parseComparisonShare(): { ticker: string; investorIds: string[] } | null {
+  // Injected by Express /share/comparison/:ticker/:investors route (production)
+  const wc = (window as { __SHARE_COMPARISON__?: { ticker: string; investors: string } }).__SHARE_COMPARISON__
+  if (wc?.ticker && wc?.investors) {
+    const ids = wc.investors.split(',').filter(Boolean)
+    if (ids.length >= 2) return { ticker: wc.ticker, investorIds: ids }
+  }
+
+  // Dev fallback: ?comparison=AAPL/buffett,graham
+  const cp = new URLSearchParams(window.location.search).get('comparison')
+  if (cp) {
+    const [t, inv] = cp.split('/')
+    const ids = (inv ?? '').split(',').filter(Boolean)
+    if (t && ids.length >= 2) return { ticker: t.toUpperCase(), investorIds: ids }
+  }
+
+  return null
 }
 
 function AppShell() {
@@ -31,16 +66,33 @@ function AppShell() {
     () => sessionStorage.getItem(SESSION_KEY) ?? ''
   )
   const [fmpModalOpen, setFmpModalOpen] = useState(false)
-  const [shareBanner, setShareBanner] = useState(false)
+  const [shareBanner, setShareBanner] = useState<'analysis' | 'comparison' | false>(false)
 
-  // Handle deep-link hash on first load
+  // Handle deep-link on first load (share URL or ?admin=1)
   useEffect(() => {
-    const share = parseShareHash()
+    // Admin shortcut: ?admin=1
+    if (new URLSearchParams(window.location.search).get('admin') === '1') {
+      dispatch({ type: 'SET_SCREEN', payload: 'Admin' })
+      history.replaceState(null, '', window.location.pathname)
+      return
+    }
+
+    // Comparison share link — navigate to Comparisons screen and open analyzer for the ticker
+    const comp = parseComparisonShare()
+    if (comp) {
+      dispatch({ type: 'SET_SCREEN', payload: 'Comparisons' })
+      dispatch({ type: 'SET_INVESTOR', payload: comp.investorIds[0] })
+      dispatch({ type: 'OPEN_MODAL', payload: comp.ticker })
+      setShareBanner('comparison')
+      history.replaceState(null, '', window.location.pathname)
+      return
+    }
+
+    const share = parseShareSource()
     if (share) {
       dispatch({ type: 'SET_INVESTOR', payload: share.investorId })
       dispatch({ type: 'OPEN_MODAL', payload: share.ticker })
-      setShareBanner(true)
-      // Clear hash so it doesn't re-trigger on navigate
+      setShareBanner('analysis')
       history.replaceState(null, '', window.location.pathname)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
@@ -105,8 +157,12 @@ function AppShell() {
           }}
         >
           <span>
-            <span style={{ color: C.warn, fontWeight: 700 }}>Shared analysis — educational use only. </span>
-            This is an AI-generated framework analysis, not personalised investment advice.
+            <span style={{ color: C.warn, fontWeight: 700 }}>
+              {shareBanner === 'comparison' ? 'Shared comparison — ' : 'Shared analysis — '}educational use only.{' '}
+            </span>
+            {shareBanner === 'comparison'
+              ? 'Run analyses with your chosen strategies to see results side by side. '
+              : 'This is an AI-generated framework analysis, not personalised investment advice. '}
             Always consult a qualified financial adviser before making investment decisions.
           </span>
           <button
@@ -128,6 +184,7 @@ function AppShell() {
         {screen === 'Comparisons'  && <ErrorBoundary><ComparisonsScreen /></ErrorBoundary>}
         {screen === 'MarketEvents' && <ErrorBoundary><MarketEventsScreen /></ErrorBoundary>}
         {screen === 'News'         && <ErrorBoundary><NewsScreen fmpKey={fmpKey} /></ErrorBoundary>}
+        {screen === 'Admin'        && <ErrorBoundary><AdminScreen /></ErrorBoundary>}
       </main>
 
       {state.modalOpen && (
