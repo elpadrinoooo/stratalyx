@@ -549,13 +549,22 @@ app.get('/news', fmpLimiter, async (req: Request, res: Response) => {
 })
 
 // ── Market movers (gainers + losers) ─────────────────────────────────────────
+// FMP stable API response shape (v3/stock/gainers was deprecated Aug 2025)
 interface FMPMoverRaw {
-  ticker?: string; symbol?: string; companyName?: string; name?: string
-  price?: number; change?: number; changesPercentage?: number; volume?: number
+  symbol?: string
+  name?:   string
+  price?:  number
+  change?: number
+  changesPercentage?: number
+  exchange?: string
 }
 interface Mover {
-  symbol: string; name: string; price: number
-  change: number; changesPercentage: number; volume: number
+  symbol:            string
+  name:              string
+  price:             number
+  change:            number
+  changesPercentage: number
+  exchange:          string
 }
 
 app.get('/market-movers', fmpLimiter, async (req: Request, res: Response) => {
@@ -567,29 +576,28 @@ app.get('/market-movers', fmpLimiter, async (req: Request, res: Response) => {
   const cached = getCached(cacheKey)
   if (cached !== null) { res.set('X-Cache', 'HIT').json(cached); return }
 
-  const base = 'https://financialmodelingprep.com/api/v3'
+  // Use stable/ base — v3/stock/gainers and v3/stock/losers were deprecated Aug 2025
+  const base = 'https://financialmodelingprep.com/stable'
   try {
     const [gr, lr] = await Promise.allSettled([
-      fetch(`${base}/stock/gainers?apikey=${key}`),
-      fetch(`${base}/stock/losers?apikey=${key}`),
+      fetch(`${base}/biggest-gainers?apikey=${key}`),
+      fetch(`${base}/biggest-losers?apikey=${key}`),
     ])
     type FetchResult = PromiseSettledResult<Awaited<ReturnType<typeof fetch>>>
     const parse = async (r: FetchResult): Promise<FMPMoverRaw[]> => {
       if (r.status === 'rejected' || !r.value.ok) return []
       const d = await r.value.json() as unknown
       if (Array.isArray(d)) return d as FMPMoverRaw[]
-      if (d !== null && typeof d === 'object') {
-        const k = Object.keys(d as object)[0]
-        const v = (d as Record<string, unknown>)[k]
-        return Array.isArray(v) ? v as FMPMoverRaw[] : []
-      }
       return []
     }
     const [rawG, rawL] = await Promise.all([parse(gr), parse(lr)])
     const toMover = (r: FMPMoverRaw): Mover => ({
-      symbol: r.ticker ?? r.symbol ?? '', name: r.companyName ?? r.name ?? '',
-      price: r.price ?? 0, change: r.change ?? 0,
-      changesPercentage: r.changesPercentage ?? 0, volume: r.volume ?? 0,
+      symbol:            r.symbol            ?? '',
+      name:              r.name              ?? '',
+      price:             r.price             ?? 0,
+      change:            r.change            ?? 0,
+      changesPercentage: r.changesPercentage ?? 0,
+      exchange:          r.exchange          ?? '',
     })
     const payload = { gainers: rawG.slice(0, 10).map(toMover), losers: rawL.slice(0, 10).map(toMover) }
     setCache(cacheKey, payload, 5 * 60 * 1000)

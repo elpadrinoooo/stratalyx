@@ -12,7 +12,7 @@ interface Mover {
   price:             number
   change:            number
   changesPercentage: number
-  volume:            number
+  exchange:          string
 }
 
 interface MarketMoversPayload {
@@ -45,9 +45,6 @@ const INDEX_CARDS = [
   { ticker: 'SPY', label: 'S&P 500',      subtitle: 'S&P 500' },
   { ticker: 'IWM', label: 'Russell 2000', subtitle: 'Small Cap' },
 ]
-
-const fmtVol = (v: number) =>
-  new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(v)
 
 const fmtPct = (v: number) =>
   (v >= 0 ? '+' : '') + v.toFixed(2) + '%'
@@ -250,8 +247,8 @@ function MoverRow({ mover, isGainer, onTickerClick }: {
       }}>
         {fmtPct(pct)}
       </span>
-      <span style={{ color: C.t4, fontSize: 11, flexShrink: 0, width: 42, textAlign: 'right' }}>
-        {fmtVol(mover.volume)}
+      <span style={{ color: C.t4, fontSize: 10, flexShrink: 0, width: 52, textAlign: 'right', fontFamily: C.mono }}>
+        {mover.exchange}
       </span>
     </div>
   )
@@ -285,7 +282,7 @@ function MoversTable({ title, movers, isGainer, loading, onTickerClick }: {
         <span style={{ color: C.t4, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', flex: 1 }}>Company</span>
         <span style={{ color: C.t4, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', width: 60, textAlign: 'right', flexShrink: 0 }}>Price</span>
         <span style={{ color: C.t4, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', width: 60, textAlign: 'right', flexShrink: 0 }}>Chg %</span>
-        <span style={{ color: C.t4, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', width: 42, textAlign: 'right', flexShrink: 0 }}>Vol</span>
+        <span style={{ color: C.t4, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', width: 52, textAlign: 'right', flexShrink: 0 }}>Exch</span>
       </div>
 
       {/* Rows */}
