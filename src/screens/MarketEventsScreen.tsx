@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   ResponsiveContainer,
   LineChart,
@@ -87,11 +87,17 @@ function PerfBar({ value, label }: { value: number | undefined; label: string })
 
 // ── event card ────────────────────────────────────────────────────────────────
 
-function EventCard({ event }: { event: MarketEvent }) {
-  const [open, setOpen]       = useState(false)
-  const [hovered, setHovered] = useState(false)
+function EventCard({ event, onScanClick }: { event: MarketEvent; onScanClick?: () => void }) {
+  const [open, setOpen]             = useState(false)
+  const [hovered, setHovered]       = useState(false)
+  const [causeExpanded, setCauseExp] = useState(false)
   const meta     = TYPE_META[event.type]
   const duration = durationLabel(event)
+
+  // Truncate cause to first sentence for scannability
+  const dotIdx    = event.cause.indexOf('. ')
+  const causeShort = dotIdx > 0 ? event.cause.slice(0, dotIdx + 1) : event.cause
+  const causeHasMore = causeShort.length < event.cause.length - 5
 
   // Primary index figure shown as large callout
   const primaryPct = event.sp500 ?? event.dow ?? event.nasdaq
@@ -184,10 +190,44 @@ function EventCard({ event }: { event: MarketEvent }) {
           </div>
         )}
 
-        {/* Cause */}
+        {/* Cause — first sentence preview with Read more */}
         <p style={{ margin: '0 0 12px', color: C.t3, fontSize: 13, lineHeight: 1.7 }}>
-          {event.cause}
+          {causeExpanded || !causeHasMore ? event.cause : causeShort}
+          {causeHasMore && !causeExpanded && (
+            <span
+              onClick={(e) => { e.stopPropagation(); setCauseExp(true) }}
+              style={{ color: C.accent, cursor: 'pointer', marginLeft: 5, fontWeight: 600, fontSize: 12 }}
+            >
+              Read more
+            </span>
+          )}
         </p>
+
+        {/* Action row */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          {onScanClick && (
+            <button
+              onClick={onScanClick}
+              style={{
+                background: C.accentM,
+                border: `1px solid ${C.accentB}`,
+                borderRadius: R.r6,
+                color: C.accent,
+                cursor: 'pointer',
+                fontSize: 11,
+                fontWeight: 600,
+                padding: '5px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ fontSize: 12 }}>📈</span>
+              Scan a stock vs this event
+            </button>
+          )}
+        </div>
 
         {/* Full-width chevron toggle */}
         <button
@@ -358,9 +398,143 @@ function RecordStrip() {
   )
 }
 
+// ── event scrubber ────────────────────────────────────────────────────────────
+
+const SCRUB_MIN = new Date('1905-01-01').getTime()
+const SCRUB_MAX = new Date('2025-06-01').getTime()
+const SCRUB_RANGE = SCRUB_MAX - SCRUB_MIN
+
+function scrubPos(e: MarketEvent): number {
+  return ((new Date(e.date).getTime() - SCRUB_MIN) / SCRUB_RANGE) * 100
+}
+
+const SCRUB_YEAR_TICKS = [1910, 1930, 1950, 1970, 1990, 2010]
+
+function EventScrubber({
+  visibleIds,
+  onSelect,
+}: {
+  visibleIds: Set<string>
+  onSelect: (id: string) => void
+}) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const hoveredEvent = hoveredId ? MARKET_EVENTS.find((e) => e.id === hoveredId) ?? null : null
+
+  return (
+    <div
+      style={{
+        background: C.bg1,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.r10,
+        padding: '12px 16px 20px',
+        marginBottom: 18,
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, minHeight: 18 }}>
+        <span style={{ color: C.t4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+          Timeline Overview — click any dot to jump
+        </span>
+        {hoveredEvent ? (
+          <span style={{ color: TYPE_META[hoveredEvent.type].color, fontSize: 11, fontWeight: 700, transition: 'color .1s' }}>
+            {hoveredEvent.title}
+            <span style={{ color: C.t4, fontWeight: 400, marginLeft: 5 }}>
+              {new Date(hoveredEvent.date).getFullYear()}
+              {hoveredEvent.sp500 !== undefined && ` · ${pct(hoveredEvent.sp500)} S&P`}
+            </span>
+          </span>
+        ) : (
+          <span style={{ color: C.t4, fontSize: 10, fontStyle: 'italic' }}>Hover a dot to preview</span>
+        )}
+      </div>
+
+      {/* Track */}
+      <div style={{ position: 'relative', height: 28, paddingBottom: 16 }}>
+        {/* Base line */}
+        <div style={{
+          position: 'absolute', left: 0, right: 0, top: 10,
+          height: 2, background: C.border, borderRadius: 1,
+        }} />
+
+        {/* Year ticks */}
+        {SCRUB_YEAR_TICKS.map((yr) => {
+          const pos = ((new Date(`${yr}-01-01`).getTime() - SCRUB_MIN) / SCRUB_RANGE) * 100
+          return (
+            <React.Fragment key={yr}>
+              <div style={{
+                position: 'absolute', left: `${pos}%`, top: 6,
+                width: 1, height: 8, background: C.border,
+                transform: 'translateX(-50%)',
+              }} />
+              <span style={{
+                position: 'absolute', left: `${pos}%`, top: 18,
+                transform: 'translateX(-50%)',
+                color: C.t4, fontSize: 9, fontFamily: C.mono, fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}>
+                {yr}
+              </span>
+            </React.Fragment>
+          )
+        })}
+
+        {/* Event dots */}
+        {MARKET_EVENTS.map((e) => {
+          const meta   = TYPE_META[e.type]
+          const isVis  = visibleIds.has(e.id)
+          const isHov  = hoveredId === e.id
+          const pos    = scrubPos(e)
+          return (
+            <div
+              key={e.id}
+              onMouseEnter={() => setHoveredId(e.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              onClick={() => onSelect(e.id)}
+              title={e.title}
+              style={{
+                position: 'absolute',
+                left: `${pos}%`,
+                top: 4,
+                transform: `translate(-50%, 0) scale(${isHov ? 1.9 : 1})`,
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                background: isVis ? meta.color : C.bg2,
+                border: `2px solid ${isVis ? meta.color : C.border}`,
+                cursor: 'pointer',
+                transition: 'transform .15s, opacity .15s, box-shadow .15s',
+                opacity: isVis ? 1 : 0.2,
+                zIndex: isHov ? 4 : 1,
+                boxShadow: isHov ? `0 0 0 4px ${meta.bg}, 0 3px 10px rgba(0,0,0,.25)` : 'none',
+              }}
+            />
+          )
+        })}
+      </div>
+
+      {/* Era labels */}
+      <div style={{ display: 'flex', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+        {[
+          { color: 'var(--c-loss)', label: 'Crash' },
+          { color: 'var(--c-warn)', label: 'Bear / Crisis' },
+          { color: 'var(--c-gain)', label: 'Bull / Recovery' },
+        ].map((l) => (
+          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: l.color }} />
+            <span style={{ color: C.t4, fontSize: 9 }}>{l.label}</span>
+          </div>
+        ))}
+        <span style={{ color: C.t4, fontSize: 9, marginLeft: 'auto', fontStyle: 'italic' }}>
+          Dimmed = hidden by current filter
+        </span>
+      </div>
+    </div>
+  )
+}
+
 // ── timeline ──────────────────────────────────────────────────────────────────
 
-function Timeline({ events }: { events: MarketEvent[] }) {
+function Timeline({ events, isMobile, onScanClick }: { events: MarketEvent[]; isMobile: boolean; onScanClick: () => void }) {
   // Group by year
   const byYear = useMemo(() => {
     const map = new Map<number, MarketEvent[]>()
@@ -372,9 +546,22 @@ function Timeline({ events }: { events: MarketEvent[] }) {
     return [...map.entries()].sort(([a], [b]) => a - b)
   }, [events])
 
+  // Mobile: flat cards, no spine
+  if (isMobile) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {events.map((e) => (
+          <div key={e.id} id={`event-${e.id}`}>
+            <EventCard event={e} onScanClick={onScanClick} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div style={{ position: 'relative', paddingLeft: 60 }}>
-      {/* Vertical spine — accent color for visual connection to timeline theme */}
+      {/* Vertical spine */}
       <div
         style={{
           position: 'absolute',
@@ -414,7 +601,6 @@ function Timeline({ events }: { events: MarketEvent[] }) {
             >
               {year}
             </div>
-            {/* Connector tick from spine to badge */}
             <div
               style={{
                 position: 'absolute',
@@ -434,7 +620,7 @@ function Timeline({ events }: { events: MarketEvent[] }) {
               const meta = TYPE_META[e.type]
               return (
                 <div key={e.id} id={`event-${e.id}`} style={{ position: 'relative' }}>
-                  {/* Dot on spine — larger with white ring */}
+                  {/* Dot on spine */}
                   <div
                     style={{
                       position: 'absolute',
@@ -461,7 +647,7 @@ function Timeline({ events }: { events: MarketEvent[] }) {
                       opacity: 0.4,
                     }}
                   />
-                  <EventCard event={e} />
+                  <EventCard event={e} onScanClick={onScanClick} />
                 </div>
               )
             })}
@@ -1045,8 +1231,33 @@ export function MarketEventsScreen() {
   const width    = useWindowWidth()
   const isMobile = width <= 768
 
-  const [filter,   setFilter]   = useState<Filter>('all')
-  const [sortMode, setSortMode] = useState<SortMode>('chronological')
+  const [filter,      setFilter]      = useState<Filter>('all')
+  const [sortMode,    setSortMode]    = useState<SortMode>('chronological')
+  const [search,      setSearch]      = useState('')
+  const [showBackTop, setShowBackTop] = useState(false)
+  const scannerRef = useRef<HTMLDivElement>(null)
+
+  // Back-to-top trigger
+  useEffect(() => {
+    const onScroll = () => setShowBackTop(window.scrollY > 500)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  const scrollToScanner = useCallback(() => {
+    scannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
+
+  const scrollToEvent = useCallback((id: string) => {
+    const el = document.getElementById(`event-${id}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Brief highlight flash
+      el.style.outline = `2px solid ${TYPE_META[MARKET_EVENTS.find(e => e.id === id)?.type ?? 'crash'].color}`
+      el.style.outlineOffset = '2px'
+      setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = '' }, 1400)
+    }
+  }, [])
 
   const chronological = useMemo(
     () => [...MARKET_EVENTS].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
@@ -1054,12 +1265,22 @@ export function MarketEventsScreen() {
   )
 
   const filtered = useMemo(() => {
-    const base = filter === 'all' ? chronological : chronological.filter((e) => e.type === filter)
+    let base = filter === 'all' ? chronological : chronological.filter((e) => e.type === filter)
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      base = base.filter((e) =>
+        e.title.toLowerCase().includes(q) ||
+        e.shortTitle.toLowerCase().includes(q) ||
+        e.cause.toLowerCase().includes(q)
+      )
+    }
     if (sortMode === 'severity') {
       return [...base].sort((a, b) => Math.abs(b.sp500 ?? 0) - Math.abs(a.sp500 ?? 0))
     }
     return base
-  }, [filter, sortMode, chronological])
+  }, [filter, sortMode, chronological, search])
+
+  const visibleIds = useMemo(() => new Set(filtered.map((e) => e.id)), [filtered])
 
   const crashCount  = MARKET_EVENTS.filter((e) => e.type === 'crash').length
   const bearCount   = MARKET_EVENTS.filter((e) => e.type === 'bear').length
@@ -1106,6 +1327,9 @@ export function MarketEventsScreen() {
       {/* ── Record callouts ── */}
       <RecordStrip />
 
+      {/* ── Interactive event scrubber ── */}
+      <EventScrubber visibleIds={visibleIds} onSelect={scrollToEvent} />
+
       {/* ── Controls row — sticky ── */}
       <div style={{
         position: 'sticky',
@@ -1122,54 +1346,95 @@ export function MarketEventsScreen() {
         paddingBottom: 10,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
       }}>
-        {/* Filter chips */}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {FILTERS.map(({ label, value }) => {
-            const active = filter === value
-            const meta   = value !== 'all' ? TYPE_META[value] : null
-            const count  = value === 'all' ? MARKET_EVENTS.length
-                         : value === 'crash'  ? crashCount
-                         : value === 'bear'   ? bearCount
-                         : value === 'crisis' ? crisisCount
-                         : bullCount
-            return (
-              <button
-                key={value}
-                onClick={() => setFilter(value)}
-                style={{
-                  background: active ? (meta?.bg ?? C.accentM) : C.bg2,
-                  border: `1px solid ${active ? (meta?.border ?? C.accentB) : C.border}`,
-                  borderRadius: R.r99,
-                  color: active ? (meta?.color ?? C.accent) : C.t3,
-                  cursor: 'pointer',
-                  fontSize: 12,
-                  fontWeight: active ? 700 : 400,
-                  padding: '5px 12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                }}
-              >
-                {label}
-                <span
+        {/* Left cluster: filter chips + results count */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+            {FILTERS.map(({ label, value }) => {
+              const active = filter === value
+              const meta   = value !== 'all' ? TYPE_META[value] : null
+              const count  = value === 'all' ? MARKET_EVENTS.length
+                           : value === 'crash'  ? crashCount
+                           : value === 'bear'   ? bearCount
+                           : value === 'crisis' ? crisisCount
+                           : bullCount
+              return (
+                <button
+                  key={value}
+                  onClick={() => { setFilter(value); setSearch('') }}
                   style={{
-                    background: active ? 'rgba(0,0,0,0.15)' : C.bg0,
+                    background: active ? (meta?.bg ?? C.accentM) : C.bg2,
+                    border: `1px solid ${active ? (meta?.border ?? C.accentB) : C.border}`,
                     borderRadius: R.r99,
-                    fontSize: 10,
-                    fontWeight: 700,
-                    padding: '0 4px',
-                    lineHeight: 1.6,
+                    color: active ? (meta?.color ?? C.accent) : C.t3,
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: active ? 700 : 400,
+                    padding: '5px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    transition: 'background .12s, border-color .12s, color .12s',
                   }}
                 >
-                  {count}
-                </span>
-              </button>
-            )
-          })}
+                  {label}
+                  <span
+                    style={{
+                      background: active ? 'rgba(0,0,0,0.15)' : C.bg0,
+                      borderRadius: R.r99,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: '0 4px',
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {count}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Results count feedback */}
+          <span style={{ color: C.t4, fontSize: 11, whiteSpace: 'nowrap' }}>
+            {filtered.length === MARKET_EVENTS.length
+              ? `${filtered.length} events`
+              : `${filtered.length} of ${MARKET_EVENTS.length}`}
+          </span>
         </div>
 
-        {/* Sort + decade jump */}
+        {/* Right cluster: search + sort + decade jump */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Search */}
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: C.t4, fontSize: 12, pointerEvents: 'none' }}>
+              🔍
+            </span>
+            <input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setFilter('all') }}
+              onKeyDown={(e) => e.key === 'Escape' && setSearch('')}
+              placeholder={isMobile ? 'Search…' : 'Search events…'}
+              style={{
+                background: C.bg1,
+                border: `1px solid ${search ? C.accentB : C.border}`,
+                borderRadius: R.r99,
+                color: C.t1,
+                fontSize: 12,
+                padding: '5px 28px 5px 28px',
+                outline: 'none',
+                width: isMobile ? 110 : 150,
+                transition: 'border-color .15s',
+              }}
+            />
+            {search && (
+              <span
+                onClick={() => setSearch('')}
+                style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', color: C.t4, cursor: 'pointer', fontSize: 14, lineHeight: 1 }}
+              >
+                ×
+              </span>
+            )}
+          </div>
           {/* Sort toggle */}
           <div style={{ display: 'flex', background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r8, padding: 2, gap: 1 }}>
             {(['chronological', 'severity'] as SortMode[]).map((s) => {
@@ -1245,21 +1510,72 @@ export function MarketEventsScreen() {
 
       {/* ── Content: timeline or severity grid ── */}
       {filtered.length > 0 && sortMode === 'chronological' && (
-        <Timeline events={filtered} />
+        <Timeline events={filtered} isMobile={isMobile} onScanClick={scrollToScanner} />
       )}
 
       {filtered.length > 0 && sortMode === 'severity' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.map((event) => (
             <div key={event.id} id={`event-${event.id}`}>
-              <EventCard event={event} />
+              <EventCard event={event} onScanClick={scrollToScanner} />
             </div>
           ))}
         </div>
       )}
 
+      {/* ── Empty state ── */}
+      {filtered.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '56px 20px', background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r12 }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
+          <div style={{ color: C.t2, fontWeight: 700, fontSize: 15, marginBottom: 6 }}>No events found</div>
+          <div style={{ color: C.t3, fontSize: 13, marginBottom: 16 }}>
+            {search ? `No events match "${search}"` : 'No events match this filter'}
+          </div>
+          <button
+            onClick={() => { setFilter('all'); setSearch('') }}
+            style={{
+              background: C.accentM, border: `1px solid ${C.accentB}`,
+              borderRadius: R.r8, color: C.accent,
+              cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: '7px 18px',
+            }}
+          >
+            Reset filters
+          </button>
+        </div>
+      )}
+
       {/* ── Stock vs Events Scanner ── */}
-      <StockScanner />
+      <div ref={scannerRef}>
+        <StockScanner />
+      </div>
+
+      {/* ── Back to top button ── */}
+      {showBackTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          title="Back to top"
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 200,
+            background: C.accent,
+            border: 'none',
+            borderRadius: '50%',
+            width: 42,
+            height: 42,
+            color: '#fff',
+            cursor: 'pointer',
+            fontSize: 18,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 18px rgba(0,0,0,.35)',
+          }}
+        >
+          ↑
+        </button>
+      )}
     </div>
   )
 }
