@@ -5,6 +5,7 @@ import { useApp } from '../state/context'
 import { Tag } from '../components/Tag'
 import { ScoreBar } from '../components/ScoreBar'
 import { LiveBadge } from '../components/LiveBadge'
+import { TickerLogo } from '../components/TickerLogo'
 import { scColor, vColor, verdictLabel } from '../engine/utils'
 
 type Tab = 'active' | 'archived'
@@ -156,13 +157,16 @@ export function HistoryScreen() {
                 {/* Top row */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                   <div
-                    style={{ flex: 1, cursor: 'pointer' }}
+                    style={{ flex: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
                     onClick={() => dispatch({ type: 'OPEN_MODAL', payload: result.ticker })}
                   >
-                    <div style={{ color: C.accent, fontWeight: 700, fontSize: 16, fontFamily: C.mono }}>
-                      {result.ticker}
+                    <TickerLogo ticker={result.ticker} size={36} />
+                    <div>
+                      <div style={{ color: C.accent, fontWeight: 700, fontSize: 16, fontFamily: C.mono }}>
+                        {result.ticker}
+                      </div>
+                      <div style={{ color: C.t3, fontSize: 12, marginTop: 2 }}>{result.companyName}</div>
                     </div>
-                    <div style={{ color: C.t3, fontSize: 12, marginTop: 2 }}>{result.companyName}</div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                     <Tag color={vColor(result.verdict)} small>{verdictLabel(result.verdict)}</Tag>

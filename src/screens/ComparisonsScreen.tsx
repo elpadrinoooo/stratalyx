@@ -4,6 +4,7 @@ import { INV } from '../constants/investors'
 import { useApp } from '../state/context'
 import { ScoreBar } from '../components/ScoreBar'
 import { Tag } from '../components/Tag'
+import { TickerLogo } from '../components/TickerLogo'
 import { scColor, vColor, verdictLabel, fmtN, fmtB } from '../engine/utils'
 import type { AnalysisResult } from '../types'
 
@@ -255,17 +256,22 @@ export function ComparisonsScreen() {
 
               {/* ── Card header ── */}
               <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-                  <span
-                    style={{ color: C.accent, fontWeight: 800, fontSize: 18, fontFamily: C.mono, cursor: 'pointer' }}
-                    onClick={() => dispatch({ type: 'OPEN_MODAL', payload: comp.ticker })}
-                  >
-                    {comp.ticker}
-                  </span>
-                  <span style={{ color: C.t2, fontSize: 14 }}>{a.companyName}</span>
-                  {price > 0 && (
-                    <span style={{ color: C.warn, fontWeight: 700, fontSize: 14, fontFamily: C.mono }}>{formatPrice(price)}</span>
-                  )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <TickerLogo ticker={comp.ticker} size={36} />
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                      <span
+                        style={{ color: C.accent, fontWeight: 800, fontSize: 18, fontFamily: C.mono, cursor: 'pointer' }}
+                        onClick={() => dispatch({ type: 'OPEN_MODAL', payload: comp.ticker })}
+                      >
+                        {comp.ticker}
+                      </span>
+                      <span style={{ color: C.t2, fontSize: 14 }}>{a.companyName}</span>
+                      {price > 0 && (
+                        <span style={{ color: C.warn, fontWeight: 700, fontSize: 14, fontFamily: C.mono }}>{formatPrice(price)}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <Tag color={consensus.color} small>{consensus.label}</Tag>

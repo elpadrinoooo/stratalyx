@@ -17,6 +17,166 @@ export interface MarketEvent {
 }
 
 export const MARKET_EVENTS: MarketEvent[] = [
+  // ── Pre-1950s ──────────────────────────────────────────────────────────────
+  {
+    id: 'bankers_panic_1907',
+    date: '1907-10-14',
+    endDate: '1907-11-15',
+    title: "Banker's Panic of 1907",
+    shortTitle: "Panic of 1907",
+    type: 'crash',
+    dow: -48,
+    cause:
+      "Speculative lending by trust companies outside the Federal Reserve system (which did not yet exist) fuelled a credit bubble. When the Knickerbocker Trust Company failed on October 22, a nationwide bank run began. J.P. Morgan personally orchestrated a private bailout to stop the collapse.",
+    impact:
+      "The Dow Jones fell 48% from its peak. More than 25 major banks and trust companies failed. The US economy contracted sharply, unemployment doubled, and industrial production fell 11%. The panic directly led to the passage of the Federal Reserve Act of 1913.",
+    recovery:
+      "Markets recovered within 18 months, supported by J.P. Morgan's private credit injections. The creation of the Federal Reserve in 1913 was the direct institutional response to prevent a future recurrence.",
+    sources: [
+      { title: 'Federal Reserve History: The Panic of 1907', url: 'https://www.federalreservehistory.org/essays/panic-of-1907' },
+      { title: 'NBER: The Panic of 1907', url: 'https://www.nber.org/papers/w12866' },
+    ],
+  },
+  {
+    id: 'great_crash_1929',
+    date: '1929-09-03',
+    endDate: '1932-07-08',
+    title: 'Great Crash & Great Depression',
+    shortTitle: 'Great Crash 1929',
+    type: 'crash',
+    dow: -89,
+    cause:
+      "A decade of loose credit, rampant stock speculation on margin (often 10:1 leverage), and overvalued equities drove the Dow Jones to an all-time high of 381 on September 3, 1929. The subsequent unwind triggered bank failures across the US, deflationary spirals, and the Smoot–Hawley Tariff Act (1930), which collapsed global trade.",
+    impact:
+      "The Dow Jones fell 89% from its September 1929 peak to its July 1932 trough — the worst drawdown in US equity market history. Over 9,000 banks failed. US GDP contracted 30%. Unemployment reached 25%. Global trade fell 65% due to protectionist tariffs. Over $30 billion in stock market wealth was wiped out.",
+    recovery:
+      "Full recovery of the Dow Jones to its 1929 peak did not occur until November 1954 — 25 years later. The New Deal programmes (1933–1939) and eventually WWII-era defence spending drove the economic recovery.",
+    sources: [
+      { title: 'Federal Reserve History: Great Depression', url: 'https://www.federalreservehistory.org/essays/great-depression' },
+      { title: 'Milton Friedman & Schwartz: A Monetary History of the United States', url: 'https://press.princeton.edu/books/paperback/9780691003467/a-monetary-history-of-the-united-states-1867-1960' },
+    ],
+  },
+  {
+    id: 'recession_1937',
+    date: '1937-08-14',
+    endDate: '1938-03-31',
+    title: 'Roosevelt Recession',
+    shortTitle: 'Recession 1937',
+    type: 'bear',
+    dow: -49,
+    cause:
+      "The Federal Reserve doubled reserve requirements in 1936–37, and the Roosevelt administration prematurely tightened fiscal policy by cutting spending and raising taxes, fearing the recovery was complete. This abrupt policy reversal choked off the nascent recovery from the Great Depression.",
+    impact:
+      "The Dow Jones fell 49% in 7 months. US GDP contracted 10%. Unemployment surged back to 19% from 14%. Industrial production fell 33%. The recession remains a textbook example of premature austerity cutting short a fragile recovery.",
+    recovery:
+      "Roosevelt reversed course in 1938, resuming government spending. The economy began recovering, and WWII mobilisation in 1941–42 completed the recovery.",
+    sources: [
+      { title: 'Federal Reserve History: Recession of 1937–1938', url: 'https://www.federalreservehistory.org/essays/recession-of-1937-38' },
+      { title: "Keynes: How to Avoid a Slump (The Times, 1937)", url: 'https://www.economist.com' },
+    ],
+  },
+  {
+    id: 'wwii_bull_1942',
+    date: '1942-04-28',
+    endDate: '1946-05-29',
+    title: 'World War II Recovery Bull Market',
+    shortTitle: 'WWII Bull 1942',
+    type: 'bull',
+    dow: 129,
+    cause:
+      "US entry into WWII following Pearl Harbor (December 1941) triggered massive government defence spending — equivalent to 40% of GDP. Industrial production surged. War bonds, rationing, and workforce mobilisation channelled savings into equities. Once the tide turned at Midway (June 1942), markets began a sustained rally.",
+    impact:
+      "The Dow Jones rose 129% from its April 1942 low to its May 1946 high. Corporate profits reached record levels. Unemployment fell from 14% to effectively zero. The US emerged from WWII as the world's dominant economic superpower, holding approximately 50% of global GDP.",
+    recovery:
+      "N/A — this was a bull market. It ended in 1946 as post-war demobilisation and reconversion fears caused a temporary correction.",
+    sources: [
+      { title: 'NYSE Historical Data', url: 'https://www.nyse.com' },
+      { title: 'Robert Gordon: The Rise and Fall of American Growth (2016)', url: 'https://press.princeton.edu/books/paperback/9780691175805/the-rise-and-fall-of-american-growth' },
+    ],
+  },
+  // ── 1970s ──────────────────────────────────────────────────────────────────
+  {
+    id: 'oil_crisis_1973',
+    date: '1973-01-11',
+    endDate: '1974-10-03',
+    title: '1973–74 Oil Crisis & Bear Market',
+    shortTitle: 'Oil Crisis 1973',
+    type: 'bear',
+    sp500: -48,
+    dow: -45,
+    cause:
+      "OPEC's oil embargo (October 1973) against nations supporting Israel in the Yom Kippur War sent oil prices from $3 to $12 per barrel overnight — a 400% spike. This was compounded by the Nixon administration ending the gold standard (1971), soaring inflation, and the Watergate political crisis eroding business confidence.",
+    impact:
+      "The S&P 500 fell 48% and the Dow Jones 45% from early 1973 to October 1974. Inflation surged to 12%. The US GDP contracted for five consecutive quarters. Long petrol queues became a symbol of economic dysfunction. The combined hit of stagflation (high inflation + recession) defied conventional Keynesian economic models.",
+    recovery:
+      "Markets recovered gradually through 1975–76 after OPEC lifted the embargo. However, inflation remained elevated through the decade, culminating in the Volcker rate shock of the early 1980s.",
+    sources: [
+      { title: 'Federal Reserve History: 1973–75 Recession', url: 'https://www.federalreservehistory.org/essays/recession-of-1973-75' },
+      { title: 'EIA: History of Oil Price Shocks', url: 'https://www.eia.gov/finance/markets/crudeoil/spot_prices.php' },
+    ],
+  },
+  // ── 1980s ──────────────────────────────────────────────────────────────────
+  {
+    id: 'volcker_bear_1980',
+    date: '1980-11-28',
+    endDate: '1982-08-12',
+    title: 'Volcker Rate Shock Bear Market',
+    shortTitle: 'Volcker Bear 1980',
+    type: 'bear',
+    sp500: -27,
+    dow: -24,
+    cause:
+      "Fed Chairman Paul Volcker deliberately engineered a recession to kill double-digit inflation. He raised the Federal Funds Rate to 20% — the highest in US history — forcing a sharp economic contraction. Mortgage rates hit 18%, collapsing the housing market. The medicine was intentionally painful.",
+    impact:
+      "The S&P 500 fell 27% and unemployment peaked at 10.8% — the highest since the Great Depression. Hundreds of savings and loan associations (S&Ls) failed. The construction, auto, and farming sectors were devastated. Volcker's approach was deeply unpopular, but it broke the back of inflation.",
+    recovery:
+      "The S&P 500 bottomed on August 12, 1982 and subsequently began one of the longest bull markets in US history — the Reagan-era bull run from 1982 to 1987. Inflation fell from 14% to 3% by 1983.",
+    sources: [
+      { title: 'Federal Reserve History: Volcker Disinflation', url: 'https://www.federalreservehistory.org/essays/volcker-disinflation' },
+      { title: "Robert Hetzel: The Monetary Policy of the Federal Reserve (2008)", url: 'https://www.cambridge.org/us/universitypress/subjects/economics/macroeconomics-and-monetary-economics/monetary-policy-federal-reserve-history' },
+    ],
+  },
+  // ── 1990s ──────────────────────────────────────────────────────────────────
+  {
+    id: 'gulf_war_recession_1990',
+    date: '1990-07-16',
+    endDate: '1990-10-11',
+    title: 'Gulf War Recession',
+    shortTitle: 'Gulf War 1990',
+    type: 'bear',
+    sp500: -20,
+    dow: -21,
+    cause:
+      "Iraq's invasion of Kuwait (August 2, 1990) sent oil prices surging 70% in weeks, tipping a slowing US economy into recession. The savings & loan crisis was simultaneously draining government resources. Consumer and business confidence collapsed.",
+    impact:
+      "The S&P 500 fell 20% and the Dow 21% in under 90 days. US GDP contracted for three consecutive quarters. Unemployment rose to 7.8%. The recession lasted from July 1990 to March 1991 — brief but sharp.",
+    recovery:
+      "Markets recovered rapidly once Operation Desert Storm successfully expelled Iraqi forces from Kuwait (February 1991). The S&P 500 returned to pre-recession levels by February 1991 and then rallied through the rest of the decade.",
+    sources: [
+      { title: 'Federal Reserve History: 1990–91 Recession', url: 'https://www.federalreservehistory.org/essays/recession-of-1990-91' },
+      { title: 'EIA: Oil Prices and the Gulf War', url: 'https://www.eia.gov' },
+    ],
+  },
+  {
+    id: 'ltcm_russia_1998',
+    date: '1998-07-17',
+    endDate: '1998-10-08',
+    title: 'Russia Default & LTCM Collapse',
+    shortTitle: 'LTCM/Russia 1998',
+    type: 'crisis',
+    sp500: -19,
+    nasdaq: -25,
+    cause:
+      "Russia defaulted on its sovereign debt on August 17, 1998 and devalued the ruble, triggering global financial contagion. Long-Term Capital Management (LTCM), a hedge fund run by Nobel Prize-winning economists, had $125 billion in assets and over $1 trillion in notional derivatives exposure. Its near-collapse threatened global financial system stability.",
+    impact:
+      "The S&P 500 fell 19% and the Nasdaq 25% in 83 days. The Federal Reserve orchestrated a $3.6 billion private bailout of LTCM by 14 major banks to prevent disorderly unwinding. The event exposed the systemic dangers of excessive leverage and complex derivatives strategies.",
+    recovery:
+      "The Fed cut rates three times in quick succession (October–November 1998). Markets fully recovered within months, resuming the dot-com bull market into 2000.",
+    sources: [
+      { title: "Roger Lowenstein: When Genius Failed (2000)", url: 'https://www.penguinrandomhouse.com/books/292168/when-genius-failed-by-roger-lowenstein/' },
+      { title: 'Federal Reserve History: LTCM and the 1998 Crisis', url: 'https://www.federalreservehistory.org/essays/ltcm-crisis' },
+    ],
+  },
   {
     id: 'black_monday_1987',
     date: '1987-10-19',

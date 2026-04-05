@@ -8,6 +8,7 @@ import { Tag } from '../components/Tag'
 import { WLBtn } from '../components/WLBtn'
 import { ScoreBar } from '../components/ScoreBar'
 import { LiveBadge } from '../components/LiveBadge'
+import { TickerLogo } from '../components/TickerLogo'
 import { pegColor, scColor, vColor, verdictLabel } from '../engine/utils'
 
 export function WatchlistScreen() {
@@ -63,12 +64,15 @@ export function WatchlistScreen() {
                 key={stock.ticker}
                 style={{ background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r12, padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}
               >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <span style={{ color: C.accent, fontWeight: 700, fontSize: 15, fontFamily: C.mono }}>{stock.ticker}</span>
-                    <Tag color={C.t3} small>{stock.sector}</Tag>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <TickerLogo ticker={stock.ticker} size={30} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <span style={{ color: C.accent, fontWeight: 700, fontSize: 15, fontFamily: C.mono }}>{stock.ticker}</span>
+                      <Tag color={C.t3} small>{stock.sector}</Tag>
+                    </div>
+                    <div style={{ color: C.t2, fontSize: 13, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.name}</div>
                   </div>
-                  <div style={{ color: C.t2, fontSize: 13, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.name}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   <button
@@ -173,17 +177,20 @@ export function WatchlistScreen() {
             >
               {/* Card header */}
               <div style={{ padding: '12px 14px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <span style={{ color: C.accent, fontWeight: 700, fontSize: 17, fontFamily: C.mono }}>
-                    {stock.ticker}
-                  </span>
-                  {result?.moat && (
-                    <span style={{ marginLeft: 6 }}>
-                      <Tag color={C.gain} small>{result.moat}</Tag>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <TickerLogo ticker={stock.ticker} size={36} />
+                  <div>
+                    <span style={{ color: C.accent, fontWeight: 700, fontSize: 17, fontFamily: C.mono }}>
+                      {stock.ticker}
                     </span>
-                  )}
-                  <div style={{ color: C.t2, fontSize: 13, marginTop: 2 }}>{stock.name}</div>
-                  {stock.sector && <div style={{ color: C.t3, fontSize: 12, marginTop: 1 }}>{stock.sector}</div>}
+                    {result?.moat && (
+                      <span style={{ marginLeft: 6 }}>
+                        <Tag color={C.gain} small>{result.moat}</Tag>
+                      </span>
+                    )}
+                    <div style={{ color: C.t2, fontSize: 13, marginTop: 2 }}>{stock.name}</div>
+                    {stock.sector && <div style={{ color: C.t3, fontSize: 12, marginTop: 1 }}>{stock.sector}</div>}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                   <WLBtn ticker={stock.ticker} inWatchlist={true} onToggle={toggle} />
