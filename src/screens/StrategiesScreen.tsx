@@ -423,18 +423,29 @@ export function StrategiesScreen() {
                               display: 'flex',
                               alignItems: 'flex-start',
                               gap: 8,
-                              padding: '6px 8px',
-                              background: C.bg1,
-                              border: `1px solid ${C.border}`,
+                              padding: '8px 10px',
+                              background: s.url ? C.bg1 : C.bg2,
+                              border: `1px solid ${s.url ? C.accentB : C.border}`,
                               borderRadius: R.r6,
                               textDecoration: 'none',
+                              transition: 'border-color .15s',
                             }}
                           >
-                            <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>{meta.icon}</span>
+                            <span style={{ fontSize: 13, flexShrink: 0, marginTop: 2 }}>{meta.icon}</span>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ color: s.url ? 'var(--c-accent)' : C.t2, fontSize: 13, lineHeight: 1.4, fontWeight: s.url ? 600 : 400 }}>
-                                {s.title}
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexWrap: 'wrap' }}>
+                                <span style={{ color: s.url ? 'var(--c-accent)' : C.t2, fontSize: 13, lineHeight: 1.4, fontWeight: s.url ? 600 : 400 }}>
+                                  {s.title}
+                                </span>
+                                {s.url && (
+                                  <span style={{ color: 'var(--c-accent)', fontSize: 11, flexShrink: 0, opacity: 0.7 }}>↗</span>
+                                )}
                               </div>
+                              {s.note && (
+                                <div style={{ color: C.t3, fontSize: 12, lineHeight: 1.55, marginTop: 3 }}>
+                                  {s.note}
+                                </div>
+                              )}
                             </div>
                             <span
                               style={{
@@ -448,7 +459,8 @@ export function StrategiesScreen() {
                                 textTransform: 'uppercase',
                                 letterSpacing: '.05em',
                                 flexShrink: 0,
-                                alignSelf: 'center',
+                                alignSelf: 'flex-start',
+                                marginTop: 2,
                               }}
                             >
                               {meta.label}
