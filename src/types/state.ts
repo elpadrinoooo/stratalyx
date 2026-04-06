@@ -1,6 +1,6 @@
 import type { AnalysisResult } from './analysis'
 
-export type Screen = 'Markets' | 'Screener' | 'Strategies' | 'Watchlist' | 'History' | 'Comparisons' | 'MarketEvents' | 'News' | 'Admin'
+export type Screen = 'Markets' | 'Screener' | 'Strategies' | 'Watchlist' | 'History' | 'Comparisons' | 'MarketEvents' | 'News' | 'Admin' | 'Account'
 
 export interface Toast {
   id: string
@@ -28,6 +28,8 @@ export interface AppState {
   watchlist: string[]
   archived: string[]
   toasts: Toast[]
+  user: { id: string; email: string; tier: 'free' | 'pro' } | null
+  authLoading: boolean
 }
 
 export type Action =
@@ -51,3 +53,5 @@ export type Action =
   | { type: 'REMOVE_FROM_WATCHLIST'; payload: string }
   | { type: 'TOAST'; payload: { message: string; type: Toast['type'] } }
   | { type: 'DISMISS_TOAST'; payload: string }
+  | { type: 'SET_USER'; payload: AppState['user'] }
+  | { type: 'SET_AUTH_LOADING'; payload: boolean }

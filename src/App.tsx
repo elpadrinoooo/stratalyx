@@ -16,6 +16,8 @@ import { MarketEventsScreen } from './screens/MarketEventsScreen'
 import { NewsScreen } from './screens/NewsScreen'
 import { MarketsScreen } from './screens/MarketsScreen'
 import { AdminScreen } from './screens/AdminScreen'
+import { AccountScreen } from './screens/AccountScreen'
+import { AuthModal } from './components/AuthModal'
 
 const SESSION_KEY = 'stratalyx_fmp_key'
 
@@ -66,6 +68,7 @@ function AppShell() {
     () => sessionStorage.getItem(SESSION_KEY) ?? ''
   )
   const [fmpModalOpen, setFmpModalOpen] = useState(false)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
   const [shareBanner, setShareBanner] = useState<'analysis' | 'comparison' | false>(false)
 
   // Handle deep-link on first load (share URL or ?admin=1)
@@ -140,7 +143,7 @@ function AppShell() {
         fontFamily: C.sans,
       }}
     >
-      <Navbar fmpKeySet={!!fmpKey} onOpenFmpModal={() => setFmpModalOpen(true)} />
+      <Navbar fmpKeySet={!!fmpKey} onOpenFmpModal={() => setFmpModalOpen(true)} onOpenAuthModal={() => setAuthModalOpen(true)} />
 
       {shareBanner && (
         <div
@@ -185,6 +188,7 @@ function AppShell() {
         {screen === 'MarketEvents' && <ErrorBoundary><MarketEventsScreen /></ErrorBoundary>}
         {screen === 'News'         && <ErrorBoundary><NewsScreen fmpKey={fmpKey} /></ErrorBoundary>}
         {screen === 'Admin'        && <ErrorBoundary><AdminScreen /></ErrorBoundary>}
+        {screen === 'Account'      && <ErrorBoundary><AccountScreen /></ErrorBoundary>}
       </main>
 
       {state.modalOpen && (
@@ -199,6 +203,10 @@ function AppShell() {
           onSave={handleSaveFmpKey}
           onClose={() => setFmpModalOpen(false)}
         />
+      )}
+
+      {authModalOpen && (
+        <AuthModal onClose={() => setAuthModalOpen(false)} />
       )}
 
       <Toasts />

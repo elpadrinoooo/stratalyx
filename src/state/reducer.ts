@@ -96,6 +96,12 @@ export function reducer(state: AppState, action: Action): AppState {
         toasts: state.toasts.filter((t) => t.id !== action.payload),
       }
 
+    case 'SET_USER':
+      return { ...state, user: action.payload, authLoading: false }
+
+    case 'SET_AUTH_LOADING':
+      return { ...state, authLoading: action.payload }
+
     default:
       return state
   }

@@ -13,4 +13,6 @@ export const INIT: AppState = {
   watchlist: [],
   archived: [],
   toasts: [],
+  user: null,
+  authLoading: true,
 }

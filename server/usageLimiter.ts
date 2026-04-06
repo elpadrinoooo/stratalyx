@@ -1,0 +1,56 @@
+import type { Request, Response, NextFunction } from 'express'
+import { supabaseAdmin } from './supabaseAdmin.js'
+
+const FREE_LIMIT = 3
+
+export function checkUsage(req: Request, res: Response, next: NextFunction): void {
+  const user = req.user
+  if (user && user.tier === 'free' && user.analysesThisMonth >= FREE_LIMIT) {
+    res.status(402).json({
+      error: 'Monthly analysis limit reached. Upgrade to Pro for unlimited analyses.',
+    })
+    return
+  }
+  next()
+}
+
+interface AnalysisFlywheelPayload {
+  ticker: string
+  investorId: string
+  score?: number | null
+  verdict?: string | null
+  result: unknown
+  priceAtAnalysis?: number | null
+}
+
+export function recordAnalysis(
+  userId: string | null,
+  payload: AnalysisFlywheelPayload
+): void {
+  const run = async (): Promise<void> => {
+    await supabaseAdmin.from('analyses').insert({
+      ticker: payload.ticker,
+      investor_id: payload.investorId,
+      score: payload.score ?? null,
+      verdict: payload.verdict ?? null,
+      result: payload.result,
+      price_at_analysis: payload.priceAtAnalysis ?? null,
+      user_id: userId,
+    })
+
+    if (userId) {
+      const { data: u } = await supabaseAdmin
+        .from('users')
+        .select('analyses_this_month')
+        .eq('id', userId)
+        .single()
+      if (u) {
+        await supabaseAdmin
+          .from('users')
+          .update({ analyses_this_month: (u.analyses_this_month as number) + 1 })
+          .eq('id', userId)
+      }
+    }
+  }
+  void run()
+}

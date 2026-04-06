@@ -23,6 +23,7 @@ interface AnalyzeOptions {
   provider: string
   model: string
   fmpKey: string | null
+  authToken: string | null
 }
 
 interface LLMResponse {
@@ -85,11 +86,15 @@ export async function runAnalysis(opts: AnalyzeOptions): Promise<AnalysisResult>
   // Step 3 — Call LLM and fetch Yahoo price in parallel
   const apiOrigin = typeof window === 'undefined' ? (process.env?.['API_BASE'] ?? '') : ''
   const endpoint = llmEndpoint(opts.provider)
+  const authHeaders: Record<string, string> = opts.authToken
+    ? { 'Authorization': `Bearer ${opts.authToken}` }
+    : {}
+
   const [resp, yahooPrice] = await Promise.all([
     fetch(`${apiOrigin}${endpoint}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, model: opts.model }),
+      headers: { 'Content-Type': 'application/json', ...authHeaders },
+      body: JSON.stringify({ prompt, model: opts.model, ticker, investorId: investor.id }),
     }),
     fetchYahooPrice(ticker, apiOrigin),
   ])

@@ -9,6 +9,7 @@ import type { Screen } from '../types'
 interface Props {
   fmpKeySet: boolean
   onOpenFmpModal: () => void
+  onOpenAuthModal: () => void
 }
 
 const SCREENS: { label: string; screen: Screen }[] = [
@@ -28,7 +29,7 @@ const THEME_OPTIONS: { mode: ThemeMode; icon: string; label: string }[] = [
   { mode: 'system', icon: '💻', label: 'System' },
 ]
 
-export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
+export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
   const { state, dispatch } = useApp()
   const { mode: themeMode, setTheme } = useTheme()
   const inv = INV[state.investor] ?? INVESTORS[0]
@@ -166,6 +167,68 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
     </button>
   )
 
+  // Auth button: shows nothing during load, Sign In when logged out, user pill when logged in
+  const authBtn: React.ReactNode = state.authLoading ? null : state.user ? (
+    <button
+      onClick={() => dispatch({ type: 'SET_SCREEN', payload: 'Account' })}
+      aria-label="Account"
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.8' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        background: C.bg2,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.r8,
+        padding: '4px 9px',
+        cursor: 'pointer',
+        transition: 'opacity .15s',
+      }}
+    >
+      <div style={{
+        width: 22,
+        height: 22,
+        borderRadius: '50%',
+        background: C.accent,
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 11,
+        fontWeight: 700,
+        flexShrink: 0,
+      }}>
+        {state.user.email[0]?.toUpperCase() ?? '?'}
+      </div>
+      {!isMobile && (
+        <span style={{ fontSize: 12, fontWeight: 600, color: state.user.tier === 'pro' ? C.accent : C.t2 }}>
+          {state.user.tier === 'pro' ? 'Pro' : 'Free'}
+        </span>
+      )}
+    </button>
+  ) : (
+    <button
+      onClick={onOpenAuthModal}
+      aria-label="Sign in"
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.8' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+      style={{
+        background: C.bg2,
+        color: C.t2,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.r8,
+        padding: isMobile ? '5px 9px' : '5px 12px',
+        fontSize: 13,
+        fontWeight: 600,
+        cursor: 'pointer',
+        transition: 'opacity .15s',
+      }}
+    >
+      Sign In
+    </button>
+  )
+
   const analyzeBtn = (
     <button
       onClick={() => dispatch({ type: 'OPEN_MODAL', payload: '' })}
@@ -187,6 +250,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {themeToggle}
             {fmpBtn}
+            {authBtn}
             {analyzeBtn}
           </div>
         </div>
@@ -241,6 +305,8 @@ export function Navbar({ fmpKeySet, onOpenFmpModal }: Props) {
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: inv.color }} />
           <span style={{ color: inv.color, fontSize: 12, fontWeight: 600 }}>{inv.shortName}</span>
         </div>
+
+        {authBtn}
 
         {analyzeBtn}
       </div>

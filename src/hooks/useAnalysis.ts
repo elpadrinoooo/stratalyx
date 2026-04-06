@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { runAnalysis } from '../engine/analyze'
 import { useApp } from '../state/context'
 import { INV } from '../constants/investors'
+import { supabase } from '../lib/supabase'
 
 export type AnalysisPhase = 'idle' | 'running' | 'done' | 'error'
 
@@ -31,12 +32,16 @@ export function useAnalysis(): UseAnalysisReturn {
     setError('')
 
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const authToken = session?.access_token ?? null
+
       const result = await runAnalysis({
         ticker: sym,
         investor,
         provider: state.provider,
         model: state.model,
         fmpKey: fmpKey || null,
+        authToken,
       })
 
       dispatch({ type: 'SET_ANALYSIS', payload: result })
@@ -49,7 +54,9 @@ export function useAnalysis(): UseAnalysisReturn {
       const msg = err instanceof Error ? err.message : 'Analysis failed'
       setError(msg)
       setPhase('error')
-      dispatch({ type: 'TOAST', payload: { message: msg, type: 'error' } })
+      // 402 usage limit — show as warning, not error
+      const isLimit = msg.toLowerCase().includes('monthly analysis limit')
+      dispatch({ type: 'TOAST', payload: { message: msg, type: isLimit ? 'info' : 'error' } })
     }
   }, [state.investor, state.provider, state.model, dispatch])
 

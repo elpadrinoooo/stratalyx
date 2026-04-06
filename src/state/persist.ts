@@ -43,14 +43,16 @@ export function loadState(): AppState {
   }
 }
 
-/** Persist the durable state slices to localStorage. */
-export function saveState(state: AppState): void {
+/** Persist the durable state slices to localStorage.
+ *  When skipUserData is true (logged-in users), analyses and watchlist are
+ *  omitted because Supabase is now the authoritative store for those. */
+export function saveState(state: AppState, opts: { skipUserData?: boolean } = {}): void {
   try {
     const slice: PersistedSlice = {
-      analyses: state.analyses,
+      analyses: opts.skipUserData ? {} : state.analyses,
       comparisons: state.comparisons,
       archivedComparisons: state.archivedComparisons,
-      watchlist: state.watchlist,
+      watchlist: opts.skipUserData ? [] : state.watchlist,
       archived: state.archived,
       provider: state.provider,
       model: state.model,

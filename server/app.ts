@@ -5,6 +5,9 @@ import crypto from 'crypto'
 import { rateLimit } from 'express-rate-limit'
 import fs from 'fs'
 import path from 'path'
+import { attachUser } from './authMiddleware.js'
+import { checkUsage, recordAnalysis } from './usageLimiter.js'
+import { userRouter } from './routes/userRoutes.js'
 // Load affiliate map — mutable so admin routes can update it in memory
 const affiliateMapPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), 'affiliate.json')
 let affiliateMap: Record<string, string> = {}
@@ -61,6 +64,13 @@ app.use(cors({
 
 app.use(express.json({ limit: '1mb' }))
 
+// ── Auth middleware (global — attaches req.user if valid JWT present) ─────────
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
+app.use(attachUser)
+
+// ── User routes ───────────────────────────────────────────────────────────────
+app.use('/user', userRouter)
+
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 
 const IS_TEST = Boolean(process.env['JEST_WORKER_ID'])
@@ -101,13 +111,14 @@ app.get('/health', (_req: Request, res: Response) => {
 })
 
 // ── Claude proxy ──────────────────────────────────────────────────────────────
-app.post('/claude', llmLimiter, async (req: Request, res: Response) => {
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
+app.post('/claude', llmLimiter, checkUsage, async (req: Request, res: Response) => {
   if (!ANTHROPIC_KEY) {
     res.status(503).json({ error: 'ANTHROPIC_API_KEY not configured on server' })
     return
   }
 
-  const { prompt } = req.body as { prompt?: unknown; model?: unknown }
+  const { prompt, ticker, investorId } = req.body as { prompt?: unknown; model?: unknown; ticker?: unknown; investorId?: unknown }
   if (typeof prompt !== 'string' || !prompt.trim()) {
     res.status(400).json({ error: 'prompt must be a non-empty string' })
     return
@@ -140,6 +151,11 @@ app.post('/claude', llmLimiter, async (req: Request, res: Response) => {
     }
 
     res.json(data)
+    recordAnalysis(req.user?.id ?? null, {
+      ticker: typeof ticker === 'string' ? ticker : 'UNKNOWN',
+      investorId: typeof investorId === 'string' ? investorId : 'unknown',
+      result: data,
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     res.status(502).json({ error: 'Failed to reach Anthropic API', detail: message })
@@ -147,13 +163,14 @@ app.post('/claude', llmLimiter, async (req: Request, res: Response) => {
 })
 
 // ── Gemini proxy ──────────────────────────────────────────────────────────────
-app.post('/gemini', llmLimiter, async (req: Request, res: Response) => {
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
+app.post('/gemini', llmLimiter, checkUsage, async (req: Request, res: Response) => {
   if (!GOOGLE_KEY) {
     res.status(503).json({ error: 'GOOGLE_API_KEY not configured on server' })
     return
   }
 
-  const { prompt, model } = req.body as { prompt?: unknown; model?: unknown }
+  const { prompt, model, ticker, investorId } = req.body as { prompt?: unknown; model?: unknown; ticker?: unknown; investorId?: unknown }
   if (typeof prompt !== 'string' || !prompt.trim()) {
     res.status(400).json({ error: 'prompt must be a non-empty string' })
     return
@@ -195,6 +212,11 @@ app.post('/gemini', llmLimiter, async (req: Request, res: Response) => {
     const textPart = [...parts].reverse().find(p => !p.thought && p.text) ?? parts[0]
     const text = textPart?.text ?? ''
     res.json({ content: [{ type: 'text', text }] })
+    recordAnalysis(req.user?.id ?? null, {
+      ticker: typeof ticker === 'string' ? ticker : 'UNKNOWN',
+      investorId: typeof investorId === 'string' ? investorId : 'unknown',
+      result: { content: [{ type: 'text', text }] },
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     res.status(502).json({ error: 'Failed to reach Gemini API', detail: message })
@@ -345,13 +367,14 @@ app.get('/history/:ticker', async (req: Request, res: Response) => {
 })
 
 // ── OpenAI proxy ─────────────────────────────────────────────────────────────
-app.post('/openai', llmLimiter, async (req: Request, res: Response) => {
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
+app.post('/openai', llmLimiter, checkUsage, async (req: Request, res: Response) => {
   if (!OPENAI_KEY) {
     res.status(503).json({ error: 'OPENAI_API_KEY not configured on server' })
     return
   }
 
-  const { prompt, model } = req.body as { prompt?: unknown; model?: unknown }
+  const { prompt, model, ticker, investorId } = req.body as { prompt?: unknown; model?: unknown; ticker?: unknown; investorId?: unknown }
   if (typeof prompt !== 'string' || !prompt.trim()) {
     res.status(400).json({ error: 'prompt must be a non-empty string' })
     return
@@ -391,6 +414,11 @@ app.post('/openai', llmLimiter, async (req: Request, res: Response) => {
     const openai = data as { choices?: Array<{ message?: { content?: string } }> }
     const text = openai.choices?.[0]?.message?.content ?? ''
     res.json({ content: [{ type: 'text', text }] })
+    recordAnalysis(req.user?.id ?? null, {
+      ticker: typeof ticker === 'string' ? ticker : 'UNKNOWN',
+      investorId: typeof investorId === 'string' ? investorId : 'unknown',
+      result: { content: [{ type: 'text', text }] },
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     res.status(502).json({ error: 'Failed to reach OpenAI API', detail: message })
@@ -398,13 +426,14 @@ app.post('/openai', llmLimiter, async (req: Request, res: Response) => {
 })
 
 // ── Mistral proxy ─────────────────────────────────────────────────────────────
-app.post('/mistral', llmLimiter, async (req: Request, res: Response) => {
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
+app.post('/mistral', llmLimiter, checkUsage, async (req: Request, res: Response) => {
   if (!MISTRAL_KEY) {
     res.status(503).json({ error: 'MISTRAL_API_KEY not configured on server' })
     return
   }
 
-  const { prompt, model } = req.body as { prompt?: unknown; model?: unknown }
+  const { prompt, model, ticker, investorId } = req.body as { prompt?: unknown; model?: unknown; ticker?: unknown; investorId?: unknown }
   if (typeof prompt !== 'string' || !prompt.trim()) {
     res.status(400).json({ error: 'prompt must be a non-empty string' })
     return
@@ -444,6 +473,11 @@ app.post('/mistral', llmLimiter, async (req: Request, res: Response) => {
     const mistral = data as { choices?: Array<{ message?: { content?: string } }> }
     const text = mistral.choices?.[0]?.message?.content ?? ''
     res.json({ content: [{ type: 'text', text }] })
+    recordAnalysis(req.user?.id ?? null, {
+      ticker: typeof ticker === 'string' ? ticker : 'UNKNOWN',
+      investorId: typeof investorId === 'string' ? investorId : 'unknown',
+      result: { content: [{ type: 'text', text }] },
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     res.status(502).json({ error: 'Failed to reach Mistral API', detail: message })
