@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
-import { supabaseAdmin } from './supabaseAdmin.js'
+import { supabaseAdmin, supabaseConfigured } from './supabaseAdmin.js'
 
 const FREE_LIMIT = 3
 
@@ -27,29 +27,39 @@ export function recordAnalysis(
   userId: string | null,
   payload: AnalysisFlywheelPayload
 ): void {
-  const run = async (): Promise<void> => {
-    await supabaseAdmin.from('analyses').insert({
-      ticker: payload.ticker,
-      investor_id: payload.investorId,
-      score: payload.score ?? null,
-      verdict: payload.verdict ?? null,
-      result: payload.result,
-      price_at_analysis: payload.priceAtAnalysis ?? null,
-      user_id: userId,
-    })
+  // No-op when Supabase isn't configured — matches the boot-time
+  // "auth enforcement disabled" warning. Lets local dev and CI run
+  // the LLM proxy routes without writing to a database.
+  if (!supabaseConfigured) return
 
-    if (userId) {
-      const { data: u } = await supabaseAdmin
-        .from('users')
-        .select('analyses_this_month')
-        .eq('id', userId)
-        .single()
-      if (u) {
-        await supabaseAdmin
+  const run = async (): Promise<void> => {
+    try {
+      await supabaseAdmin.from('analyses').insert({
+        ticker: payload.ticker,
+        investor_id: payload.investorId,
+        score: payload.score ?? null,
+        verdict: payload.verdict ?? null,
+        result: payload.result,
+        price_at_analysis: payload.priceAtAnalysis ?? null,
+        user_id: userId,
+      })
+
+      if (userId) {
+        const { data: u } = await supabaseAdmin
           .from('users')
-          .update({ analyses_this_month: (u.analyses_this_month as number) + 1 })
+          .select('analyses_this_month')
           .eq('id', userId)
+          .single()
+        if (u) {
+          await supabaseAdmin
+            .from('users')
+            .update({ analyses_this_month: (u.analyses_this_month as number) + 1 })
+            .eq('id', userId)
+        }
       }
+    } catch (err) {
+      // Background flywheel — failures shouldn't crash the request that triggered it
+      console.error('[usageLimiter] recordAnalysis failed:', err instanceof Error ? err.message : err)
     }
   }
   void run()

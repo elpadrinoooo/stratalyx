@@ -8,9 +8,12 @@ if (url && serviceRole) {
   client = createClient(url, serviceRole, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
-} else {
+} else if (!process.env['JEST_WORKER_ID']) {
   console.warn('[supabase] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set — auth enforcement disabled')
 }
+
+/** True when both env vars are present and a real Supabase client exists. */
+export const supabaseConfigured: boolean = client !== null
 
 export const supabaseAdmin = new Proxy({} as SupabaseClient, {
   get(_t, prop) {
