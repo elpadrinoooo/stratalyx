@@ -1,13 +1,22 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
+import {
+  Mail, Lock, LogOut, Sun, Moon, Monitor, BarChart3, Star,
+  ArrowLeftRight, Archive, Sparkles, ShieldCheck,
+} from 'lucide-react'
 import { C, R } from '../constants/colors'
 import { useApp } from '../state/context'
 import { useUsageInfo } from '../hooks/useUsageInfo'
+import { useTheme, type ThemeMode } from '../hooks/useTheme'
+import { useWindowWidth } from '../hooks/useWindowWidth'
 import { supabase } from '../lib/supabase'
 import { Button } from '../components/Button'
 
+// ── Account screen ──────────────────────────────────────────────────────────
 export function AccountScreen() {
   const { state, dispatch } = useApp()
   const { usage } = useUsageInfo()
+  const width = useWindowWidth()
+  const isCompact = width <= 768
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -16,137 +25,232 @@ export function AccountScreen() {
   }
 
   if (!state.user) return null
+  const { email, tier, isAdmin } = state.user
 
-  const { email, tier } = state.user
-
-  const tierBadge = (
-    <span style={{
-      display: 'inline-block',
-      padding: '2px 10px',
-      borderRadius: R.r99,
-      fontSize: 12,
-      fontWeight: 700,
-      fontFamily: C.sans,
-      background: tier === 'pro' ? C.accentB : C.bg3,
-      color: tier === 'pro' ? C.accent : C.t3,
-      border: `1px solid ${tier === 'pro' ? C.accent : C.border}`,
-    }}>
-      {tier === 'pro' ? 'PRO' : 'FREE'}
-    </span>
-  )
-
-  const usageLine = () => {
-    if (!usage) return null
-    if (usage.tier === 'pro') {
-      return (
-        <span style={{ fontFamily: C.sans, fontSize: 14, color: C.t3 }}>
-          Unlimited analyses
-        </span>
-      )
-    }
-    const pct = usage.limit ? (usage.analysesThisMonth / usage.limit) * 100 : 0
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <span style={{ fontFamily: C.sans, fontSize: 14, color: C.t2 }}>
-          {usage.analysesThisMonth} / {usage.limit} analyses this month
-        </span>
-        <div style={{ height: 6, borderRadius: R.r99, background: C.bg3, overflow: 'hidden' }}>
-          <div style={{
-            height: '100%',
-            width: `${Math.min(pct, 100)}%`,
-            background: pct >= 100 ? C.loss : C.accent,
-            borderRadius: R.r99,
-            transition: 'width .3s',
-          }} />
-        </div>
-        {usage.limitReached && (
-          <span style={{ fontFamily: C.sans, fontSize: 12, color: C.loss }}>
-            Monthly limit reached. Upgrade to Pro for unlimited analyses.
-          </span>
-        )}
-      </div>
-    )
+  const stats = {
+    analyses: Object.keys(state.analyses).length,
+    watchlist: state.watchlist.length,
+    comparisons: state.comparisons.length,
+    archived: state.archived.length,
   }
 
   return (
-    <div style={{ maxWidth: 480, margin: '48px auto', padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <h1 style={{ fontFamily: C.sans, fontSize: 22, fontWeight: 700, color: C.t1, margin: 0 }}>
-        Account
-      </h1>
+    <div style={{
+      maxWidth: 920, margin: '32px auto', padding: '0 18px',
+      display: 'flex', flexDirection: 'column', gap: 18,
+      fontFamily: C.sans,
+    }}>
+      <ProfileHeader email={email} tier={tier} isAdmin={isAdmin} />
 
-      {/* Profile card */}
-      <Card>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontFamily: C.sans, fontSize: 15, color: C.t2 }}>{email}</span>
-          {tierBadge}
-        </div>
-        {usageLine()}
-        {tier === 'free' && (
-          <div style={{
-            background: C.accentM,
-            border: `1px solid ${C.accentB}`,
-            borderRadius: R.r8,
-            padding: '12px 16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 6,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontFamily: C.sans, fontSize: 14, fontWeight: 600, color: C.accent }}>
-                Pro tier — coming soon
-              </span>
-              <span style={{
-                fontFamily: C.sans, fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
-                background: C.bg2, border: `1px solid ${C.border}`, color: C.t2,
-                padding: '2px 8px', borderRadius: R.r99, textTransform: 'uppercase',
-              }}>
-                Beta
-              </span>
-            </div>
-            <span style={{ fontFamily: C.sans, fontSize: 12, color: C.t2 }}>
-              Unlimited analyses, priority support, and early access to new features. Billing
-              isn&apos;t live yet — we&apos;ll email you the moment Pro opens up.
-            </span>
-          </div>
-        )}
-      </Card>
+      <UsageCard usage={usage} tier={tier} />
 
-      <ChangeEmailCard currentEmail={email} />
-      <ChangePasswordCard />
+      <StatsGrid stats={stats} />
 
-      <Card>
-        <SectionLabel>Session</SectionLabel>
-        <div>
-          <Button variant="ghost" onClick={() => { void handleSignOut() }}>
-            Sign Out
-          </Button>
-        </div>
-      </Card>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr',
+        gap: 16,
+      }}>
+        <SettingsColumn currentEmail={email} />
+        <PreferencesColumn onSignOut={() => { void handleSignOut() }} />
+      </div>
     </div>
   )
 }
 
-function Card({ children }: { children: React.ReactNode }) {
+// ── Profile header (avatar + identity) ──────────────────────────────────────
+function ProfileHeader({ email, tier, isAdmin }: { email: string; tier: 'free' | 'pro'; isAdmin: boolean }) {
+  const initial = (email[0] ?? '?').toUpperCase()
   return (
     <div style={{
       background: C.bg2,
       border: `1px solid ${C.border}`,
-      borderRadius: R.r12,
-      padding: 24,
+      borderRadius: R.r16,
+      padding: 22,
       display: 'flex',
-      flexDirection: 'column',
-      gap: 16,
+      alignItems: 'center',
+      gap: 18,
+      flexWrap: 'wrap',
     }}>
-      {children}
+      <div style={{
+        width: 64, height: 64, borderRadius: '50%',
+        background: `linear-gradient(135deg, ${C.accent}, ${C.accentB})`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: '#fff', fontSize: 28, fontWeight: 700,
+        boxShadow: `0 4px 16px ${C.accentM}`,
+        flexShrink: 0,
+      }}>
+        {initial}
+      </div>
+      <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: C.t3, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 4 }}>
+          Signed in
+        </div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: C.t1, wordBreak: 'break-all', lineHeight: 1.3 }}>
+          {email}
+        </div>
+        <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+          <Pill icon={tier === 'pro' ? <Sparkles size={11} strokeWidth={2.4} aria-hidden /> : null}
+                color={tier === 'pro' ? C.accent : C.t2}
+                bg={tier === 'pro' ? C.accentM : C.bg3}
+                border={tier === 'pro' ? C.accentB : C.border}>
+            {tier === 'pro' ? 'PRO' : 'FREE TIER'}
+          </Pill>
+          {isAdmin && (
+            <Pill icon={<ShieldCheck size={11} strokeWidth={2.4} aria-hidden />}
+                  color={C.warn} bg={C.warnBg} border={C.warnB}>
+              ADMIN
+            </Pill>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+// ── Usage card ──────────────────────────────────────────────────────────────
+function UsageCard({ usage, tier }: { usage: ReturnType<typeof useUsageInfo>['usage']; tier: 'free' | 'pro' }) {
+  if (tier === 'pro') {
+    return (
+      <Card>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <SectionLabel>This month</SectionLabel>
+            <div style={{ fontSize: 26, fontWeight: 700, color: C.t1, marginTop: 4 }}>
+              Unlimited <span style={{ color: C.t3, fontSize: 15, fontWeight: 500 }}>analyses</span>
+            </div>
+            <div style={{ fontSize: 13, color: C.t2, marginTop: 4 }}>
+              Pro members run as many strategy analyses as they want — no monthly cap.
+            </div>
+          </div>
+          <Pill icon={<Sparkles size={11} strokeWidth={2.4} aria-hidden />} color={C.accent} bg={C.accentM} border={C.accentB}>
+            PRO BENEFIT
+          </Pill>
+        </div>
+      </Card>
+    )
+  }
+
+  // Free tier
+  const used = usage?.analysesThisMonth ?? 0
+  const limit = usage?.limit ?? 3
+  const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0
+  const remaining = Math.max(0, limit - used)
+  const reached = usage?.limitReached ?? false
+  const barColor = reached ? C.loss : pct >= 67 ? C.warn : C.accent
+
+  // The free tier resets at the start of each calendar month — show days remaining.
+  const now = new Date()
+  const nextReset = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  const msPerDay = 86_400_000
+  const daysUntilReset = Math.max(1, Math.ceil((nextReset.getTime() - now.getTime()) / msPerDay))
+
   return (
-    <span style={{ fontFamily: C.sans, fontSize: 13, fontWeight: 600, color: C.t2, textTransform: 'uppercase', letterSpacing: '.04em' }}>
-      {children}
-    </span>
+    <Card>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
+        <div>
+          <SectionLabel>This month</SectionLabel>
+          <div style={{ fontSize: 26, fontWeight: 700, color: C.t1, marginTop: 4, fontFamily: C.mono }}>
+            {used} <span style={{ color: C.t3, fontSize: 18 }}>/ {limit}</span>
+            <span style={{ color: C.t3, fontSize: 14, fontWeight: 500, fontFamily: C.sans, marginLeft: 6 }}>analyses used</span>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.t2 }}>
+            {remaining} {remaining === 1 ? 'analysis' : 'analyses'} left
+          </div>
+          <div style={{ fontSize: 11, color: C.t3, marginTop: 2 }}>
+            Resets in {daysUntilReset} {daysUntilReset === 1 ? 'day' : 'days'}
+          </div>
+        </div>
+      </div>
+      <div style={{ height: 8, borderRadius: R.r99, background: C.bg3, overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', width: `${pct}%`,
+          background: barColor,
+          borderRadius: R.r99,
+          transition: 'width .35s ease, background .2s',
+        }} />
+      </div>
+      {reached && (
+        <Banner type="warn" style={{ marginTop: 12 }}>
+          You&rsquo;ve hit the free monthly cap. Upgrade to Pro for unlimited analyses (coming soon).
+        </Banner>
+      )}
+      <ProUpsell />
+    </Card>
+  )
+}
+
+function ProUpsell() {
+  return (
+    <div style={{
+      marginTop: 12,
+      background: `linear-gradient(135deg, ${C.accentM} 0%, transparent 100%)`,
+      border: `1px solid ${C.accentB}`,
+      borderRadius: R.r10,
+      padding: '12px 14px',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 200 }}>
+        <Sparkles size={18} strokeWidth={2} color="var(--c-accent)" aria-hidden />
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: C.accent }}>Pro tier — coming soon</div>
+          <div style={{ fontSize: 12, color: C.t2, marginTop: 2 }}>
+            Unlimited analyses, priority support, and early access. We&rsquo;ll email you the moment it opens.
+          </div>
+        </div>
+      </div>
+      <Pill color={C.t2} bg={C.bg2} border={C.border}>BETA</Pill>
+    </div>
+  )
+}
+
+// ── Stats grid ──────────────────────────────────────────────────────────────
+interface Stats { analyses: number; watchlist: number; comparisons: number; archived: number }
+function StatsGrid({ stats }: { stats: Stats }) {
+  const items = [
+    { label: 'Analyses run',   value: stats.analyses,    Icon: BarChart3,       color: C.accent },
+    { label: 'Watchlist',      value: stats.watchlist,   Icon: Star,            color: C.warn },
+    { label: 'Comparisons',    value: stats.comparisons, Icon: ArrowLeftRight,  color: C.gain },
+    { label: 'Archived',       value: stats.archived,    Icon: Archive,         color: C.t3 },
+  ]
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+      gap: 10,
+    }}>
+      {items.map(({ label, value, Icon, color }) => (
+        <div key={label} style={{
+          background: C.bg2,
+          border: `1px solid ${C.border}`,
+          borderRadius: R.r10,
+          padding: '14px 16px',
+          display: 'flex', flexDirection: 'column', gap: 6,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: C.t3, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+              {label}
+            </span>
+            <Icon size={14} strokeWidth={2} color={color} aria-hidden />
+          </div>
+          <span style={{ fontSize: 22, fontWeight: 700, color: C.t1, fontFamily: C.mono, lineHeight: 1 }}>
+            {value}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── Settings column (email + password) ──────────────────────────────────────
+function SettingsColumn({ currentEmail }: { currentEmail: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <ChangeEmailCard currentEmail={currentEmail} />
+      <ChangePasswordCard />
+    </div>
   )
 }
 
@@ -162,18 +266,14 @@ function ChangeEmailCard({ currentEmail }: { currentEmail: string }) {
     setLoading(true)
     const { error } = await supabase.auth.updateUser({ email })
     setLoading(false)
-    if (error) {
-      setMsg({ type: 'err', text: error.message })
-    } else {
-      setMsg({ type: 'ok', text: 'Confirmation email sent — click the link to confirm the change.' })
-      setEmail('')
-    }
+    if (error) setMsg({ type: 'err', text: error.message })
+    else { setMsg({ type: 'ok', text: 'Confirmation email sent — click the link to confirm.' }); setEmail('') }
   }
 
   return (
     <Card>
-      <SectionLabel>Change email</SectionLabel>
-      <form onSubmit={(e) => { void submit(e) }} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <CardHeader Icon={Mail} title="Email address" subtitle={currentEmail} />
+      <form onSubmit={(e) => { void submit(e) }} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <input
           type="email"
           placeholder="new-email@example.com"
@@ -184,11 +284,11 @@ function ChangeEmailCard({ currentEmail }: { currentEmail: string }) {
           style={inputStyle}
         />
         <div>
-          <Button type="submit" variant="primary" disabled={loading || !email} loading={loading}>
+          <Button type="submit" variant="primary" size="sm" disabled={loading || !email} loading={loading}>
             {loading ? 'Sending…' : 'Send confirmation email'}
           </Button>
         </div>
-        {msg && <Banner type={msg.type}>{msg.text}</Banner>}
+        {msg && <Banner type={msg.type === 'ok' ? 'ok' : 'err'}>{msg.text}</Banner>}
       </form>
     </Card>
   )
@@ -208,21 +308,17 @@ function ChangePasswordCard() {
     setLoading(true)
     const { error } = await supabase.auth.updateUser({ password: pw })
     setLoading(false)
-    if (error) {
-      setMsg({ type: 'err', text: error.message })
-    } else {
-      setMsg({ type: 'ok', text: 'Password updated.' })
-      setPw(''); setConfirm('')
-    }
+    if (error) setMsg({ type: 'err', text: error.message })
+    else { setMsg({ type: 'ok', text: 'Password updated.' }); setPw(''); setConfirm('') }
   }
 
   return (
     <Card>
-      <SectionLabel>Change password</SectionLabel>
-      <form onSubmit={(e) => { void submit(e) }} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <CardHeader Icon={Lock} title="Password" subtitle="Min 8 characters" />
+      <form onSubmit={(e) => { void submit(e) }} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <input
           type="password"
-          placeholder="New password (min 8 chars)"
+          placeholder="New password"
           aria-label="New password (minimum 8 characters)"
           value={pw}
           onChange={(e) => setPw(e.target.value)}
@@ -240,27 +336,162 @@ function ChangePasswordCard() {
           style={inputStyle}
         />
         <div>
-          <Button type="submit" variant="primary" disabled={loading} loading={loading}>
+          <Button type="submit" variant="primary" size="sm" disabled={loading} loading={loading}>
             {loading ? 'Updating…' : 'Update password'}
           </Button>
         </div>
-        {msg && <Banner type={msg.type}>{msg.text}</Banner>}
+        {msg && <Banner type={msg.type === 'ok' ? 'ok' : 'err'}>{msg.text}</Banner>}
       </form>
     </Card>
   )
 }
 
-function Banner({ type, children }: { type: 'ok' | 'err'; children: React.ReactNode }) {
-  const isOk = type === 'ok'
+// ── Preferences column (theme + sign out) ───────────────────────────────────
+function PreferencesColumn({ onSignOut }: { onSignOut: () => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <ThemeCard />
+      <SessionCard onSignOut={onSignOut} />
+    </div>
+  )
+}
+
+function ThemeCard() {
+  const { mode, setTheme } = useTheme()
+  const opts: { id: ThemeMode; label: string; Icon: typeof Sun }[] = [
+    { id: 'light',  label: 'Light',  Icon: Sun },
+    { id: 'dark',   label: 'Dark',   Icon: Moon },
+    { id: 'system', label: 'System', Icon: Monitor },
+  ]
+  return (
+    <Card>
+      <CardHeader Icon={Sun} title="Appearance" subtitle="Pick your color theme" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+        {opts.map(({ id, label, Icon }) => {
+          const active = mode === id
+          return (
+            <button
+              key={id}
+              onClick={() => setTheme(id)}
+              aria-pressed={active}
+              style={{
+                background: active ? C.accentM : C.bg1,
+                border: `1px solid ${active ? C.accentB : C.border}`,
+                borderRadius: R.r8,
+                color: active ? C.accent : C.t2,
+                cursor: 'pointer',
+                padding: '10px 6px',
+                fontSize: 12,
+                fontWeight: active ? 700 : 500,
+                fontFamily: C.sans,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                transition: 'background .15s, border-color .15s, color .15s',
+              }}
+            >
+              <Icon size={18} strokeWidth={2} aria-hidden />
+              {label}
+            </button>
+          )
+        })}
+      </div>
+    </Card>
+  )
+}
+
+function SessionCard({ onSignOut }: { onSignOut: () => void }) {
+  return (
+    <Card>
+      <CardHeader Icon={LogOut} title="Sign out" subtitle="Ends your session on this device" />
+      <div>
+        <Button variant="destructive" size="sm" icon={<LogOut size={14} strokeWidth={2} aria-hidden />} onClick={onSignOut}>
+          Sign out
+        </Button>
+      </div>
+    </Card>
+  )
+}
+
+// ── Shared atoms ────────────────────────────────────────────────────────────
+function Card({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      background: isOk ? C.gainBg : C.lossBg,
-      border: `1px solid ${isOk ? C.gainB : C.lossB}`,
+      background: C.bg2,
+      border: `1px solid ${C.border}`,
+      borderRadius: R.r12,
+      padding: 18,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12,
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function CardHeader({ Icon, title, subtitle }: { Icon: typeof Sun; title: string; subtitle?: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: R.r8,
+        background: C.bg3, border: `1px solid ${C.border}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        <Icon size={15} strokeWidth={2} color="var(--c-t2)" aria-hidden />
+      </div>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.t1 }}>{title}</div>
+        {subtitle && <div style={{ fontSize: 12, color: C.t3, marginTop: 2, wordBreak: 'break-all' }}>{subtitle}</div>}
+      </div>
+    </div>
+  )
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{
+      fontFamily: C.sans, fontSize: 11, fontWeight: 700, color: C.t3,
+      textTransform: 'uppercase', letterSpacing: '.07em',
+    }}>
+      {children}
+    </span>
+  )
+}
+
+function Pill({ children, color, bg, border, icon }: {
+  children: React.ReactNode; color: string; bg: string; border: string; icon?: React.ReactNode
+}) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '3px 10px',
+      borderRadius: R.r99,
+      fontSize: 11, fontWeight: 700, letterSpacing: '.05em',
+      background: bg, color, border: `1px solid ${border}`,
+      fontFamily: C.sans,
+    }}>
+      {icon}
+      {children}
+    </span>
+  )
+}
+
+function Banner({ type, children, style }: { type: 'ok' | 'err' | 'warn'; children: React.ReactNode; style?: React.CSSProperties }) {
+  const palette = type === 'ok'
+    ? { bg: C.gainBg, bd: C.gainB, fg: C.gain }
+    : type === 'warn'
+      ? { bg: C.warnBg, bd: C.warnB, fg: C.warn }
+      : { bg: C.lossBg, bd: C.lossB, fg: C.loss }
+  return (
+    <div style={{
+      background: palette.bg,
+      border: `1px solid ${palette.bd}`,
       borderRadius: R.r8,
-      padding: '10px 12px',
-      color: isOk ? C.gain : C.loss,
+      padding: '9px 12px',
+      color: palette.fg,
       fontFamily: C.sans,
       fontSize: 13,
+      ...style,
     }}>
       {children}
     </div>
@@ -279,4 +510,3 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
   boxSizing: 'border-box',
 }
-
