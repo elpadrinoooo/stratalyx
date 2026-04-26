@@ -267,7 +267,13 @@ function ChangeEmailCard({ currentEmail }: { currentEmail: string }) {
     const { error } = await supabase.auth.updateUser({ email })
     setLoading(false)
     if (error) setMsg({ type: 'err', text: error.message })
-    else { setMsg({ type: 'ok', text: 'Confirmation email sent — click the link to confirm.' }); setEmail('') }
+    else {
+      setMsg({
+        type: 'ok',
+        text: 'Confirmation links sent to both your current address and the new one — click both links to complete the change.',
+      })
+      setEmail('')
+    }
   }
 
   return (
@@ -295,6 +301,9 @@ function ChangeEmailCard({ currentEmail }: { currentEmail: string }) {
 }
 
 function ChangePasswordCard() {
+  const { state } = useApp()
+  const email = state.user?.email ?? ''
+  const [currentPw, setCurrentPw] = useState('')
   const [pw, setPw] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
@@ -303,23 +312,55 @@ function ChangePasswordCard() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMsg(null)
-    if (pw.length < 8) { setMsg({ type: 'err', text: 'Password must be at least 8 characters' }); return }
-    if (pw !== confirm) { setMsg({ type: 'err', text: 'Passwords do not match' }); return }
+    if (!currentPw)            { setMsg({ type: 'err', text: 'Enter your current password' }); return }
+    if (pw.length < 8)         { setMsg({ type: 'err', text: 'New password must be at least 8 characters' }); return }
+    if (pw !== confirm)        { setMsg({ type: 'err', text: 'Passwords do not match' }); return }
+    if (pw === currentPw)      { setMsg({ type: 'err', text: 'New password must differ from current' }); return }
+    if (!email)                { setMsg({ type: 'err', text: 'Missing email — try refreshing the page' }); return }
+
     setLoading(true)
+
+    // Verify the current password by re-attempting sign-in. Supabase's "Require
+    // current password when updating" setting rejects updateUser() without proof
+    // of current credentials. signInWithPassword refreshes the session in place
+    // — no sign-out side effect.
+    const verify = await supabase.auth.signInWithPassword({ email, password: currentPw })
+    if (verify.error) {
+      setLoading(false)
+      setMsg({ type: 'err', text: 'Current password is incorrect' })
+      return
+    }
+
     const { error } = await supabase.auth.updateUser({ password: pw })
     setLoading(false)
-    if (error) setMsg({ type: 'err', text: error.message })
-    else { setMsg({ type: 'ok', text: 'Password updated.' }); setPw(''); setConfirm('') }
+    if (error) {
+      // Supabase returns the precise rejection (length / strength / HIBP leak).
+      setMsg({ type: 'err', text: error.message })
+    } else {
+      setMsg({ type: 'ok', text: 'Password updated.' })
+      setCurrentPw(''); setPw(''); setConfirm('')
+    }
   }
 
   return (
     <Card>
-      <CardHeader Icon={Lock} title="Password" subtitle="Min 8 characters" />
+      <CardHeader Icon={Lock} title="Password" subtitle="Min 8 characters · current password required" />
       <form onSubmit={(e) => { void submit(e) }} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <input
+          type="password"
+          placeholder="Current password"
+          aria-label="Current password"
+          autoComplete="current-password"
+          value={currentPw}
+          onChange={(e) => setCurrentPw(e.target.value)}
+          required
+          style={inputStyle}
+        />
         <input
           type="password"
           placeholder="New password"
           aria-label="New password (minimum 8 characters)"
+          autoComplete="new-password"
           value={pw}
           onChange={(e) => setPw(e.target.value)}
           required
@@ -330,6 +371,7 @@ function ChangePasswordCard() {
           type="password"
           placeholder="Confirm new password"
           aria-label="Confirm new password"
+          autoComplete="new-password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           required
