@@ -191,6 +191,7 @@ export function StrategiesScreen() {
             <input
               type="text"
               placeholder="Search frameworks…"
+              aria-label="Search investor frameworks"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
@@ -487,6 +488,7 @@ export function StrategiesScreen() {
                     <input
                       type="text"
                       placeholder="e.g. AAPL"
+                      aria-label="Ticker to analyze with this framework"
                       value={quickTicker}
                       onChange={(e) => setQuickTicker(e.target.value.toUpperCase())}
                       onKeyDown={(e) => e.key === 'Enter' && handleQuickAnalyze()}

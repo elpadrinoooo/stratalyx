@@ -13,16 +13,27 @@ interface Props {
   onOpenAuthModal: () => void
 }
 
-const SCREENS: { label: string; screen: Screen; admin?: boolean }[] = [
-  { label: 'Markets',       screen: 'Markets' },
-  { label: 'Screener',      screen: 'Screener' },
-  { label: 'Strategies',    screen: 'Strategies' },
-  { label: 'Watchlist',     screen: 'Watchlist' },
-  { label: 'History',       screen: 'History' },
-  { label: 'Comparisons',   screen: 'Comparisons' },
-  { label: 'Market Events', screen: 'MarketEvents' },
-  { label: 'News',          screen: 'News' },
-  { label: 'Admin',         screen: 'Admin', admin: true },
+interface ScreenLink { label: string; screen: Screen; admin?: boolean }
+
+// Grouped IA: Discover (passive market-watching) · Analyze (active research) · Library (saved work)
+const SCREEN_GROUPS: ScreenLink[][] = [
+  [
+    { label: 'Markets',       screen: 'Markets' },
+    { label: 'News',          screen: 'News' },
+    { label: 'Market Events', screen: 'MarketEvents' },
+  ],
+  [
+    { label: 'Screener',     screen: 'Screener' },
+    { label: 'Strategies',   screen: 'Strategies' },
+    { label: 'Comparisons',  screen: 'Comparisons' },
+  ],
+  [
+    { label: 'Watchlist',    screen: 'Watchlist' },
+    { label: 'History',      screen: 'History' },
+  ],
+  [
+    { label: 'Admin',        screen: 'Admin', admin: true },
+  ],
 ]
 
 const THEME_OPTIONS: { mode: ThemeMode; icon: string; label: string }[] = [
@@ -300,8 +311,18 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
         </div>
         {/* Row 2: scrollable tab strip (scrollbar hidden) */}
         <div style={{ overflowX: 'auto', borderTop: `1px solid ${C.border44}`, scrollbarWidth: 'none' } as React.CSSProperties}>
-          <div style={{ display: 'flex', gap: 2, padding: '5px 14px 6px', width: 'max-content' }}>
-            {SCREENS.filter(s => !s.admin || state.user?.isAdmin).map(({ label, screen }) => tabBtn(screen, label))}
+          <div style={{ display: 'flex', gap: 2, padding: '5px 14px 6px', width: 'max-content', alignItems: 'center' }}>
+            {SCREEN_GROUPS
+              .map(group => group.filter(s => !s.admin || state.user?.isAdmin))
+              .filter(group => group.length > 0)
+              .map((group, gi, arr) => (
+                <React.Fragment key={gi}>
+                  {group.map(({ label, screen }) => tabBtn(screen, label))}
+                  {gi < arr.length - 1 && (
+                    <div aria-hidden style={{ width: 1, height: 16, background: C.border, margin: '0 4px', flexShrink: 0 }} />
+                  )}
+                </React.Fragment>
+              ))}
           </div>
         </div>
       </nav>
@@ -332,9 +353,19 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
         {/* Divider */}
         <div style={{ height: 20, width: 1, background: C.border, margin: '0 4px' }} />
 
-        {/* Nav tabs */}
-        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-          {SCREENS.filter(s => !s.admin || state.user?.isAdmin).map(({ label, screen }) => tabBtn(screen, label))}
+        {/* Nav tabs (grouped: Discover · Analyze · Library · Admin) */}
+        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+          {SCREEN_GROUPS
+            .map(group => group.filter(s => !s.admin || state.user?.isAdmin))
+            .filter(group => group.length > 0)
+            .map((group, gi, arr) => (
+              <React.Fragment key={gi}>
+                {group.map(({ label, screen }) => tabBtn(screen, label))}
+                {gi < arr.length - 1 && (
+                  <div aria-hidden style={{ width: 1, height: 16, background: C.border, margin: '0 4px', flexShrink: 0 }} />
+                )}
+              </React.Fragment>
+            ))}
         </div>
       </div>
 

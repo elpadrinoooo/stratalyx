@@ -237,6 +237,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
         <input
           type="text"
           placeholder="Search ticker or company…"
+          aria-label="Filter screener by ticker or company"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onFocus={e => { (e.target as HTMLInputElement).style.borderColor = C.accent }}

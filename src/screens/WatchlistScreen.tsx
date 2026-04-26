@@ -237,45 +237,88 @@ export function WatchlistScreen() {
                   <div style={{ color: C.t3, fontSize: 12, marginTop: 8, lineHeight: 1.5 }}>
                     {result.verdictReason}
                   </div>
-                  <button
-                    onClick={() => dispatch({ type: 'OPEN_MODAL', payload: stock.ticker })}
-                    style={{
-                      marginTop: 10,
-                      width: '100%',
-                      background: C.accentM,
-                      border: `1px solid ${C.accentB}`,
-                      borderRadius: R.r8,
-                      color: C.accent,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      padding: '6px 0',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Re-analyze
-                  </button>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                    <button
+                      onClick={() => dispatch({ type: 'OPEN_MODAL', payload: stock.ticker })}
+                      style={{
+                        flex: 1,
+                        background: C.accentM,
+                        border: `1px solid ${C.accentB}`,
+                        borderRadius: R.r8,
+                        color: C.accent,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        padding: '6px 0',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Re-analyze
+                    </button>
+                    <button
+                      onClick={() => toggle(stock.ticker)}
+                      title={`Remove ${stock.ticker} from watchlist`}
+                      aria-label={`Remove ${stock.ticker} from watchlist`}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.lossB; (e.currentTarget as HTMLButtonElement).style.color = C.loss }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.border; (e.currentTarget as HTMLButtonElement).style.color = C.t3 }}
+                      style={{
+                        background: 'transparent',
+                        border: `1px solid ${C.border}`,
+                        borderRadius: R.r8,
+                        color: C.t3,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: '6px 12px',
+                        cursor: 'pointer',
+                        transition: 'border-color .15s, color .15s',
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div style={{ padding: '12px 14px', textAlign: 'center' }}>
                   <div style={{ color: C.t3, fontSize: 13, marginBottom: 10 }}>
                     Not yet analyzed with {inv.shortName}
                   </div>
-                  <button
-                    onClick={() => dispatch({ type: 'OPEN_MODAL', payload: stock.ticker })}
-                    style={{
-                      width: '100%',
-                      background: C.accent,
-                      color: 'var(--c-fg-on-accent, #fff)',
-                      border: 'none',
-                      borderRadius: R.r8,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      padding: '7px 0',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Analyze
-                  </button>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={() => dispatch({ type: 'OPEN_MODAL', payload: stock.ticker })}
+                      style={{
+                        flex: 1,
+                        background: C.accent,
+                        color: 'var(--c-fg-on-accent, #fff)',
+                        border: 'none',
+                        borderRadius: R.r8,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        padding: '7px 0',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Analyze
+                    </button>
+                    <button
+                      onClick={() => toggle(stock.ticker)}
+                      title={`Remove ${stock.ticker} from watchlist`}
+                      aria-label={`Remove ${stock.ticker} from watchlist`}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.lossB; (e.currentTarget as HTMLButtonElement).style.color = C.loss }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.border; (e.currentTarget as HTMLButtonElement).style.color = C.t3 }}
+                      style={{
+                        background: 'transparent',
+                        border: `1px solid ${C.border}`,
+                        borderRadius: R.r8,
+                        color: C.t3,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: '7px 12px',
+                        cursor: 'pointer',
+                        transition: 'border-color .15s, color .15s',
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

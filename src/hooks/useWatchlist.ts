@@ -19,7 +19,17 @@ export function useWatchlist(): UseWatchlistReturn {
     const t = ticker.toUpperCase()
     if (state.watchlist.includes(t)) {
       dispatch({ type: 'REMOVE_FROM_WATCHLIST', payload: t })
-      dispatch({ type: 'TOAST', payload: { message: `${t} removed from watchlist`, type: 'info' } })
+      dispatch({
+        type: 'TOAST',
+        payload: {
+          message: `${t} removed from watchlist`,
+          type: 'info',
+          action: {
+            label: 'Undo',
+            onClick: () => dispatch({ type: 'ADD_TO_WATCHLIST', payload: t }),
+          },
+        },
+      })
     } else {
       dispatch({ type: 'ADD_TO_WATCHLIST', payload: t })
       dispatch({ type: 'TOAST', payload: { message: `${t} added to watchlist`, type: 'success' } })

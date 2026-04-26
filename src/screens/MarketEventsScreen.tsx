@@ -1448,6 +1448,7 @@ function StockScanner() {
           onChange={(e) => setInput(e.target.value.toUpperCase())}
           onKeyDown={(e) => e.key === 'Enter' && handleScan()}
           placeholder="e.g. AAPL, TSLA, BRK.B"
+          aria-label="Tickers to scan for market events"
           style={{ flex: 1, minWidth: 140, background: C.bg0, border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t1, fontSize: 14, fontFamily: C.mono, padding: '8px 12px', outline: 'none' }}
         />
         <button
@@ -1852,6 +1853,7 @@ export function MarketEventsScreen() {
               onChange={(e) => { setSearch(e.target.value); setFilter('all') }}
               onKeyDown={(e) => e.key === 'Escape' && setSearch('')}
               placeholder={isMobile ? 'Search…' : 'Search events…'}
+              aria-label="Search events"
               style={{
                 background: C.bg1,
                 border: `1px solid ${search ? C.accentB : C.border}`,

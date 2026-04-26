@@ -177,6 +177,7 @@ function ChangeEmailCard({ currentEmail }: { currentEmail: string }) {
         <input
           type="email"
           placeholder="new-email@example.com"
+          aria-label="New email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -220,6 +221,7 @@ function ChangePasswordCard() {
         <input
           type="password"
           placeholder="New password (min 8 chars)"
+          aria-label="New password (minimum 8 characters)"
           value={pw}
           onChange={(e) => setPw(e.target.value)}
           required
@@ -229,6 +231,7 @@ function ChangePasswordCard() {
         <input
           type="password"
           placeholder="Confirm new password"
+          aria-label="Confirm new password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           required

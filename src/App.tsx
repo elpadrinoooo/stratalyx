@@ -163,6 +163,30 @@ function AppShell() {
         fontFamily: C.sans,
       }}
     >
+      <a
+        href="#main"
+        style={{
+          position: 'absolute',
+          top: 8,
+          left: 8,
+          padding: '8px 14px',
+          background: C.accent,
+          color: '#fff',
+          borderRadius: 8,
+          fontSize: 13,
+          fontWeight: 600,
+          fontFamily: C.sans,
+          textDecoration: 'none',
+          zIndex: 10001,
+          transform: 'translateY(-150%)',
+          transition: 'transform .15s',
+        }}
+        onFocus={e => { e.currentTarget.style.transform = 'translateY(0)' }}
+        onBlur={e => { e.currentTarget.style.transform = 'translateY(-150%)' }}
+      >
+        Skip to content
+      </a>
+
       <Navbar fmpKeySet={!!fmpKey} onOpenFmpModal={() => setFmpModalOpen(true)} onOpenAuthModal={() => setAuthModalOpen(true)} />
 
       {shareBanner && (
@@ -198,7 +222,7 @@ function AppShell() {
         </div>
       )}
 
-      <main>
+      <main id="main" tabIndex={-1}>
         {screen === 'Markets'     && <ErrorBoundary><MarketsScreen fmpKey={fmpKey} onOpenFmpModal={() => setFmpModalOpen(true)} /></ErrorBoundary>}
         {screen === 'Screener'    && <ErrorBoundary><ScreenerScreen    fmpKeySet={!!fmpKey} onOpenFmpModal={() => setFmpModalOpen(true)} /></ErrorBoundary>}
         {screen === 'Strategies'  && <ErrorBoundary><StrategiesScreen /></ErrorBoundary>}

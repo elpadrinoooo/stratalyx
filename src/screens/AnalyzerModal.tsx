@@ -347,6 +347,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
               onFocus={e => { (e.target as HTMLInputElement).style.borderColor = C.accent }}
               onBlur={e => { (e.target as HTMLInputElement).style.borderColor = C.border }}
               placeholder="Enter any ticker — NVDA, TSLA, BRK.B, PLTR…"
+              aria-label="Stock ticker symbol"
               style={{
                 flex: 1,
                 background: C.bg2,

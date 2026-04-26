@@ -717,6 +717,7 @@ export function NewsScreen() {
             onFocus={e => { if (suggestions.length > 0) setShowSugg(true); (e.target as HTMLInputElement).style.borderColor = C.accent }}
             onBlur={e => { (e.target as HTMLInputElement).style.borderColor = C.border }}
             placeholder="Search by ticker or company name…"
+            aria-label="Search news by ticker or company"
             style={{ width: '100%', boxSizing: 'border-box', background: C.bg0, border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t1, fontSize: 14, padding: '8px 12px', outline: 'none', transition: 'border-color .15s' }}
           />
           {showSugg && suggestions.length > 0 && (

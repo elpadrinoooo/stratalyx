@@ -130,6 +130,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="Paste your FMP API key here…"
+          aria-label="FMP API key"
           onFocus={e => { (e.target as HTMLInputElement).style.border = `1px solid ${C.accent}` }}
           onBlur={e => { (e.target as HTMLInputElement).style.border = `1px solid ${C.border}` }}
           style={{
