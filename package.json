@@ -7,6 +7,7 @@
     "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
     "dev:client": "vite",
     "dev:server": "nodemon --exec tsx server/index.ts",
+    "start": "tsx server/index.ts",
     "build": "tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
