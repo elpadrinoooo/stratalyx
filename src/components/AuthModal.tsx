@@ -6,21 +6,25 @@ import { supabase } from '../lib/supabase'
 
 interface Props {
   onClose: () => void
+  /** When true, render the "set new password" form (called from password-reset email link). */
+  recovery?: boolean
 }
 
-export function AuthModal({ onClose }: Props) {
+export function AuthModal({ onClose, recovery = false }: Props) {
   React.useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  // Close modal once Supabase fires SIGNED_IN
+  // Close modal once Supabase confirms a regular sign-in OR a password update.
+  // (USER_UPDATED fires after the recovery flow successfully sets a new password.)
   React.useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') onClose()
+      if (event === 'SIGNED_IN' && !recovery) onClose()
+      if (event === 'USER_UPDATED' && recovery) onClose()
     })
     return () => { subscription.unsubscribe() }
-  }, [onClose])
+  }, [onClose, recovery])
 
   const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose()
@@ -56,7 +60,7 @@ export function AuthModal({ onClose }: Props) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <span style={{ fontFamily: C.sans, fontWeight: 700, fontSize: 18, color: C.t1 }}>
-            Welcome to Stratalyx
+            {recovery ? 'Set a new password' : 'Welcome to Stratalyx'}
           </span>
           <button
             onClick={onClose}
@@ -70,6 +74,8 @@ export function AuthModal({ onClose }: Props) {
         <Auth
           supabaseClient={supabase}
           providers={[]}
+          view={recovery ? 'update_password' : 'sign_in'}
+          showLinks={!recovery}
           redirectTo={`${window.location.origin}/`}
           appearance={{
             theme: ThemeSupa,

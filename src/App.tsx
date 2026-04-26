@@ -18,6 +18,7 @@ import { MarketsScreen } from './screens/MarketsScreen'
 import { AdminScreen } from './screens/AdminScreen'
 import { AccountScreen } from './screens/AccountScreen'
 import { AuthModal } from './components/AuthModal'
+import { supabase } from './lib/supabase'
 
 const SESSION_KEY = 'stratalyx_fmp_key'
 
@@ -69,6 +70,7 @@ function AppShell() {
   )
   const [fmpModalOpen, setFmpModalOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [authRecoveryMode, setAuthRecoveryMode] = useState(false)
   const [shareBanner, setShareBanner] = useState<'analysis' | 'comparison' | false>(false)
 
   // Handle deep-link on first load (share URL or ?admin=1)
@@ -99,6 +101,24 @@ function AppShell() {
       history.replaceState(null, '', window.location.pathname)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, [])
+
+  // Password-recovery deep link: when the user clicks the email link, supabase
+  // sets a session and fires PASSWORD_RECOVERY. Open the auth modal in
+  // "set new password" mode so the user can finish the flow.
+  useEffect(() => {
+    // Detect on initial load (the hash is parsed by supabase-js before this runs)
+    if (window.location.hash.includes('type=recovery')) {
+      setAuthRecoveryMode(true)
+      setAuthModalOpen(true)
+    }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthRecoveryMode(true)
+        setAuthModalOpen(true)
+      }
+    })
+    return () => { subscription.unsubscribe() }
   }, [])
 
   // Cmd/Ctrl+K → open analyzer modal
@@ -206,7 +226,17 @@ function AppShell() {
       )}
 
       {authModalOpen && (
-        <AuthModal onClose={() => setAuthModalOpen(false)} />
+        <AuthModal
+          recovery={authRecoveryMode}
+          onClose={() => {
+            setAuthModalOpen(false)
+            if (authRecoveryMode) {
+              setAuthRecoveryMode(false)
+              // Strip the recovery hash so a refresh doesn't re-open the modal
+              history.replaceState(null, '', window.location.pathname + window.location.search)
+            }
+          }}
+        />
       )}
 
       <Toasts />
