@@ -81,7 +81,10 @@ function AppShell() {
     const isAdminParam = new URLSearchParams(window.location.search).get('admin') === '1'
     if (isAdminPath || isAdminParam) {
       dispatch({ type: 'SET_SCREEN', payload: 'Admin' })
-      history.replaceState(null, '', '/')
+      // Strip ?admin=1 if present, but keep /admin path AND any hash so react-admin's
+      // HashRouter can deep-link into /admin#/users, /admin#/analyses, etc.
+      const newPath = isAdminPath ? '/admin' : '/'
+      history.replaceState(null, '', newPath + window.location.hash)
       return
     }
 
