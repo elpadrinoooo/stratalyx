@@ -115,7 +115,8 @@ function IndexMiniCard({ card }: { card: IndexCardData }) {
   const [hovered, setHovered] = useState(false)
   const up         = card.changePct >= 0
   const strokeColor = up ? C.gain : C.loss
-  const fillId     = `grad-${card.ticker}`
+  // Sanitize for SVG/CSS id — `^DJI` would break url(#grad-^DJI) since ^ is a CSS selector char.
+  const fillId     = `grad-${card.ticker.replace(/[^A-Za-z0-9]/g, '')}`
   const hasData    = card.points.length > 1
 
   return (
