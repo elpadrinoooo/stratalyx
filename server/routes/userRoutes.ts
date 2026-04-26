@@ -1,22 +1,24 @@
 import { Router, type Request, type Response } from 'express'
 import { supabaseAdmin } from '../supabaseAdmin.js'
+import { getSetting } from '../settings.js'
 import type { AnalysisResult } from '../../src/types/index.js'
 
 export const userRouter = Router()
 
-const FREE_LIMIT = 25
+const DEFAULT_FREE_LIMIT = 25
 
 // GET /user/me — returns current user's tier and usage
-userRouter.get('/me', (req: Request, res: Response): void => {
+userRouter.get('/me', async (req: Request, res: Response): Promise<void> => {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' })
     return
   }
   const { tier, analysesThisMonth, isAdmin } = req.user
+  const cap = await getSetting('free_tier_limit', DEFAULT_FREE_LIMIT)
   res.json({
     tier,
     analysesThisMonth,
-    limit: tier === 'pro' ? null : FREE_LIMIT,
+    limit: tier === 'pro' ? null : cap,
     isAdmin,
   })
 })

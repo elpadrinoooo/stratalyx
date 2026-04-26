@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGetList, Title, useRedirect } from 'react-admin'
 import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent,
@@ -106,6 +106,95 @@ function topN<T extends string>(items: T[], n: number): Array<{ key: T; count: n
     .map(([key, count]) => ({ key, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, n)
+}
+
+// ── API key status panel ────────────────────────────────────────────────────
+interface HealthResponse {
+  status?: string
+  claude?: boolean
+  gemini?: boolean
+  openai?: boolean
+  mistral?: boolean
+  fmp?: boolean
+  // finnhub and supabase aren't currently in /health output, but adding them is one PR
+  uptime?: number
+  time?: string
+}
+
+function ApiKeyStatusCard() {
+  const [health, setHealth] = useState<HealthResponse | null>(null)
+  const [error, setError]   = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/health')
+      .then(r => r.ok ? r.json() as Promise<HealthResponse> : Promise.reject(`HTTP ${r.status}`))
+      .then(d => { if (!cancelled) { setHealth(d); setLoading(false) } })
+      .catch(e => { if (!cancelled) { setError(String(e)); setLoading(false) } })
+    return () => { cancelled = true }
+  }, [])
+
+  const services: { label: string; key: keyof HealthResponse; required: boolean }[] = [
+    { label: 'Anthropic (Claude)', key: 'claude',  required: true  },
+    { label: 'Google (Gemini)',    key: 'gemini',  required: true  },
+    { label: 'OpenAI',             key: 'openai',  required: false },
+    { label: 'Mistral',            key: 'mistral', required: false },
+    { label: 'FMP',                key: 'fmp',     required: true  },
+  ]
+
+  return (
+    <Card>
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+            API key status (read-only)
+          </Typography>
+          {health?.uptime != null && (
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
+              uptime {Math.floor(health.uptime / 3600)}h
+            </Typography>
+          )}
+        </Box>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
+          Stored in Railway environment variables, not the database. To rotate or update, open the&nbsp;
+          <Box component="a" href="https://railway.com/dashboard" target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+            Railway dashboard
+          </Box>
+          &nbsp;→ stratalyx-backend → Variables.
+        </Typography>
+        {loading && <Typography variant="body2" sx={{ color: 'text.secondary' }}>Checking…</Typography>}
+        {error && <Typography variant="body2" sx={{ color: 'error.main' }}>Health check failed: {error}</Typography>}
+        {health && (
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 1 }}>
+            {services.map(({ label, key, required }) => {
+              const ok = Boolean(health[key])
+              return (
+                <Box
+                  key={key}
+                  sx={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    p: 1.25, borderRadius: 1,
+                    background: 'action.hover',
+                    border: 1,
+                    borderColor: ok ? 'success.main' : (required ? 'error.main' : 'divider'),
+                  }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{label}</Typography>
+                  <Chip
+                    size="small"
+                    label={ok ? '✓ Configured' : (required ? '✗ Missing' : 'Not set')}
+                    color={ok ? 'success' : (required ? 'error' : 'default')}
+                    variant={ok ? 'filled' : 'outlined'}
+                  />
+                </Box>
+              )
+            })}
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  )
 }
 
 // ── Activity feed ───────────────────────────────────────────────────────────
@@ -481,6 +570,10 @@ export function Dashboard() {
 
       <Box sx={{ mb: 3 }}>
         <CohortRetention users={users} analyses={analyses30} />
+      </Box>
+
+      <Box sx={{ mb: 3 }}>
+        <ApiKeyStatusCard />
       </Box>
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>

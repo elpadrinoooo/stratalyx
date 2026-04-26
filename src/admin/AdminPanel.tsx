@@ -410,6 +410,47 @@ const WatchlistList = () => (
   </List>
 )
 
+// ── settings ────────────────────────────────────────────────────────────────
+// Runtime config. Edits land immediately in Postgres; the server picks them up
+// within 60s thanks to the in-process settings cache.
+
+const SETTING_TYPE_CHOICES = [
+  { id: 'number',  name: 'Number'  },
+  { id: 'string',  name: 'String'  },
+  { id: 'boolean', name: 'Boolean' },
+  { id: 'json',    name: 'JSON'    },
+]
+
+const SettingValueCell = () => {
+  const r = useRecordContext<{ value: unknown; type: string }>()
+  if (!r) return null
+  const v = typeof r.value === 'object' ? JSON.stringify(r.value) : String(r.value)
+  return <Box component="code" sx={{ fontFamily: 'monospace', fontSize: 12, color: 'primary.main' }}>{v}</Box>
+}
+
+const SettingsList = () => (
+  <List sort={{ field: 'key', order: 'ASC' }} perPage={50} actions={<TopToolbar><ExportButton /></TopToolbar>}>
+    <Datagrid rowClick="edit" bulkActionButtons={false}>
+      <TextField source="key" />
+      <FunctionField label="Value" render={() => <SettingValueCell />} />
+      <TextField source="type" />
+      <TextField source="description" />
+      <DateField source="updated_at" showTime />
+    </Datagrid>
+  </List>
+)
+
+const SettingsEdit = () => (
+  <Edit mutationMode="pessimistic">
+    <SimpleForm>
+      <TextInput source="key" disabled fullWidth helperText="Setting key — read by the server. Don't rename." />
+      <TextInput source="value" fullWidth helperText="Stored as JSON. For numbers/booleans, just type the literal (25, true). For strings, wrap in quotes." />
+      <SelectInput source="type" choices={SETTING_TYPE_CHOICES} />
+      <TextInput source="description" fullWidth multiline />
+    </SimpleForm>
+  </Edit>
+)
+
 // ── shell ────────────────────────────────────────────────────────────────────
 export default function AdminPanel() {
   // HashRouter keeps react-admin's URLs (#/users, #/analyses) isolated from the
@@ -430,6 +471,7 @@ export default function AdminPanel() {
         <Resource name="users"     list={UserList}     edit={UserEdit} show={UserShow} recordRepresentation="email" />
         <Resource name="analyses"  list={AnalysisList} show={AnalysisShow} recordRepresentation="ticker" />
         <Resource name="watchlist" list={WatchlistList} options={{ label: 'Watchlist' }} />
+        <Resource name="app_settings" list={SettingsList} edit={SettingsEdit} options={{ label: 'Settings' }} recordRepresentation="key" />
       </Admin>
     </HashRouter>
   )
