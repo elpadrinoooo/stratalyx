@@ -8,6 +8,8 @@ import {
 import { HashRouter } from 'react-router-dom'
 import { supabaseDataProvider, supabaseAuthProvider } from 'ra-supabase'
 import { supabase } from '../lib/supabase'
+import { useTheme } from '../hooks/useTheme'
+import { stratalyxDarkTheme, stratalyxLightTheme } from './theme'
 
 const SUPABASE_URL  = import.meta.env['VITE_SUPABASE_URL']      as string
 const SUPABASE_ANON = import.meta.env['VITE_SUPABASE_ANON_KEY'] as string
@@ -96,6 +98,8 @@ export default function AdminPanel() {
   // HashRouter keeps react-admin's URLs (#/users, #/analyses) isolated from the
   // host app's location, so navigating in the admin panel doesn't disturb the
   // Stratalyx screen state or interfere with the share-link parser.
+  const { resolved } = useTheme()
+  const theme = resolved === 'light' ? stratalyxLightTheme : stratalyxDarkTheme
   return (
     <HashRouter>
       <Admin
@@ -103,6 +107,7 @@ export default function AdminPanel() {
         authProvider={authProvider}
         requireAuth
         title="Stratalyx Admin"
+        theme={theme}
       >
         <Resource name="users"     list={UserList}     edit={UserEdit} recordRepresentation="email" />
         <Resource name="analyses"  list={AnalysisList} show={AnalysisShow} recordRepresentation="ticker" />
