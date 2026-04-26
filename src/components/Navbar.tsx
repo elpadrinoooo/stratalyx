@@ -4,6 +4,7 @@ import { INVESTORS, INV } from '../constants/investors'
 import { useApp } from '../state/context'
 import { useWindowWidth } from '../hooks/useWindowWidth'
 import { useTheme, type ThemeMode } from '../hooks/useTheme'
+import { useUsageInfo } from '../hooks/useUsageInfo'
 import type { Screen } from '../types'
 
 interface Props {
@@ -40,6 +41,9 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
   const watchlistCount = state.watchlist.length
   const historyCount   = Object.keys(state.analyses).length
   const compCount      = state.comparisons.length
+
+  // Re-fetch usage whenever a new analysis lands so the pill stays in sync.
+  const { usage } = useUsageInfo(historyCount)
 
   function badgeCount(screen: Screen): number {
     if (screen === 'Watchlist')   return watchlistCount
@@ -230,6 +234,44 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
     </button>
   )
 
+  // Usage pill — only for signed-in free users with usage data loaded.
+  // Color escalates: subtle (0-1 used) → amber (last one) → red (limit hit).
+  const usagePill: React.ReactNode = (state.user && usage && usage.tier === 'free' && usage.limit) ? (() => {
+    const used = usage.analysesThisMonth
+    const limit = usage.limit ?? 3
+    const remaining = Math.max(0, limit - used)
+    const tone = remaining === 0 ? 'loss' : remaining === 1 ? 'warn' : 'neutral'
+    const fg = tone === 'loss' ? C.loss : tone === 'warn' ? C.warn : C.t2
+    const bg = tone === 'loss' ? C.lossBg : tone === 'warn' ? C.warnBg : C.bg2
+    const bd = tone === 'loss' ? C.lossB : tone === 'warn' ? C.warnB : C.border
+    return (
+      <button
+        onClick={() => dispatch({ type: 'SET_SCREEN', payload: 'Account' })}
+        aria-label={`${used} of ${limit} free analyses used this month — view account`}
+        title="Free tier usage — click to view account"
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.85' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 5,
+          background: bg, border: `1px solid ${bd}`,
+          borderRadius: R.r8,
+          padding: '4px 9px',
+          cursor: 'pointer', transition: 'opacity .15s',
+          fontFamily: C.sans,
+        }}
+      >
+        <span style={{ fontSize: 12, fontWeight: 600, color: fg, fontFamily: C.mono }}>
+          {used}/{limit}
+        </span>
+        {!isMobile && (
+          <span style={{ fontSize: 11, color: fg, opacity: 0.85 }}>
+            {remaining === 0 ? 'limit reached' : `free ${remaining === 1 ? 'left' : 'this mo'}`}
+          </span>
+        )}
+      </button>
+    )
+  })() : null
+
   const analyzeBtn = (
     <button
       onClick={() => dispatch({ type: 'OPEN_MODAL', payload: '' })}
@@ -251,6 +293,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {themeToggle}
             {fmpBtn}
+            {usagePill}
             {authBtn}
             {analyzeBtn}
           </div>
@@ -306,6 +349,8 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: inv.color }} />
           <span style={{ color: inv.color, fontSize: 12, fontWeight: 600 }}>{inv.shortName}</span>
         </div>
+
+        {usagePill}
 
         {authBtn}
 

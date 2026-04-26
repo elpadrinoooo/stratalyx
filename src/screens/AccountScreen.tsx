@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { C, R } from '../constants/colors'
 import { useApp } from '../state/context'
 import { useUsageInfo } from '../hooks/useUsageInfo'
@@ -6,9 +6,7 @@ import { supabase } from '../lib/supabase'
 
 export function AccountScreen() {
   const { state, dispatch } = useApp()
-  const { usage, refetch } = useUsageInfo()
-
-  useEffect(() => { refetch() }, [refetch])
+  const { usage } = useUsageInfo()
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -84,19 +82,29 @@ export function AccountScreen() {
         {usageLine()}
         {tier === 'free' && (
           <div style={{
-            background: C.accentB,
-            border: `1px solid ${C.accentM}`,
+            background: C.accentM,
+            border: `1px solid ${C.accentB}`,
             borderRadius: R.r8,
             padding: '12px 16px',
             display: 'flex',
             flexDirection: 'column',
             gap: 6,
           }}>
-            <span style={{ fontFamily: C.sans, fontSize: 14, fontWeight: 600, color: C.accent }}>
-              Upgrade to Pro — $19/month
-            </span>
-            <span style={{ fontFamily: C.sans, fontSize: 12, color: C.t3 }}>
-              Unlimited analyses, priority support, and early access to new features.
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontFamily: C.sans, fontSize: 14, fontWeight: 600, color: C.accent }}>
+                Pro tier — coming soon
+              </span>
+              <span style={{
+                fontFamily: C.sans, fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                background: C.bg2, border: `1px solid ${C.border}`, color: C.t2,
+                padding: '2px 8px', borderRadius: R.r99, textTransform: 'uppercase',
+              }}>
+                Beta
+              </span>
+            </div>
+            <span style={{ fontFamily: C.sans, fontSize: 12, color: C.t2 }}>
+              Unlimited analyses, priority support, and early access to new features. Billing
+              isn&apos;t live yet — we&apos;ll email you the moment Pro opens up.
             </span>
           </div>
         )}

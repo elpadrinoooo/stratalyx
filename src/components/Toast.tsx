@@ -24,11 +24,13 @@ function typeColor(type: ToastType['type']): string {
 
 export function Toast({ toast, onDismiss }: Props) {
   const c = typeColor(toast.type)
+  const hasAction = !!toast.action
 
+  // Toasts with an actionable undo get a longer window (5s) than plain notifications (3.5s).
   useEffect(() => {
-    const t = setTimeout(() => onDismiss(toast.id), 3500)
+    const t = setTimeout(() => onDismiss(toast.id), hasAction ? 5000 : 3500)
     return () => clearTimeout(t)
-  }, [toast.id, onDismiss])
+  }, [toast.id, onDismiss, hasAction])
 
   return (
     <div
@@ -40,12 +42,32 @@ export function Toast({ toast, onDismiss }: Props) {
         padding: '9px 14px',
         display: 'flex',
         gap: 10,
+        alignItems: 'center',
         minWidth: 200,
-        maxWidth: 300,
+        maxWidth: 360,
         animation: 'toastIn .2s ease',
       }}
     >
       <span style={{ fontSize: 14, color: C.t2, flex: 1 }}>{toast.message}</span>
+      {toast.action && (
+        <button
+          onClick={() => { toast.action!.onClick(); onDismiss(toast.id) }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: c,
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: 'pointer',
+            padding: '2px 6px',
+            flexShrink: 0,
+            textTransform: 'uppercase',
+            letterSpacing: '.04em',
+          }}
+        >
+          {toast.action.label}
+        </button>
+      )}
       <button
         onClick={() => onDismiss(toast.id)}
         aria-label="Dismiss notification"

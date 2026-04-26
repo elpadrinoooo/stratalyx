@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 export interface UsageInfo {
@@ -8,7 +8,12 @@ export interface UsageInfo {
   limitReached: boolean
 }
 
-export function useUsageInfo(): { usage: UsageInfo | null; refetch: () => void } {
+/**
+ * Fetches the signed-in user's tier + analyses-this-month from /api/user/me.
+ * Auto-fetches on mount; pass an `event` value (e.g. modalOpen) to re-fetch
+ * whenever it changes — used to refresh after an analysis runs.
+ */
+export function useUsageInfo(event?: unknown): { usage: UsageInfo | null; refetch: () => void } {
   const [usage, setUsage] = useState<UsageInfo | null>(null)
 
   const refetch = useCallback((): void => {
@@ -33,6 +38,8 @@ export function useUsageInfo(): { usage: UsageInfo | null; refetch: () => void }
       }
     })()
   }, [])
+
+  useEffect(() => { refetch() }, [refetch, event])
 
   return { usage, refetch }
 }

@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { C, R } from '../constants/colors'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface Props {
   currentKey: string
@@ -9,12 +10,15 @@ interface Props {
 
 export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
   const [value, setValue] = useState(currentKey)
+  const dialogRef = useRef<HTMLDivElement>(null)
 
-  // Lock body scroll while open
-  React.useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
-  }, [])
+  useFocusTrap(dialogRef)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
 
   const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose()
@@ -22,6 +26,7 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
 
   return (
     <div
+      ref={dialogRef}
       onClick={handleBackdrop}
       role="dialog"
       aria-modal="true"

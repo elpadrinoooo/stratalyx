@@ -5,6 +5,7 @@ import { INVESTORS, INV } from '../constants/investors'
 import { PROV } from '../constants/providers'
 import { useApp } from '../state/context'
 import { useAnalysis } from '../hooks/useAnalysis'
+import { useUsageInfo } from '../hooks/useUsageInfo'
 import { Tag } from '../components/Tag'
 import { Kpi } from '../components/Kpi'
 import { ScoreBar } from '../components/ScoreBar'
@@ -23,6 +24,7 @@ interface Props {
 export function AnalyzerModal({ fmpKey }: Props) {
   const { state, dispatch } = useApp()
   const { phase, error, run } = useAnalysis()
+  const { usage } = useUsageInfo(phase)
   const [ticker, setTicker] = useState(state.modalTicker)
   const inputRef = useRef<HTMLInputElement>(null)
   const width = useWindowWidth()
@@ -376,6 +378,48 @@ export function AnalyzerModal({ fmpKey }: Props) {
               {phase === 'running' ? 'Analyzing…' : 'Analyze'}
             </button>
           </div>
+
+          {/* USAGE NUDGE — only for free users at/near the limit */}
+          {usage && usage.tier === 'free' && usage.limit !== null && usage.analysesThisMonth >= usage.limit - 1 && (
+            <div
+              style={{
+                background: usage.limitReached ? C.lossBg : C.warnBg,
+                border: `1px solid ${usage.limitReached ? C.lossB : C.warnB}`,
+                borderRadius: R.r8,
+                padding: '8px 12px',
+                marginTop: 10,
+                fontSize: 12,
+                color: usage.limitReached ? C.loss : C.warn,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+                flexWrap: 'wrap',
+              }}
+            >
+              <span style={{ fontFamily: C.sans }}>
+                {usage.limitReached
+                  ? `Monthly limit reached (${usage.analysesThisMonth}/${usage.limit}). Pro is coming soon for unlimited analyses.`
+                  : `${usage.analysesThisMonth}/${usage.limit} free analyses used — this is your last one this month.`}
+              </span>
+              <button
+                onClick={() => { dispatch({ type: 'CLOSE_MODAL' }); dispatch({ type: 'SET_SCREEN', payload: 'Account' }) }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: usage.limitReached ? C.loss : C.warn,
+                  fontFamily: C.sans,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: 0,
+                }}
+              >
+                View account →
+              </button>
+            </div>
+          )}
 
           {/* LEGAL DISCLAIMER */}
           <div

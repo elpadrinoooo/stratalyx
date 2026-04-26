@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { C, R } from '../constants/colors'
 import { supabase } from '../lib/supabase'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface Props {
   onClose: () => void
@@ -11,10 +12,15 @@ interface Props {
 }
 
 export function AuthModal({ onClose, recovery = false }: Props) {
-  React.useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
-  }, [])
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  useFocusTrap(dialogRef)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
 
   // Close modal once Supabase confirms a regular sign-in OR a password update.
   // (USER_UPDATED fires after the recovery flow successfully sets a new password.)
@@ -32,6 +38,7 @@ export function AuthModal({ onClose, recovery = false }: Props) {
 
   return (
     <div
+      ref={dialogRef}
       onClick={handleBackdrop}
       role="dialog"
       aria-modal="true"

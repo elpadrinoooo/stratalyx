@@ -247,13 +247,27 @@ export function HistoryScreen() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      if (confirm(`Delete ${result.ticker} (${inv?.shortName ?? result.investorId}) analysis? This cannot be undone.`)) {
-                        dispatch({ type: 'CLEAR_ANALYSIS', payload: key })
-                        dispatch({ type: 'UNARCHIVE_ANALYSIS', payload: key })
-                        dispatch({ type: 'TOAST', payload: { message: `${result.ticker} analysis deleted`, type: 'info' } })
-                      }
+                      const wasArchived = isArchived
+                      // Snapshot before mutating so the undo path can fully restore state.
+                      const snapshot = result
+                      dispatch({ type: 'CLEAR_ANALYSIS', payload: key })
+                      dispatch({ type: 'UNARCHIVE_ANALYSIS', payload: key })
+                      dispatch({
+                        type: 'TOAST',
+                        payload: {
+                          message: `${result.ticker} analysis deleted`,
+                          type: 'info',
+                          action: {
+                            label: 'Undo',
+                            onClick: () => {
+                              dispatch({ type: 'SET_ANALYSIS', payload: snapshot })
+                              if (wasArchived) dispatch({ type: 'ARCHIVE_ANALYSIS', payload: key })
+                            },
+                          },
+                        },
+                      })
                     }}
-                    title="Delete permanently"
+                    title="Delete (5s undo)"
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.lossB; (e.currentTarget as HTMLButtonElement).style.color = C.loss }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.border; (e.currentTarget as HTMLButtonElement).style.color = C.t4 }}
                     style={{

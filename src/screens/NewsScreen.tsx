@@ -411,13 +411,16 @@ function NewsCard({
     <div
       onClick={() => onCardClick(article)}
       style={{
-        background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r12,
+        background: C.bg1,
+        border: `1px solid ${placeholder ? C.warnB : C.border}`,
+        borderRadius: R.r12,
         overflow: 'hidden', display: 'flex', flexDirection: 'column',
-        cursor: 'pointer', opacity: placeholder ? 0.8 : 1,
+        cursor: 'pointer',
+        position: 'relative',
         transition: 'border-color .15s, box-shadow .15s',
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = C.accentB; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 20px rgba(0,0,0,.2)' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = C.border; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = placeholder ? C.warn : C.accentB; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 20px rgba(0,0,0,.2)' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = placeholder ? C.warnB : C.border; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}
     >
       {/* Thumbnail */}
       {article.image && !imgErr ? (
@@ -426,7 +429,7 @@ function NewsCard({
           alt=""
           referrerPolicy="no-referrer"
           onError={() => setImgErr(true)}
-          style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block', flexShrink: 0 }}
+          style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block', flexShrink: 0, filter: placeholder ? 'grayscale(0.45)' : 'none' }}
         />
       ) : (
         <div style={{ width: '100%', height: 140, background: fallbackBg + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderBottom: `1px solid ${C.border}` }}>
@@ -436,13 +439,29 @@ function NewsCard({
         </div>
       )}
 
+      {/* Demo-data ribbon — only on placeholder cards */}
+      {placeholder && (
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute', top: 8, left: 8,
+            background: C.warn, color: '#000',
+            fontSize: 10, fontWeight: 800, letterSpacing: '.08em',
+            padding: '3px 8px', borderRadius: R.r4,
+            textTransform: 'uppercase',
+            boxShadow: '0 2px 8px rgba(0,0,0,.4)',
+          }}
+        >
+          Demo
+        </div>
+      )}
+
       {/* Body */}
       <div style={{ padding: '11px 13px', display: 'flex', flexDirection: 'column', flex: 1, gap: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ color: C.t4, fontSize: 11, fontWeight: 600 }}>{article.site}</span>
           <span style={{ color: C.border }}>·</span>
           <span style={{ color: C.t4, fontSize: 11 }}>{relDate(article.publishedDate)}</span>
-          {placeholder && <span style={{ marginLeft: 'auto', background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r99, color: C.t4, fontSize: 9, fontWeight: 600, padding: '1px 6px', textTransform: 'uppercase' }}>Sample</span>}
           {article.insight && !placeholder && <span style={{ marginLeft: 'auto', color: C.accent, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em' }}>✦ Insight</span>}
         </div>
 
@@ -729,13 +748,32 @@ export function NewsScreen() {
 
       {/* Status banners */}
       {(noKey || (isPlaceholder && !error)) && (
-        <div style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r8, padding: '10px 14px', marginBottom: 14, display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div style={{ background: C.warnBg, border: `1px solid ${C.warnB}`, borderRadius: R.r8, padding: '10px 14px', marginBottom: 14, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 15 }}>🔑</span>
-          <span style={{ color: C.t2, fontSize: 12, lineHeight: 1.5 }}>
+          <span style={{ color: C.t2, fontSize: 12, lineHeight: 1.5, flex: 1, minWidth: 240 }}>
             {noKey
-              ? <><strong style={{ color: C.t1 }}>Finnhub API key required</strong> — Add <code>FINNHUB_API_KEY</code> to <code>.env</code> for live news. Showing sample articles.</>
-              : <><strong style={{ color: C.t1 }}>Live news unavailable</strong> — Check your Finnhub API key in <code>.env</code>. Showing sample articles.</>}
+              ? <><strong style={{ color: C.warn }}>Demo mode</strong> — these are sample articles, not live news. Add a <code>FINNHUB_API_KEY</code> to your <code>.env</code> to see real headlines.</>
+              : <><strong style={{ color: C.warn }}>Live news unavailable</strong> — showing sample articles. Check your <code>FINNHUB_API_KEY</code> in <code>.env</code>.</>}
           </span>
+          <a
+            href="https://finnhub.io/register"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              background: C.warn,
+              color: '#000',
+              border: 'none',
+              borderRadius: R.r6,
+              fontSize: 11,
+              fontWeight: 700,
+              padding: '5px 11px',
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+              letterSpacing: '.02em',
+            }}
+          >
+            Get free key →
+          </a>
         </div>
       )}
       {error && <div style={{ color: 'var(--c-warn)', fontSize: 12, marginBottom: 12, padding: '8px 12px', background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r8 }}>{error}</div>}

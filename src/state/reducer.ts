@@ -85,7 +85,7 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         toasts: [
           ...state.toasts,
-          { id, message: action.payload.message, type: action.payload.type },
+          { id, message: action.payload.message, type: action.payload.type, action: action.payload.action },
         ],
       }
     }

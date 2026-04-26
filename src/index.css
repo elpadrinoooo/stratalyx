@@ -31,8 +31,8 @@
 
   --c-t1: #f0f2f8;
   --c-t2: #9ba3be;
-  --c-t3: #5a6280;
-  --c-t4: #2e3554;
+  --c-t3: #7e87a3;  /* lifted from #5a6280 to clear WCAG AA on bg0 (~4.5:1) */
+  --c-t4: #565d7d;  /* lifted from #2e3554 — meta/decorative only, ≤11px copy */
 
   color-scheme: dark;
 }

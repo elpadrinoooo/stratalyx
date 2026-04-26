@@ -2,10 +2,16 @@ import type { AnalysisResult } from './analysis'
 
 export type Screen = 'Markets' | 'Screener' | 'Strategies' | 'Watchlist' | 'History' | 'Comparisons' | 'MarketEvents' | 'News' | 'Admin' | 'Account'
 
+export interface ToastAction {
+  label: string
+  onClick: () => void
+}
+
 export interface Toast {
   id: string
   message: string
   type: 'success' | 'error' | 'info'
+  action?: ToastAction
 }
 
 export interface Comparison {
@@ -51,7 +57,7 @@ export type Action =
   | { type: 'UNARCHIVE_COMPARISON'; payload: string }
   | { type: 'ADD_TO_WATCHLIST'; payload: string }
   | { type: 'REMOVE_FROM_WATCHLIST'; payload: string }
-  | { type: 'TOAST'; payload: { message: string; type: Toast['type'] } }
+  | { type: 'TOAST'; payload: { message: string; type: Toast['type']; action?: ToastAction } }
   | { type: 'DISMISS_TOAST'; payload: string }
   | { type: 'SET_USER'; payload: AppState['user'] }
   | { type: 'SET_AUTH_LOADING'; payload: boolean }
