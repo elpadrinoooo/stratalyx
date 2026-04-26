@@ -20,13 +20,19 @@
     "e2e:ui": "playwright test e2e/ --ui"
   },
   "dependencies": {
+    "@supabase/auth-ui-react": "^0.4.7",
+    "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.101.1",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
     "express-rate-limit": "^8.3.1",
+    "ra-core": "^5.14.6",
+    "ra-supabase": "^3.5.2",
     "react": "^18.3.1",
+    "react-admin": "^5.14.6",
     "react-dom": "^18.3.1",
+    "react-router-dom": "^7.14.2",
     "recharts": "^3.8.1"
   },
   "devDependencies": {

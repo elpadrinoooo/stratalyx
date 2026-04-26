@@ -8,6 +8,7 @@ declare module 'express-serve-static-core' {
       email: string
       tier: 'free' | 'pro'
       analysesThisMonth: number
+      isAdmin: boolean
     }
   }
 }
@@ -23,7 +24,7 @@ export async function attachUser(req: Request, _res: Response, next: NextFunctio
 
     const { data: profile } = await supabaseAdmin
       .from('users')
-      .select('tier, analyses_this_month, analyses_reset_at')
+      .select('tier, analyses_this_month, analyses_reset_at, is_admin')
       .eq('id', data.user.id)
       .single()
 
@@ -47,6 +48,7 @@ export async function attachUser(req: Request, _res: Response, next: NextFunctio
           email: data.user.email ?? '',
           tier: profile.tier as 'free' | 'pro',
           analysesThisMonth: 0,
+          isAdmin: Boolean(profile.is_admin),
         }
       } else {
         req.user = {
@@ -54,6 +56,7 @@ export async function attachUser(req: Request, _res: Response, next: NextFunctio
           email: data.user.email ?? '',
           tier: profile.tier as 'free' | 'pro',
           analysesThisMonth: profile.analyses_this_month as number,
+          isAdmin: Boolean(profile.is_admin),
         }
       }
     }

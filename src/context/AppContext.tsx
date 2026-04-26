@@ -23,24 +23,32 @@ export function AppProvider({ children, initialState }: Props) {
 
   // ── Supabase auth listener ───────────────────────────────────────────────────
   useEffect(() => {
+    type Profile = { tier: 'free' | 'pro'; analysesThisMonth: number; isAdmin?: boolean }
+    const fetchProfile = async (token: string): Promise<Profile | null> => {
+      try {
+        const res = await fetch(`${API_ORIGIN}/api/user/me`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        })
+        if (!res.ok) return null
+        return await res.json() as Profile
+      } catch { return null }
+    }
+
     // Hydrate session on mount (handles page refresh while logged in)
     void supabase.auth.getSession().then(async ({ data }) => {
       if (data.session) {
         const token = data.session.access_token
         const userId = data.session.user.id
-        try {
-          const res = await fetch(`${API_ORIGIN}/api/user/me`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          })
-          if (res.ok) {
-            const profile = await res.json() as { tier: 'free' | 'pro'; analysesThisMonth: number }
-            dispatch({ type: 'SET_USER', payload: { id: userId, email: data.session.user.email ?? '', tier: profile.tier } })
-          } else {
-            dispatch({ type: 'SET_USER', payload: { id: userId, email: data.session.user.email ?? '', tier: 'free' } })
-          }
-        } catch {
-          dispatch({ type: 'SET_USER', payload: { id: userId, email: data.session.user.email ?? '', tier: 'free' } })
-        }
+        const profile = await fetchProfile(token)
+        dispatch({
+          type: 'SET_USER',
+          payload: {
+            id: userId,
+            email: data.session.user.email ?? '',
+            tier: profile?.tier ?? 'free',
+            isAdmin: Boolean(profile?.isAdmin),
+          },
+        })
       } else {
         dispatch({ type: 'SET_AUTH_LOADING', payload: false })
       }
@@ -51,18 +59,16 @@ export function AppProvider({ children, initialState }: Props) {
         const token = session.access_token
         const userId = session.user.id
         void (async () => {
-          try {
-            const res = await fetch(`${API_ORIGIN}/api/user/me`, {
-              headers: { 'Authorization': `Bearer ${token}` },
-            })
-            const tier: 'free' | 'pro' = res.ok
-              ? ((await res.json() as { tier: 'free' | 'pro' }).tier)
-              : 'free'
-            dispatch({ type: 'SET_USER', payload: { id: userId, email: session.user.email ?? '', tier } })
-          } catch {
-            dispatch({ type: 'SET_USER', payload: { id: userId, email: session.user.email ?? '', tier: 'free' } })
-          }
-          // One-shot localStorage migration
+          const profile = await fetchProfile(token)
+          dispatch({
+            type: 'SET_USER',
+            payload: {
+              id: userId,
+              email: session.user.email ?? '',
+              tier: profile?.tier ?? 'free',
+              isAdmin: Boolean(profile?.isAdmin),
+            },
+          })
           void migrateLocalStorageToSupabase(userId, token, API_ORIGIN)
         })()
       } else if (event === 'SIGNED_OUT') {

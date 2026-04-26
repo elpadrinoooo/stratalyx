@@ -43,13 +43,14 @@ export function buildLiveDataBlock(live: LiveData): string {
   }
 
   if (quote) {
+    // P/E and EPS surfaced from ratios + income blocks (stable/quote dropped them).
+    // Avg volume sourced from profile.volAvg in the company line above.
     lines.push(
       ``,
       `--- Quote ---`,
       `Price: $${fmtN(quote.price)} | Change: ${fmtPct(quote.changesPercentage)}`,
       `52w High: $${fmtN(quote.yearHigh)} | 52w Low: $${fmtN(quote.yearLow)}`,
-      `Volume: ${fmtB(quote.volume)} | Avg Volume: ${fmtB(quote.avgVolume)}`,
-      `P/E: ${fmtN(quote.pe)} | EPS: $${fmtN(quote.eps)}`,
+      `Volume: ${fmtB(quote.volume)}`,
     )
   }
 

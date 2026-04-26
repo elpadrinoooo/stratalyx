@@ -655,35 +655,99 @@ app.get('/market-movers', fmpLimiter, async (req: Request, res: Response) => {
 })
 
 // ── FMP proxy ─────────────────────────────────────────────────────────────────
+// Migrated Aug 2025: v3 endpoints retired for keys issued after 2025-08-31.
+// Each endpoint maps to its stable/ equivalent and (where shape diverged) is
+// normalized back to the v3-shaped JSON the client + types still expect.
+
+interface FMPRecord { [k: string]: unknown }
+function isObj(x: unknown): x is FMPRecord { return typeof x === 'object' && x !== null && !Array.isArray(x) }
+function rename(obj: FMPRecord, from: string, to: string): void {
+  if (Object.hasOwn(obj, from) && !Object.hasOwn(obj, to)) {
+    obj[to] = obj[from]; delete obj[from]
+  }
+}
+
+async function fetchStable(endpoint: string, params: Record<string, string>, key: string): Promise<unknown> {
+  const qs = new URLSearchParams({ ...params, apikey: key }).toString()
+  const upstream = await fetch(`https://financialmodelingprep.com/stable/${endpoint}?${qs}`)
+  if (!upstream.ok) {
+    const detail = upstream.statusText
+    const err = new Error(`FMP ${upstream.status} ${detail}`) as Error & { status?: number }
+    err.status = upstream.status
+    throw err
+  }
+  return upstream.json()
+}
+
+function normalizeProfile(data: unknown): unknown {
+  if (!Array.isArray(data)) return data
+  return data.map((row) => {
+    if (!isObj(row)) return row
+    const r = { ...row }
+    rename(r, 'marketCap', 'mktCap')
+    rename(r, 'lastDividend', 'lastDiv')
+    rename(r, 'averageVolume', 'volAvg')
+    return r
+  })
+}
+
+function normalizeQuote(data: unknown): unknown {
+  if (!Array.isArray(data)) return data
+  return data.map((row) => {
+    if (!isObj(row)) return row
+    const r = { ...row }
+    rename(r, 'changePercentage', 'changesPercentage')
+    return r
+  })
+}
+
+/** stable/ratios-ttm + stable/key-metrics-ttm merged, then normalized back to v3 keys. */
+function normalizeRatios(ratiosData: unknown, metricsData: unknown): unknown {
+  const ratios = Array.isArray(ratiosData) && isObj(ratiosData[0]) ? { ...ratiosData[0] } : null
+  const metrics = Array.isArray(metricsData) && isObj(metricsData[0]) ? metricsData[0] : null
+  if (!ratios) return []
+  // key-metrics-ttm carries returnOnEquityTTM / returnOnAssetsTTM that ratios-ttm dropped
+  if (metrics) {
+    if (Object.hasOwn(metrics, 'returnOnEquityTTM')) ratios['returnOnEquityTTM'] = metrics['returnOnEquityTTM']
+    if (Object.hasOwn(metrics, 'returnOnAssetsTTM')) ratios['returnOnAssetsTTM'] = metrics['returnOnAssetsTTM']
+    if (!Object.hasOwn(ratios, 'returnOnCapitalEmployedTTM') && Object.hasOwn(metrics, 'returnOnCapitalEmployedTTM')) {
+      ratios['returnOnCapitalEmployedTTM'] = metrics['returnOnCapitalEmployedTTM']
+    }
+  }
+  rename(ratios, 'priceToEarningsRatioTTM', 'peRatioTTM')
+  rename(ratios, 'priceToEarningsGrowthRatioTTM', 'pegRatioTTM')
+  rename(ratios, 'debtToEquityRatioTTM', 'debtToEquityTTM')
+  rename(ratios, 'priceToFreeCashFlowRatioTTM', 'priceToFreeCashFlowsRatioTTM')
+  return [ratios]
+}
+
+const ALLOWED_FMP_PATHS = new Set([
+  'profile', 'ratios-ttm', 'income-statement',
+  'cash-flow-statement', 'quote', 'stock/list',
+])
+
 app.get('/fmp/*', fmpLimiter, async (req: Request, res: Response) => {
-  // Accept key from client header as fallback when server env key isn't set
   const clientKey = typeof req.headers['x-fmp-key'] === 'string' ? req.headers['x-fmp-key'] : ''
   const effectiveFmpKey = FMP_KEY || clientKey
-
   if (!effectiveFmpKey) {
     res.status(503).json({ error: 'No FMP API key available — enter your key via the Live Data button' })
     return
   }
 
   const fmpPath = req.params[0] as string
+  // Path shape: <endpoint>/<ticker>  OR  stock/list
+  const isStockList = fmpPath === 'stock/list'
+  const slash = fmpPath.indexOf('/')
+  const endpoint = isStockList ? 'stock/list' : (slash >= 0 ? fmpPath.slice(0, slash) : fmpPath)
+  const ticker = isStockList ? '' : (slash >= 0 ? fmpPath.slice(slash + 1) : '')
 
-  // Allowlist valid FMP paths — prevents SSRF to arbitrary endpoints
-  const ALLOWED_FMP_SEGMENTS = [
-    'profile', 'ratios-ttm', 'income-statement',
-    'cash-flow-statement', 'quote', 'stock',
-  ]
-  const basePath = fmpPath.split('/')[0]
-  if (!ALLOWED_FMP_SEGMENTS.includes(basePath)) {
+  if (!ALLOWED_FMP_PATHS.has(endpoint)) {
     res.status(400).json({ error: 'Invalid FMP endpoint' })
     return
   }
 
-  const queryString = new URLSearchParams(req.query as Record<string, string>).toString()
-  const sep = queryString ? '&' : '?'
-  const url = `https://financialmodelingprep.com/api/v3/${fmpPath}${queryString ? `?${queryString}` : ''}${sep}apikey=${effectiveFmpKey}`
-
-  const cacheKey = url
-
+  // Cache key includes endpoint + ticker + period/limit so concurrent endpoints don't collide
+  const cacheKey = `fmp:${endpoint}:${ticker}:${new URLSearchParams(req.query as Record<string, string>).toString()}`
   const cached = getCached(cacheKey)
   if (cached !== null) {
     res.set('X-Cache', 'HIT')
@@ -691,21 +755,59 @@ app.get('/fmp/*', fmpLimiter, async (req: Request, res: Response) => {
     return
   }
 
-  try {
-    const upstream = await fetch(url)
-    const data: unknown = await upstream.json()
+  const period = typeof req.query['period'] === 'string' ? req.query['period'] : ''
+  const limit  = typeof req.query['limit']  === 'string' ? req.query['limit']  : ''
+  const symbolParam: Record<string, string> = ticker ? { symbol: ticker } : {}
 
-    if (!upstream.ok) {
-      res.status(upstream.status).json({ error: 'FMP API error', detail: upstream.statusText })
+  try {
+    let payload: unknown
+    switch (endpoint) {
+      case 'profile':
+        payload = normalizeProfile(await fetchStable('profile', symbolParam, effectiveFmpKey))
+        break
+      case 'quote':
+        payload = normalizeQuote(await fetchStable('quote', symbolParam, effectiveFmpKey))
+        break
+      case 'ratios-ttm': {
+        // Merge ratios-ttm + key-metrics-ttm so client gets ROE/ROA in one shape
+        const [ratios, metrics] = await Promise.all([
+          fetchStable('ratios-ttm', symbolParam, effectiveFmpKey),
+          fetchStable('key-metrics-ttm', symbolParam, effectiveFmpKey).catch(() => null),
+        ])
+        payload = normalizeRatios(ratios, metrics)
+        break
+      }
+      case 'income-statement': {
+        const params: Record<string, string> = { ...symbolParam }
+        if (period) params['period'] = period
+        if (limit)  params['limit']  = limit
+        payload = await fetchStable('income-statement', params, effectiveFmpKey)
+        break
+      }
+      case 'cash-flow-statement': {
+        const params: Record<string, string> = { ...symbolParam }
+        if (period) params['period'] = period
+        if (limit)  params['limit']  = limit
+        payload = await fetchStable('cash-flow-statement', params, effectiveFmpKey)
+        break
+      }
+      case 'stock/list':
+        payload = await fetchStable('stock-list', {}, effectiveFmpKey)
+        break
+      default:
+        res.status(400).json({ error: 'Invalid FMP endpoint' })
+        return
+    }
+    setCache(cacheKey, payload)
+    res.set('X-Cache', 'MISS')
+    res.json(payload)
+  } catch (err) {
+    const e = err as Error & { status?: number }
+    if (typeof e.status === 'number') {
+      res.status(e.status).json({ error: 'FMP API error', detail: e.message })
       return
     }
-
-    setCache(cacheKey, data)
-    res.set('X-Cache', 'MISS')
-    res.json(data)
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    res.status(502).json({ error: 'Failed to reach FMP API', detail: message })
+    res.status(502).json({ error: 'Failed to reach FMP API', detail: e.message ?? 'Unknown error' })
   }
 })
 

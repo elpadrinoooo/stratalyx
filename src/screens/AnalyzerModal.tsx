@@ -15,7 +15,6 @@ import { ProviderModelBar } from '../components/ProviderModelBar'
 import { scColor, vColor, vBg, verdictLabel, pegColor, fmtPct, fmtN } from '../engine/utils'
 import { PriceChart } from '../components/PriceChart'
 import type { AnalysisResult } from '../types'
-import { ADMIN_SESSION_KEY } from './AdminScreen'
 
 interface Props {
   fmpKey: string
@@ -494,7 +493,7 @@ function ResultSection({
 }: ResultSectionProps) {
   const [showLiveData, setShowLiveData] = useState(false)
   const [copied, setCopied] = useState(false)
-  const isAdmin = Boolean(sessionStorage.getItem(ADMIN_SESSION_KEY))
+  const isAdmin = Boolean(state.user?.isAdmin)
 
   const copyShareLink = () => {
     const url = `${window.location.origin}/share/${result.ticker}/${result.investorId}`

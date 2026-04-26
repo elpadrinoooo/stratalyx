@@ -69,10 +69,10 @@ export interface FMPQuote {
   priceAvg50: number
   priceAvg200: number
   volume: number
-  avgVolume: number
-  pe: number
-  eps: number
-  earningsAnnouncement: string
-  sharesOutstanding: number
   timestamp: number
+  avgVolume?: number
+  pe?: number
+  eps?: number
+  earningsAnnouncement?: string
+  sharesOutstanding?: number
 }

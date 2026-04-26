@@ -12,7 +12,7 @@ interface Props {
   onOpenAuthModal: () => void
 }
 
-const SCREENS: { label: string; screen: Screen }[] = [
+const SCREENS: { label: string; screen: Screen; admin?: boolean }[] = [
   { label: 'Markets',       screen: 'Markets' },
   { label: 'Screener',      screen: 'Screener' },
   { label: 'Strategies',    screen: 'Strategies' },
@@ -21,6 +21,7 @@ const SCREENS: { label: string; screen: Screen }[] = [
   { label: 'Comparisons',   screen: 'Comparisons' },
   { label: 'Market Events', screen: 'MarketEvents' },
   { label: 'News',          screen: 'News' },
+  { label: 'Admin',         screen: 'Admin', admin: true },
 ]
 
 const THEME_OPTIONS: { mode: ThemeMode; icon: string; label: string }[] = [
@@ -257,7 +258,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
         {/* Row 2: scrollable tab strip (scrollbar hidden) */}
         <div style={{ overflowX: 'auto', borderTop: `1px solid ${C.border44}`, scrollbarWidth: 'none' } as React.CSSProperties}>
           <div style={{ display: 'flex', gap: 2, padding: '5px 14px 6px', width: 'max-content' }}>
-            {SCREENS.map(({ label, screen }) => tabBtn(screen, label))}
+            {SCREENS.filter(s => !s.admin || state.user?.isAdmin).map(({ label, screen }) => tabBtn(screen, label))}
           </div>
         </div>
       </nav>
@@ -290,7 +291,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
 
         {/* Nav tabs */}
         <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-          {SCREENS.map(({ label, screen }) => tabBtn(screen, label))}
+          {SCREENS.filter(s => !s.admin || state.user?.isAdmin).map(({ label, screen }) => tabBtn(screen, label))}
         </div>
       </div>
 

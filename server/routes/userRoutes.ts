@@ -12,11 +12,12 @@ userRouter.get('/me', (req: Request, res: Response): void => {
     res.status(401).json({ error: 'Unauthorized' })
     return
   }
-  const { tier, analysesThisMonth } = req.user
+  const { tier, analysesThisMonth, isAdmin } = req.user
   res.json({
     tier,
     analysesThisMonth,
     limit: tier === 'pro' ? null : FREE_LIMIT,
+    isAdmin,
   })
 })
 

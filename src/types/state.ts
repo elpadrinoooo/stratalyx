@@ -28,7 +28,7 @@ export interface AppState {
   watchlist: string[]
   archived: string[]
   toasts: Toast[]
-  user: { id: string; email: string; tier: 'free' | 'pro' } | null
+  user: { id: string; email: string; tier: 'free' | 'pro'; isAdmin: boolean } | null
   authLoading: boolean
 }
 
