@@ -10,9 +10,16 @@
 import request from 'supertest'
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 
-// Ensure all provider keys are set so key-guard checks don't return 503
-process.env['OPENAI_API_KEY']  = process.env['OPENAI_API_KEY']  || 'test-openai-key'
-process.env['MISTRAL_API_KEY'] = process.env['MISTRAL_API_KEY'] || 'test-mistral-key'
+// Ensure all provider keys are set so key-guard checks don't return 503.
+// Tests mock fetch globally so no real upstream calls are made — these are
+// just sentinel values to satisfy the `if (!KEY) res.status(503)` guards.
+process.env['ANTHROPIC_API_KEY'] = process.env['ANTHROPIC_API_KEY'] || 'test-anthropic-key'
+process.env['GOOGLE_API_KEY']    = process.env['GOOGLE_API_KEY']    || 'test-google-key'
+process.env['OPENAI_API_KEY']    = process.env['OPENAI_API_KEY']    || 'test-openai-key'
+process.env['MISTRAL_API_KEY']   = process.env['MISTRAL_API_KEY']   || 'test-mistral-key'
+process.env['FMP_API_KEY']       = process.env['FMP_API_KEY']       || 'test-fmp-key'
+process.env['FINNHUB_API_KEY']   = process.env['FINNHUB_API_KEY']   || 'test-finnhub-key'
+process.env['ADMIN_PASSWORD']    = process.env['ADMIN_PASSWORD']    || 'test-admin-password'
 
 // Must import AFTER jest env is set up
 // eslint-disable-next-line @typescript-eslint/no-require-imports
