@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/share/:ticker/:investor", "destination": "/api/index" },
+    { "source": "/share/comparison/:ticker/:investors", "destination": "/api/index" },
+    { "source": "/og-default.png", "destination": "/api/index" }
+  ]
+}
