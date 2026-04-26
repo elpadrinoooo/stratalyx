@@ -54,9 +54,22 @@ export function useAnalysis(): UseAnalysisReturn {
       const msg = err instanceof Error ? err.message : 'Analysis failed'
       setError(msg)
       setPhase('error')
-      // 402 usage limit — show as warning, not error
-      const isLimit = msg.toLowerCase().includes('monthly analysis limit')
-      dispatch({ type: 'TOAST', payload: { message: msg, type: isLimit ? 'info' : 'error' } })
+
+      const lower = msg.toLowerCase()
+      const isLimit    = lower.includes('monthly analysis limit')
+      const needsAuth  = lower.includes('sign in required')
+
+      if (needsAuth) {
+        // Surface a friendlier nudge and pop the auth modal so the user can
+        // sign in without hunting for the navbar button.
+        dispatch({ type: 'TOAST', payload: {
+          message: 'Sign in to run an analysis — your first 3 are free each month.',
+          type: 'info',
+        } })
+        window.dispatchEvent(new CustomEvent('stratalyx:request-auth'))
+      } else {
+        dispatch({ type: 'TOAST', payload: { message: msg, type: isLimit ? 'info' : 'error' } })
+      }
     }
   }, [state.investor, state.provider, state.model, dispatch])
 

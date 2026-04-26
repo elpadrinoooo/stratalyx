@@ -127,6 +127,15 @@ function AppShell() {
     return () => { subscription.unsubscribe() }
   }, [])
 
+  // Surface the auth modal when the analyzer (or any feature) reports a 401.
+  useEffect(() => {
+    const onRequestAuth = () => {
+      if (!state.user) setAuthModalOpen(true)
+    }
+    window.addEventListener('stratalyx:request-auth', onRequestAuth)
+    return () => window.removeEventListener('stratalyx:request-auth', onRequestAuth)
+  }, [state.user])
+
   // Cmd/Ctrl+K → open analyzer modal
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {

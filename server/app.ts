@@ -6,7 +6,7 @@ import { rateLimit } from 'express-rate-limit'
 import fs from 'fs'
 import path from 'path'
 import { attachUser } from './authMiddleware.js'
-import { checkUsage, recordAnalysis } from './usageLimiter.js'
+import { checkUsage, recordAnalysis, validatePromptSize } from './usageLimiter.js'
 import { userRouter } from './routes/userRoutes.js'
 // Load affiliate map — mutable so admin routes can update it in memory.
 // Resolved from CWD (repo root for both `npm start` and `jest`) so the same
@@ -124,7 +124,7 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // ── Claude proxy ──────────────────────────────────────────────────────────────
  
-app.post('/claude', llmLimiter, checkUsage, async (req: Request, res: Response) => {
+app.post('/claude', llmLimiter, validatePromptSize, checkUsage, async (req: Request, res: Response) => {
   if (!ANTHROPIC_KEY) {
     res.status(503).json({ error: 'ANTHROPIC_API_KEY not configured on server' })
     return
@@ -176,7 +176,7 @@ app.post('/claude', llmLimiter, checkUsage, async (req: Request, res: Response) 
 
 // ── Gemini proxy ──────────────────────────────────────────────────────────────
  
-app.post('/gemini', llmLimiter, checkUsage, async (req: Request, res: Response) => {
+app.post('/gemini', llmLimiter, validatePromptSize, checkUsage, async (req: Request, res: Response) => {
   if (!GOOGLE_KEY) {
     res.status(503).json({ error: 'GOOGLE_API_KEY not configured on server' })
     return
@@ -391,7 +391,7 @@ app.get('/history/:ticker', async (req: Request, res: Response) => {
 
 // ── OpenAI proxy ─────────────────────────────────────────────────────────────
  
-app.post('/openai', llmLimiter, checkUsage, async (req: Request, res: Response) => {
+app.post('/openai', llmLimiter, validatePromptSize, checkUsage, async (req: Request, res: Response) => {
   if (!OPENAI_KEY) {
     res.status(503).json({ error: 'OPENAI_API_KEY not configured on server' })
     return
@@ -450,7 +450,7 @@ app.post('/openai', llmLimiter, checkUsage, async (req: Request, res: Response) 
 
 // ── Mistral proxy ─────────────────────────────────────────────────────────────
  
-app.post('/mistral', llmLimiter, checkUsage, async (req: Request, res: Response) => {
+app.post('/mistral', llmLimiter, validatePromptSize, checkUsage, async (req: Request, res: Response) => {
   if (!MISTRAL_KEY) {
     res.status(503).json({ error: 'MISTRAL_API_KEY not configured on server' })
     return
