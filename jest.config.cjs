@@ -1,15 +1,16 @@
-import type { Config } from 'jest'
-
-const config: Config = {
+/** @type {import('jest').Config} */
+module.exports = {
   testEnvironment: 'jsdom',
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.jest.json' }],
-    '^.+\\.js$': ['ts-jest', { tsconfig: 'tsconfig.jest.json' }],
+    '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.jest.json', useESM: false }],
+    '^.+\\.js$':   ['ts-jest', { tsconfig: 'tsconfig.jest.json', useESM: false }],
   },
   transformIgnorePatterns: [
     '/node_modules/(?!(until-async)/)',
   ],
   moduleNameMapper: {
+    // Strip .js from relative imports so ts-jest (CJS) resolves the source .ts files
+    '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^msw/node$': '<rootDir>/node_modules/msw/lib/node/index.js',
     '^msw/browser$': '<rootDir>/node_modules/msw/lib/browser/index.js',
@@ -27,5 +28,3 @@ const config: Config = {
     '!src/main.tsx',
   ],
 }
-
-export default config

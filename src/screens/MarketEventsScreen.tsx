@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   ResponsiveContainer,
+  AreaChart,
   ComposedChart,
   Area,
   Line,

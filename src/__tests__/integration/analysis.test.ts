@@ -19,6 +19,7 @@ const OPTS = {
   provider: 'anthropic',
   model: 'claude-haiku-4-5-20251001',
   fmpKey: null,
+  authToken: null,
 }
 
 describe('I-01: runAnalysis() — AI-only mode (no fmpKey)', () => {

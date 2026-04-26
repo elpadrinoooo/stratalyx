@@ -55,10 +55,10 @@ userRouter.post('/migrate', async (req: Request, res: Response): Promise<void> =
       const analysisRows = Object.values(body.analyses).map((r) => ({
         ticker: r.ticker,
         investor_id: r.investorId,
-        score: typeof r.score === 'number' ? r.score : null,
+        score: typeof r.strategyScore === 'number' ? r.strategyScore : null,
         verdict: r.verdict ?? null,
         result: r as unknown,
-        price_at_analysis: r.liveData?.price ?? null,
+        price_at_analysis: r.liveData?.quote?.price ?? null,
         user_id: userId,
       }))
       if (analysisRows.length > 0) {

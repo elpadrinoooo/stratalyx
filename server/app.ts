@@ -8,8 +8,10 @@ import path from 'path'
 import { attachUser } from './authMiddleware.js'
 import { checkUsage, recordAnalysis } from './usageLimiter.js'
 import { userRouter } from './routes/userRoutes.js'
-// Load affiliate map — mutable so admin routes can update it in memory
-const affiliateMapPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), 'affiliate.json')
+// Load affiliate map — mutable so admin routes can update it in memory.
+// Resolved from CWD (repo root for both `npm start` and `jest`) so the same
+// path works under tsx ESM and ts-jest CommonJS without import.meta gymnastics.
+const affiliateMapPath = path.resolve(process.cwd(), 'server', 'affiliate.json')
 let affiliateMap: Record<string, string> = {}
 try { affiliateMap = JSON.parse(fs.readFileSync(affiliateMapPath, 'utf8')) } catch { /* no-op */ }
 

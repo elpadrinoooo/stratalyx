@@ -52,7 +52,7 @@ describe('I-33: All market events render in timeline mode', () => {
 describe('I-34: Filter chips filter events by type', () => {
   it('renders all filter chips', () => {
     renderWithCtx(<MarketEventsScreen />)
-    expect(screen.getByRole('button', { name: /^All/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^All$/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Crashes/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Bears/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Bull Runs/i })).toBeInTheDocument()
