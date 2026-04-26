@@ -55,6 +55,16 @@ function setCache(key: string, data: unknown, ttl?: number): void {
 // ── App ───────────────────────────────────────────────────────────────────────
 export const app = express()
 
+// Strip /api prefix when present so the same routes serve every host:
+//   - Vercel:  the wrapper already strips before this fires (no-op here)
+//   - Vite dev proxy: rewrites /api → / (no-op here)
+//   - Railway / direct hits: client sends /api/foo, this middleware strips it
+app.use((req, _res, next) => {
+  if (req.url === '/api' || req.url === '/api/') req.url = '/'
+  else if (req.url.startsWith('/api/')) req.url = req.url.slice(4)
+  next()
+})
+
 const CORS_ORIGIN = process.env['CORS_ORIGIN'] ?? 'http://localhost:5173'
 app.use(cors({
   origin: CORS_ORIGIN,
