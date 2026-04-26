@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  Admin, Resource,
+  Admin, Resource, CustomRoutes,
   List, Datagrid, TextField, BooleanField, NumberField, DateField,
   Edit, SimpleForm, TextInput, BooleanInput, SelectInput, NumberInput, DateInput,
   Show, SimpleShowLayout, ReferenceManyField,
@@ -8,14 +8,18 @@ import {
   TopToolbar, ExportButton,
   BulkUpdateButton, BulkDeleteButton,
   useRecordContext, useGetManyReference,
+  Layout, Menu,
+  type LayoutProps,
 } from 'react-admin'
-import { HashRouter } from 'react-router-dom'
+import { HashRouter, Route } from 'react-router-dom'
 import { supabaseDataProvider, supabaseAuthProvider } from 'ra-supabase'
 import { Box, Card, CardContent, Chip, Typography } from '@mui/material'
+import { Sparkles, Settings as SettingsIcon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useTheme } from '../hooks/useTheme'
 import { stratalyxDarkTheme, stratalyxLightTheme } from './theme'
 import { Dashboard } from './Dashboard'
+import { LlmConfigScreen } from './LlmConfigScreen'
 
 const SUPABASE_URL  = import.meta.env['VITE_SUPABASE_URL']      as string
 const SUPABASE_ANON = import.meta.env['VITE_SUPABASE_ANON_KEY'] as string
@@ -451,6 +455,23 @@ const SettingsEdit = () => (
   </Edit>
 )
 
+// ── custom sidebar menu — auto-generated entries plus a link to /llm-config ─
+const AdminMenu = () => (
+  <Menu>
+    <Menu.DashboardItem />
+    <Menu.ResourceItem name="users" />
+    <Menu.ResourceItem name="analyses" />
+    <Menu.ResourceItem name="watchlist" />
+    <Menu.Item
+      to="/llm-config"
+      primaryText="LLM models"
+      leftIcon={<Sparkles size={18} />}
+    />
+    <Menu.ResourceItem name="app_settings" />
+  </Menu>
+)
+const AdminLayout = (props: LayoutProps) => <Layout {...props} menu={AdminMenu} />
+
 // ── shell ────────────────────────────────────────────────────────────────────
 export default function AdminPanel() {
   // HashRouter keeps react-admin's URLs (#/users, #/analyses) isolated from the
@@ -467,11 +488,15 @@ export default function AdminPanel() {
         title="Stratalyx Admin"
         theme={theme}
         dashboard={Dashboard}
+        layout={AdminLayout}
       >
         <Resource name="users"     list={UserList}     edit={UserEdit} show={UserShow} recordRepresentation="email" />
         <Resource name="analyses"  list={AnalysisList} show={AnalysisShow} recordRepresentation="ticker" />
         <Resource name="watchlist" list={WatchlistList} options={{ label: 'Watchlist' }} />
-        <Resource name="app_settings" list={SettingsList} edit={SettingsEdit} options={{ label: 'Settings' }} recordRepresentation="key" />
+        <Resource name="app_settings" list={SettingsList} edit={SettingsEdit} options={{ label: 'Settings' }} recordRepresentation="key" icon={SettingsIcon} />
+        <CustomRoutes>
+          <Route path="/llm-config" element={<LlmConfigScreen />} />
+        </CustomRoutes>
       </Admin>
     </HashRouter>
   )

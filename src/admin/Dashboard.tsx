@@ -603,12 +603,13 @@ export function Dashboard() {
         <TrendCard label="Analyses run" total={NUM.format(totalAnalyses30)}  sub="last 30 days" data={analysesTrend} color="#10b981" />
       </Box>
 
+      {/* Cost dashboard sits high — most operationally important info on the page. */}
       <Box sx={{ mb: 3 }}>
-        <CohortRetention users={users} analyses={analyses30} />
+        <CostDashboard />
       </Box>
 
       <Box sx={{ mb: 3 }}>
-        <CostDashboard />
+        <CohortRetention users={users} analyses={analyses30} />
       </Box>
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
