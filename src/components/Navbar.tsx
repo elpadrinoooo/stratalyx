@@ -1,10 +1,9 @@
 import React from 'react'
-import { Sun, Moon, Monitor, KeyRound, Plus, Sparkles } from 'lucide-react'
+import { KeyRound, Plus, Sparkles } from 'lucide-react'
 import { C, R } from '../constants/colors'
 import { INVESTORS, INV } from '../constants/investors'
 import { useApp } from '../state/context'
 import { useWindowWidth } from '../hooks/useWindowWidth'
-import { useTheme, type ThemeMode } from '../hooks/useTheme'
 import { useUsageInfo } from '../hooks/useUsageInfo'
 import type { Screen } from '../types'
 
@@ -17,6 +16,7 @@ interface Props {
 interface ScreenLink { label: string; screen: Screen; admin?: boolean }
 
 // Grouped IA: Discover (passive market-watching) · Analyze (active research) · Library (saved work)
+// Theme toggle lives on the Account screen now — kept off the navbar for a cleaner top bar.
 const SCREEN_GROUPS: ScreenLink[][] = [
   [
     { label: 'Markets',       screen: 'Markets' },
@@ -37,15 +37,8 @@ const SCREEN_GROUPS: ScreenLink[][] = [
   ],
 ]
 
-const THEME_OPTIONS: { mode: ThemeMode; Icon: typeof Sun; label: string }[] = [
-  { mode: 'light',  Icon: Sun,     label: 'Light'  },
-  { mode: 'dark',   Icon: Moon,    label: 'Dark'   },
-  { mode: 'system', Icon: Monitor, label: 'System' },
-]
-
 export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
   const { state, dispatch } = useApp()
-  const { mode: themeMode, setTheme } = useTheme()
   const inv = INV[state.investor] ?? INVESTORS[0]
   const width = useWindowWidth()
   const isMobile = width <= 640
@@ -109,53 +102,6 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
       </button>
     )
   }
-
-  /** Three-segment theme toggle: Light / Dark / System */
-  const themeToggle = (
-    <div
-      role="group"
-      aria-label="Color theme"
-      style={{
-        display: 'flex',
-        background: C.bg2,
-        border: `1px solid ${C.border}`,
-        borderRadius: R.r8,
-        padding: 2,
-        gap: 1,
-      }}
-    >
-      {THEME_OPTIONS.map(({ mode, Icon, label }) => {
-        const active = themeMode === mode
-        return (
-          <button
-            key={mode}
-            onClick={() => setTheme(mode)}
-            aria-pressed={active}
-            aria-label={`${label} mode`}
-            title={`${label} mode`}
-            style={{
-              background: active ? C.bg1 : 'transparent',
-              border: active ? `1px solid ${C.border}` : '1px solid transparent',
-              borderRadius: R.r6,
-              color: active ? C.t1 : C.t3,
-              cursor: 'pointer',
-              fontSize: isMobile ? 13 : 12,
-              fontWeight: active ? 600 : 400,
-              padding: isMobile ? '5px 7px' : '4px 8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              lineHeight: 1,
-              transition: 'background 0.15s',
-            }}
-          >
-            <Icon size={14} strokeWidth={2} aria-hidden />
-            {!isMobile && <span>{label}</span>}
-          </button>
-        )
-      })}
-    </div>
-  )
 
   const logoBtn = (
     <button
@@ -304,7 +250,6 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
         <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {logoBtn}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {themeToggle}
             {fmpBtn}
             {usagePill}
             {authBtn}
@@ -373,8 +318,6 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
 
       {/* RIGHT */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        {themeToggle}
-
         {fmpBtn}
 
         {/* Active investor pill */}

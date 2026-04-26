@@ -365,8 +365,19 @@ function ThemeCard() {
   ]
   return (
     <Card>
-      <CardHeader Icon={Sun} title="Appearance" subtitle="Pick your color theme" />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+      <CardHeader Icon={Sun} title="Appearance" subtitle="Color theme" />
+      <div
+        role="group"
+        aria-label="Color theme"
+        style={{
+          display: 'flex',
+          background: C.bg1,
+          border: `1px solid ${C.border}`,
+          borderRadius: R.r8,
+          padding: 2,
+          alignSelf: 'flex-start',
+        }}
+      >
         {opts.map(({ id, label, Icon }) => {
           const active = mode === id
           return (
@@ -374,21 +385,23 @@ function ThemeCard() {
               key={id}
               onClick={() => setTheme(id)}
               aria-pressed={active}
+              aria-label={`${label} mode`}
+              title={`${label} mode`}
               style={{
-                background: active ? C.accentM : C.bg1,
-                border: `1px solid ${active ? C.accentB : C.border}`,
-                borderRadius: R.r8,
-                color: active ? C.accent : C.t2,
+                background: active ? C.bg3 : 'transparent',
+                border: 'none',
+                borderRadius: R.r6,
+                color: active ? C.t1 : C.t3,
                 cursor: 'pointer',
-                padding: '10px 6px',
+                padding: '6px 12px',
                 fontSize: 12,
-                fontWeight: active ? 700 : 500,
+                fontWeight: active ? 600 : 500,
                 fontFamily: C.sans,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                transition: 'background .15s, border-color .15s, color .15s',
+                display: 'flex', alignItems: 'center', gap: 6,
+                transition: 'background .15s, color .15s',
               }}
             >
-              <Icon size={18} strokeWidth={2} aria-hidden />
+              <Icon size={13} strokeWidth={2} aria-hidden />
               {label}
             </button>
           )
