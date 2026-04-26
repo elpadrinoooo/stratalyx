@@ -343,16 +343,23 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
     })))
 
     INDEX_CARDS.forEach((card, i) => {
-      fetch(`/api/history/${encodeURIComponent(card.ticker)}?range=1d`)
-        .then(r => r.ok ? r.json() as Promise<{ points: { t: number; p: number }[]; previousClose: number }> : Promise.reject(r.status))
-        .then(data => {
-          const pts   = data.points
-          const last  = pts[pts.length - 1]?.p ?? 0
-          const prev  = data.previousClose > 0 ? data.previousClose : (pts[0]?.p ?? 0)
+      // Two fetches per card: 1d for the headline price + today's change %,
+      // 15y for the long-term sparkline trend the user asked for.
+      const enc = encodeURIComponent(card.ticker)
+      Promise.all([
+        fetch(`/api/history/${enc}?range=1d`)
+          .then(r => r.ok ? r.json() as Promise<{ points: { t: number; p: number }[]; previousClose: number }> : Promise.reject(r.status)),
+        fetch(`/api/history/${enc}?range=15y`)
+          .then(r => r.ok ? r.json() as Promise<{ points: { t: number; p: number }[] }> : Promise.reject(r.status)),
+      ])
+        .then(([day, hist]) => {
+          const dayPts = day.points
+          const last   = dayPts[dayPts.length - 1]?.p ?? 0
+          const prev   = day.previousClose > 0 ? day.previousClose : (dayPts[0]?.p ?? 0)
           const changePct    = prev > 0 ? ((last - prev) / prev) * 100 : 0
           const changeDollar = last - prev
           setIndexCards(prev2 => prev2.map((c, idx) =>
-            idx === i ? { ...c, points: pts, price: last, previousClose: data.previousClose, changePct, changeDollar, loading: false } : c
+            idx === i ? { ...c, points: hist.points, price: last, previousClose: day.previousClose, changePct, changeDollar, loading: false } : c
           ))
         })
         .catch(() =>

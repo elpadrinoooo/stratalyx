@@ -306,12 +306,13 @@ app.get('/price/:ticker', async (req: Request, res: Response) => {
 app.get('/history/:ticker', async (req: Request, res: Response) => {
   // Yahoo index symbols start with ^ (e.g. ^GSPC, ^DJI, ^IXIC, ^RUT) — keep them.
   const ticker = (req.params['ticker'] ?? '').toUpperCase().replace(/[^A-Z0-9.^]/g, '').slice(0, 10)
-  const range    = ['1d','5d','1mo','3mo','6mo','1y','2y','5y'].includes(req.query['range'] as string)
+  const range    = ['1d','5d','1mo','3mo','6mo','1y','2y','5y','10y','15y','max'].includes(req.query['range'] as string)
     ? req.query['range'] as string
     : '1y'
   const interval = range === '1d' ? '5m'
     : range === '5d' ? '15m'
     : range === '1mo' ? '1d'
+    : range === '10y' || range === '15y' || range === 'max' ? '1mo'
     : '1wk'
 
   if (!ticker) {
@@ -328,7 +329,15 @@ app.get('/history/:ticker', async (req: Request, res: Response) => {
   }
 
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=${interval}&range=${range}&events=div%2Csplit`
+    // Yahoo's `range` query param doesn't accept '15y' — synthesize via period1/period2.
+    const url = (range === '15y' || range === '10y')
+      ? (() => {
+          const now = Math.floor(Date.now() / 1000)
+          const years = range === '15y' ? 15 : 10
+          const start = now - years * 365 * 24 * 60 * 60
+          return `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?period1=${start}&period2=${now}&interval=${interval}&events=div%2Csplit`
+        })()
+      : `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=${interval}&range=${range}&events=div%2Csplit`
     const upstream = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
 
     if (!upstream.ok) {
