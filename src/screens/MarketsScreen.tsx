@@ -3,6 +3,7 @@ import { ResponsiveContainer, AreaChart, Area } from 'recharts'
 import { C, R } from '../constants/colors'
 import { useWindowWidth } from '../hooks/useWindowWidth'
 import { useApp } from '../state/context'
+import { FirstAnalysisCTA } from '../components/FirstAnalysisCTA'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -382,6 +383,8 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
 
   return (
     <div style={{ padding: isMobile ? '14px' : '20px 24px', maxWidth: 1440, margin: '0 auto' }}>
+
+      <FirstAnalysisCTA />
 
       {/* ── Page heading ─────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
