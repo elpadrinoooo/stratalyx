@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Admin, Resource,
   List, Datagrid, TextField, BooleanField, NumberField, DateField,
@@ -6,11 +7,11 @@ import {
   SearchInput, FilterButton, FunctionField,
   TopToolbar, ExportButton,
   BulkUpdateButton, BulkDeleteButton,
-  useRecordContext,
+  useRecordContext, useGetManyReference,
 } from 'react-admin'
 import { HashRouter } from 'react-router-dom'
 import { supabaseDataProvider, supabaseAuthProvider } from 'ra-supabase'
-import { Box, Chip, Typography } from '@mui/material'
+import { Box, Card, CardContent, Chip, Typography } from '@mui/material'
 import { supabase } from '../lib/supabase'
 import { useTheme } from '../hooks/useTheme'
 import { stratalyxDarkTheme, stratalyxLightTheme } from './theme'
@@ -33,6 +34,137 @@ const authProvider = supabaseAuthProvider(supabase, {
 })
 
 const TIER_CHOICES = [{ id: 'free', name: 'Free' }, { id: 'pro', name: 'Pro' }]
+
+// ── widgets ──────────────────────────────────────────────────────────────────
+interface AnalysisRow { id: string; user_id: string | null; ticker: string; investor_id: string; verdict: string | null; score: number | null; created_at: string }
+
+function bucketByDay(timestamps: string[], days: number, anchor: number): number[] {
+  const buckets = new Array(days).fill(0)
+  const startMs = anchor - (days - 1) * 86_400_000
+  for (const ts of timestamps) {
+    const idx = Math.floor((new Date(ts).getTime() - startMs) / 86_400_000)
+    if (idx >= 0 && idx < days) buckets[idx]++
+  }
+  return buckets
+}
+
+/** SVG bar chart, no recharts dependency. Days run left→right; today is rightmost. */
+function BarChart({ data, color = '#6366f1', height = 64 }: { data: number[]; color?: string; height?: number }) {
+  if (data.length === 0) return null
+  const w = 560
+  const max = Math.max(...data, 1)
+  const barW = w / data.length
+  return (
+    <svg viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" style={{ width: '100%', height, display: 'block' }}>
+      {data.map((v, i) => {
+        const h = (v / max) * (height - 4)
+        return (
+          <rect
+            key={i}
+            x={i * barW + 1}
+            y={height - h - 2}
+            width={Math.max(0, barW - 2)}
+            height={h}
+            fill={color}
+            opacity={v === 0 ? 0.2 : 0.85}
+            rx={1}
+          />
+        )
+      })}
+    </svg>
+  )
+}
+
+/** Daily-volume chart shown above the Analyses list. */
+function DailyVolumeChart() {
+  // Pin "now" once — date math should not re-run on render.
+  const [anchor] = useState(() => {
+    const t = new Date()
+    t.setHours(0, 0, 0, 0)
+    return t.getTime() + 86_400_000  // tomorrow midnight = today's bucket includes everything up to now
+  })
+  const since = new Date(anchor - 30 * 86_400_000).toISOString()
+
+  // useGetList fetches via the admin's data provider, same as the lists below.
+  const { data: rows = [], isLoading } = useGetList<AnalysisRow>('analyses', {
+    pagination: { page: 1, perPage: 1000 },
+    sort: { field: 'created_at', order: 'DESC' },
+    filter: { 'created_at@gte': since },
+  })
+
+  const buckets = bucketByDay(rows.map(r => r.created_at), 30, anchor)
+  const total = buckets.reduce((s, n) => s + n, 0)
+  const todayBucket = buckets[buckets.length - 1]
+
+  return (
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+            Daily volume — last 30 days
+          </Typography>
+          <Box sx={{ textAlign: 'right' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1, fontFamily: 'monospace' }}>{total}</Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              {isLoading ? 'loading…' : `${todayBucket} today`}
+            </Typography>
+          </Box>
+        </Box>
+        <BarChart data={buckets} />
+      </CardContent>
+    </Card>
+  )
+}
+
+/** Per-user weekly analysis cadence — shown on the User detail screen. */
+function UserRetentionChart() {
+  const r = useRecordContext<{ id: string; created_at?: string }>()
+  const { data = [], isLoading } = useGetManyReference<AnalysisRow>('analyses', {
+    target: 'user_id',
+    id: r?.id ?? '',
+    pagination: { page: 1, perPage: 500 },
+    sort: { field: 'created_at', order: 'ASC' },
+  })
+
+  if (!r) return null
+  if (isLoading) return <Typography variant="caption" sx={{ color: 'text.secondary' }}>Loading retention…</Typography>
+  if (data.length === 0) return <Typography variant="body2" sx={{ color: 'text.secondary' }}>No analyses yet — nothing to plot.</Typography>
+
+  const signupMs = r.created_at ? new Date(r.created_at).getTime() : new Date(data[0].created_at).getTime()
+  const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0)
+  const totalWeeks = Math.max(1, Math.ceil((todayMidnight.getTime() - signupMs) / (7 * 86_400_000)))
+  const cap = Math.min(totalWeeks, 26)  // cap at 6 months for a sane chart width
+
+  const weekly = new Array(cap).fill(0)
+  for (const a of data) {
+    const wk = Math.floor((new Date(a.created_at).getTime() - signupMs) / (7 * 86_400_000))
+    if (wk >= 0 && wk < cap) weekly[wk]++
+  }
+  const max = Math.max(...weekly, 1)
+  const w = 560
+  const h = 56
+  const step = cap > 1 ? w / (cap - 1) : 0
+  const pts = weekly.map((v, i) => `${i * step},${h - (v / max) * (h - 4) - 2}`).join(' ')
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 1 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          {data.length} analyses across {totalWeeks} {totalWeeks === 1 ? 'week' : 'weeks'} since signup
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
+          peak {max}/wk
+        </Typography>
+      </Box>
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: h, display: 'block' }}>
+        <polyline points={pts} fill="none" stroke="#6366f1" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+        {weekly.map((v, i) => v > 0 && (
+          <circle key={i} cx={i * step} cy={h - (v / max) * (h - 4) - 2} r={2.2} fill="#6366f1" />
+        ))}
+      </svg>
+    </Box>
+  )
+}
 
 // ── users ────────────────────────────────────────────────────────────────────
 const userFilters = [
@@ -102,6 +234,15 @@ const UserShow = () => (
       <BooleanField source="is_admin" label="Admin" />
       <DateField source="created_at" showTime />
       <TextField source="id" label="User ID" />
+
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+          Weekly cadence since signup
+        </Typography>
+        <Box sx={{ mt: 1 }}>
+          <UserRetentionChart />
+        </Box>
+      </Box>
 
       <Box sx={{ mt: 3 }}>
         <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 600 }}>
@@ -185,21 +326,24 @@ const AnalysisListActions = () => (
 )
 
 const AnalysisList = () => (
-  <List
-    filters={analysisFilters}
-    actions={<AnalysisListActions />}
-    sort={{ field: 'created_at', order: 'DESC' }}
-    perPage={25}
-  >
-    <Datagrid rowClick="show" bulkActionButtons={false}>
-      <TextField source="ticker" />
-      <TextField source="investor_id" label="Investor" />
-      <FunctionField label="Verdict" render={() => <VerdictChip />} />
-      <FunctionField label="Score" render={() => <ScoreCell />} />
-      <NumberField source="price_at_analysis" label="Price" />
-      <DateField source="created_at" showTime />
-    </Datagrid>
-  </List>
+  <>
+    <DailyVolumeChart />
+    <List
+      filters={analysisFilters}
+      actions={<AnalysisListActions />}
+      sort={{ field: 'created_at', order: 'DESC' }}
+      perPage={25}
+    >
+      <Datagrid rowClick="show" bulkActionButtons={false}>
+        <TextField source="ticker" />
+        <TextField source="investor_id" label="Investor" />
+        <FunctionField label="Verdict" render={() => <VerdictChip />} />
+        <FunctionField label="Score" render={() => <ScoreCell />} />
+        <NumberField source="price_at_analysis" label="Price" />
+        <DateField source="created_at" showTime />
+      </Datagrid>
+    </List>
+  </>
 )
 
 const ResultViewer = () => {

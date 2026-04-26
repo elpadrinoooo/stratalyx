@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useGetList, Title, useRedirect } from 'react-admin'
 import {
-  Alert, Box, Card, CardContent, Typography, Stack, Chip, Divider, LinearProgress,
+  Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent,
+  DialogTitle, Divider, LinearProgress, Stack, Typography,
 } from '@mui/material'
 
 const NUM = new Intl.NumberFormat('en-US')
@@ -25,6 +26,7 @@ interface AnalysisRow {
   created_at: string
 }
 
+// ── KPI card ────────────────────────────────────────────────────────────────
 function KpiCard({
   label, value, sub, accent,
 }: { label: string; value: string; sub?: string; accent?: 'gain' | 'loss' | 'warn' }) {
@@ -38,9 +40,7 @@ function KpiCard({
         <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
           {label}
         </Typography>
-        <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 700 }}>
-          {value}
-        </Typography>
+        <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 700 }}>{value}</Typography>
         {sub && (
           <Typography variant="caption" sx={{ color: subColor, fontWeight: 600 }}>
             {sub}
@@ -51,6 +51,7 @@ function KpiCard({
   )
 }
 
+// ── Sparkline + trend card ──────────────────────────────────────────────────
 function Sparkline({ data, color = '#6366f1', height = 56 }: { data: number[]; color?: string; height?: number }) {
   if (data.length === 0) return null
   const w = 320
@@ -107,8 +108,286 @@ function topN<T extends string>(items: T[], n: number): Array<{ key: T; count: n
     .slice(0, n)
 }
 
+// ── Activity feed ───────────────────────────────────────────────────────────
+function timeAgoShort(d: Date): string {
+  const s = Math.max(0, (Date.now() - d.getTime()) / 1000)
+  if (s < 60)    return `${Math.round(s)}s`
+  if (s < 3600)  return `${Math.round(s / 60)}m`
+  if (s < 86400) return `${Math.round(s / 3600)}h`
+  return `${Math.round(s / 86400)}d`
+}
+
+interface ActivityEvent {
+  kind: 'signup' | 'analysis'
+  date: Date
+  primary: string
+  secondary: string
+  refId: string
+}
+
+function ActivityFeed({ users, analyses }: { users: UserRow[]; analyses: AnalysisRow[] }) {
+  const redirect = useRedirect()
+  const events: ActivityEvent[] = []
+  for (const u of users) {
+    events.push({
+      kind: 'signup',
+      date: new Date(u.created_at),
+      primary: u.email ?? u.id.slice(0, 8),
+      secondary: `signed up · ${u.tier}`,
+      refId: u.id,
+    })
+  }
+  for (const a of analyses) {
+    events.push({
+      kind: 'analysis',
+      date: new Date(a.created_at),
+      primary: `${a.ticker} · ${a.investor_id}`,
+      secondary: a.verdict
+        ? `analyzed · ${a.verdict}${a.score != null ? ` (${a.score})` : ''}`
+        : 'analyzed',
+      refId: a.id,
+    })
+  }
+  events.sort((a, b) => b.date.getTime() - a.date.getTime())
+  const recent = events.slice(0, 30)
+
+  return (
+    <Card>
+      <CardContent>
+        <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+          Activity feed (latest 30)
+        </Typography>
+        {recent.length === 0
+          ? <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>No activity yet.</Typography>
+          : (
+            <Box sx={{ maxHeight: 360, overflowY: 'auto', mt: 1 }}>
+              <Stack divider={<Divider />}>
+                {recent.map(ev => (
+                  <Box
+                    key={`${ev.kind}-${ev.refId}`}
+                    onClick={() => redirect(
+                      ev.kind === 'signup' ? 'edit' : 'show',
+                      ev.kind === 'signup' ? 'users' : 'analyses',
+                      ev.refId,
+                    )}
+                    sx={{
+                      display: 'flex', alignItems: 'center', gap: 1.5, py: 1, cursor: 'pointer',
+                      '&:hover': { background: 'action.hover', borderRadius: 1 },
+                    }}
+                  >
+                    <Box sx={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: ev.kind === 'signup' ? 'primary.main' : 'success.main',
+                      flexShrink: 0,
+                    }} />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>{ev.primary}</Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>{ev.secondary}</Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'monospace', flexShrink: 0 }}>
+                      {timeAgoShort(ev.date)}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
+          )
+        }
+      </CardContent>
+    </Card>
+  )
+}
+
+// ── Cohort retention ────────────────────────────────────────────────────────
+const MS_PER_WEEK = 7 * 86_400_000
+
+function CohortRetention({ users, analyses }: { users: UserRow[]; analyses: AnalysisRow[] }) {
+  // Anchor: this Monday at 00:00 local time. Cohorts are weeks-ago counts.
+  const now = new Date()
+  const dayMon = (now.getDay() + 6) % 7  // Mon=0..Sun=6
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - dayMon)
+  monday.setHours(0, 0, 0, 0)
+  const anchorMs = monday.getTime()
+
+  // Group users by signup-week (cohort weeks ago, capped at 8).
+  const cohorts = new Map<number, UserRow[]>()
+  for (const u of users) {
+    const t = new Date(u.created_at).getTime()
+    const wk = Math.max(0, Math.floor((anchorMs - t) / MS_PER_WEEK))
+    if (wk > 7) continue
+    if (!cohorts.has(wk)) cohorts.set(wk, [])
+    cohorts.get(wk)!.push(u)
+  }
+
+  // For each user, set of weeks-ago they ran analyses.
+  const userActiveWeeks = new Map<string, Set<number>>()
+  for (const a of analyses) {
+    if (!a.user_id) continue
+    const t = new Date(a.created_at).getTime()
+    const wk = Math.max(0, Math.floor((anchorMs - t) / MS_PER_WEEK))
+    if (!userActiveWeeks.has(a.user_id)) userActiveWeeks.set(a.user_id, new Set())
+    userActiveWeeks.get(a.user_id)!.add(wk)
+  }
+
+  const cohortWeeks = Array.from(cohorts.keys()).sort((a, b) => a - b) // oldest first row at top
+
+  return (
+    <Card>
+      <CardContent>
+        <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+          Cohort retention — weekly
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
+          Each row is a signup-week cohort. Each column is the % of that cohort active in the Nth week after signup.
+        </Typography>
+        {cohortWeeks.length === 0 ? (
+          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+            No cohorts yet — needs at least one signup in the last 8 weeks.
+          </Typography>
+        ) : (
+          <Box sx={{ overflowX: 'auto' }}>
+            <Box component="table" sx={{ borderCollapse: 'collapse', width: '100%', fontSize: 12, fontFamily: '"SFMono-Regular",Consolas,monospace' }}>
+              <thead>
+                <tr>
+                  <Cell head>Cohort (week of)</Cell>
+                  <Cell head align="right">Size</Cell>
+                  {Array.from({ length: 8 }).map((_, i) => <Cell head key={i} align="right">+{i}w</Cell>)}
+                </tr>
+              </thead>
+              <tbody>
+                {cohortWeeks.map(cw => {
+                  const cohort = cohorts.get(cw)!
+                  const start = new Date(anchorMs - cw * MS_PER_WEEK)
+                  return (
+                    <tr key={cw}>
+                      <Cell>{start.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}</Cell>
+                      <Cell align="right">{cohort.length}</Cell>
+                      {Array.from({ length: 8 }).map((_, offset) => {
+                        // offset=0 is the cohort's signup week. weeksAgo for that = cw - offset.
+                        const targetWk = cw - offset
+                        if (targetWk < 0) return <Cell key={offset} />
+                        const activeUsers = cohort.filter(u => userActiveWeeks.get(u.id)?.has(targetWk)).length
+                        const pct = (activeUsers / cohort.length) * 100
+                        return (
+                          <Cell
+                            key={offset}
+                            align="right"
+                            sx={pct > 0
+                              ? { background: `rgba(99, 102, 241, ${0.1 + (pct / 100) * 0.55})`, fontWeight: 600 }
+                              : undefined}
+                          >
+                            {pct > 0 ? `${pct.toFixed(0)}%` : '·'}
+                          </Cell>
+                        )
+                      })}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </Box>
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function Cell({ children, head, align, sx }: {
+  children?: React.ReactNode
+  head?: boolean
+  align?: 'right' | 'left'
+  sx?: object
+}) {
+  const Tag = head ? 'th' : 'td'
+  return (
+    <Box
+      component={Tag}
+      sx={{
+        textAlign: align ?? 'left',
+        p: 1,
+        borderBottom: 1,
+        borderColor: 'divider',
+        color: head ? 'text.secondary' : 'text.primary',
+        fontWeight: head ? 700 : 400,
+        textTransform: head ? 'uppercase' : undefined,
+        letterSpacing: head ? 0.5 : undefined,
+        fontSize: head ? 10 : 12,
+        ...sx,
+      }}
+    >
+      {children}
+    </Box>
+  )
+}
+
+// ── Broadcast dialog ────────────────────────────────────────────────────────
+function BroadcastDialog({ open, onClose, candidates }: { open: boolean; onClose: () => void; candidates: UserRow[] }) {
+  const emails = candidates.map(c => c.email).filter((e): e is string => !!e)
+  const [copied, setCopied] = useState(false)
+
+  const copyEmails = () => {
+    void navigator.clipboard.writeText(emails.join(', ')).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }
+
+  const downloadCsv = () => {
+    const header = 'email,tier,analyses_this_month,signed_up\n'
+    const rows = candidates.map(c =>
+      `${c.email ?? ''},${c.tier},${c.analyses_this_month},${c.created_at}`
+    ).join('\n')
+    const blob = new Blob([header + rows], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `upgrade-candidates-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const subject = encodeURIComponent('Upgrade to Stratalyx Pro for unlimited analyses')
+  const body = encodeURIComponent(
+    'Hi,\n\nYou’ve been close to your free monthly analysis limit. Pro unlocks unlimited runs across all 22 investor frameworks. Reply to this email and we’ll get you on the list for early access.\n\n— Stratalyx'
+  )
+  const mailtoHref = `mailto:?bcc=${encodeURIComponent(emails.join(','))}&subject=${subject}&body=${body}`
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Upgrade candidates ({candidates.length})</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+          Free users at 2+ analyses this month. Three ways to reach them:
+        </Typography>
+        <Box sx={{ background: 'action.hover', p: 1.5, borderRadius: 1, fontFamily: 'monospace', fontSize: 12, maxHeight: 180, overflowY: 'auto', mb: 2 }}>
+          {emails.length === 0
+            ? <Typography variant="body2" sx={{ color: 'text.secondary' }}>No emails available.</Typography>
+            : emails.join(', ')
+          }
+        </Box>
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          Tip: paste into Mailchimp, Loops, or your CRM to send a templated upgrade nudge.
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+        <Button onClick={copyEmails} disabled={emails.length === 0}>{copied ? 'Copied!' : 'Copy emails'}</Button>
+        <Button onClick={downloadCsv} disabled={candidates.length === 0}>Download CSV</Button>
+        <Button component="a" href={mailtoHref} variant="contained" disabled={emails.length === 0}>
+          Open mail client
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+// ── Dashboard ───────────────────────────────────────────────────────────────
 export function Dashboard() {
   const redirect = useRedirect()
+  const [broadcastOpen, setBroadcastOpen] = useState(false)
 
   // Pin "now" at mount so the date-window filters don't churn on every render.
   const [windows] = useState(() => {
@@ -130,24 +409,20 @@ export function Dashboard() {
     filter: { 'created_at@gte': windows.since30 },
   })
 
-  if (usersLoading || analysesLoading) {
-    return <LinearProgress />
-  }
+  if (usersLoading || analysesLoading) return <LinearProgress />
 
   const totalUsers = users.length
   const proUsers = users.filter(u => u.tier === 'pro').length
   const proPct = totalUsers ? Math.round((proUsers / totalUsers) * 100) : 0
-  const nearLimit = users.filter(u => u.tier === 'free' && u.analyses_this_month >= 2).length
+  const nearLimit = users.filter(u => u.tier === 'free' && u.analyses_this_month >= 2)
+  const nearLimitCount = nearLimit.length
   const totalAnalyses30 = analyses30.length
 
-  // Activation = % of users who ran ≥1 analysis in the current monthly window.
-  // Uses the existing analyses_this_month counter (resets monthly), so no extra query.
   const activatedThisMonth = users.filter(u => u.analyses_this_month > 0).length
   const activationPct = totalUsers ? Math.round((activatedThisMonth / totalUsers) * 100) : 0
 
   const analyses7 = analyses30.filter(a => new Date(a.created_at).getTime() >= windows.since7Ms).length
 
-  // 30-day daily buckets for sparklines (oldest day at index 0, today at days-1)
   const signupsTrend  = bucketByDay(users.map(u => u.created_at), 30)
   const analysesTrend = bucketByDay(analyses30.map(a => a.created_at), 30)
   const signups30 = signupsTrend.reduce((s, n) => s + n, 0)
@@ -163,16 +438,29 @@ export function Dashboard() {
     <Box>
       <Title title="Dashboard" />
 
-      {nearLimit > 0 && (
+      {nearLimitCount > 0 && (
         <Alert
           severity="warning"
-          sx={{ mb: 2, cursor: 'pointer' }}
-          onClick={() => redirect('list', 'users', undefined, undefined, {
-            displayedFilters: { tier: true, 'analyses_this_month@gte': true },
-            filter: { tier: 'free', 'analyses_this_month@gte': 2 },
-          })}
+          sx={{ mb: 2, alignItems: 'center' }}
+          action={
+            <Stack direction="row" spacing={1}>
+              <Button color="warning" size="small" variant="outlined" onClick={() => setBroadcastOpen(true)}>
+                Email them
+              </Button>
+              <Button
+                color="warning"
+                size="small"
+                onClick={() => redirect('list', 'users', undefined, undefined, {
+                  displayedFilters: { tier: true, 'analyses_this_month@gte': true },
+                  filter: { tier: 'free', 'analyses_this_month@gte': 2 },
+                })}
+              >
+                View list
+              </Button>
+            </Stack>
+          }
         >
-          {nearLimit} free {nearLimit === 1 ? 'user is' : 'users are'} at 2+ analyses this month — prime upgrade candidates.
+          {nearLimitCount} free {nearLimitCount === 1 ? 'user is' : 'users are'} at 2+ analyses this month — prime upgrade candidates.
         </Alert>
       )}
 
@@ -184,23 +472,15 @@ export function Dashboard() {
       </Box>
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-        <TrendCard
-          label="New signups"
-          total={NUM.format(signups30)}
-          sub="last 30 days"
-          data={signupsTrend}
-          color="#6366f1"
-        />
-        <TrendCard
-          label="Analyses run"
-          total={NUM.format(totalAnalyses30)}
-          sub="last 30 days"
-          data={analysesTrend}
-          color="#10b981"
-        />
+        <TrendCard label="New signups"  total={NUM.format(signups30)}        sub="last 30 days" data={signupsTrend}  color="#6366f1" />
+        <TrendCard label="Analyses run" total={NUM.format(totalAnalyses30)}  sub="last 30 days" data={analysesTrend} color="#10b981" />
       </Box>
 
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+      <Box sx={{ mb: 3 }}>
+        <CohortRetention users={users} analyses={analyses30} />
+      </Box>
+
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
         <Card sx={{ flex: '1 1 320px', minWidth: 280 }}>
           <CardContent>
             <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 600 }}>
@@ -273,6 +553,16 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </Box>
+
+      <Box>
+        <ActivityFeed users={users} analyses={analyses30} />
+      </Box>
+
+      <BroadcastDialog
+        open={broadcastOpen}
+        onClose={() => setBroadcastOpen(false)}
+        candidates={nearLimit}
+      />
     </Box>
   )
 }

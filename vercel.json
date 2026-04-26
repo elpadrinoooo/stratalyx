@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://stratalyx-backend-production.up.railway.app/api/:path*" }
+    { "source": "/api/:path*", "destination": "https://stratalyx-backend-production.up.railway.app/api/:path*" },
+    { "source": "/admin", "destination": "/" }
   ]
 }

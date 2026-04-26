@@ -74,12 +74,14 @@ function AppShell() {
   const [authRecoveryMode, setAuthRecoveryMode] = useState(false)
   const [shareBanner, setShareBanner] = useState<'analysis' | 'comparison' | false>(false)
 
-  // Handle deep-link on first load (share URL or ?admin=1)
+  // Handle deep-link on first load (share URL, /admin path, or ?admin=1)
   useEffect(() => {
-    // Admin shortcut: ?admin=1
-    if (new URLSearchParams(window.location.search).get('admin') === '1') {
+    // Admin shortcut — both /admin and ?admin=1 land you on the admin screen.
+    const isAdminPath  = window.location.pathname.replace(/\/$/, '') === '/admin'
+    const isAdminParam = new URLSearchParams(window.location.search).get('admin') === '1'
+    if (isAdminPath || isAdminParam) {
       dispatch({ type: 'SET_SCREEN', payload: 'Admin' })
-      history.replaceState(null, '', window.location.pathname)
+      history.replaceState(null, '', '/')
       return
     }
 
