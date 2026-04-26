@@ -7,6 +7,40 @@ import { getSetting } from './settings.js'
 // admin Settings panel without redeploying.
 const DEFAULT_FREE_LIMIT       = 25
 const DEFAULT_MAX_PROMPT_CHARS = 32_000
+const DEFAULT_ENABLED_PROVIDERS = ['anthropic', 'openai', 'google', 'mistral']
+const DEFAULT_ENABLED_MODELS: Record<string, string[]> = {
+  anthropic: ['claude-haiku-4-5-20251001', 'claude-sonnet-4-5', 'claude-opus-4-5'],
+  openai:    ['gpt-4o-mini', 'gpt-4o', 'o3-mini'],
+  google:    ['gemini-2.5-flash', 'gemini-2.5-pro'],
+  mistral:   ['mistral-small-3.1', 'mistral-large-2'],
+}
+
+/**
+ * Build a middleware that rejects requests whose provider isn't currently
+ * enabled (admin can flip a provider off without code changes). The model
+ * check is left to each route's own model-allowlist logic — those already
+ * fall back to a default when the user supplies something unknown.
+ */
+export function gateProvider(provider: string) {
+  return async function (req: Request, res: Response, next: NextFunction): Promise<void> {
+    if (IS_TEST) { next(); return }
+    const enabled = await getSetting<string[]>('enabled_providers', DEFAULT_ENABLED_PROVIDERS)
+    if (!enabled.includes(provider)) {
+      res.status(403).json({
+        error: `${provider} is currently disabled by an admin.`,
+        code: 'PROVIDER_DISABLED',
+      })
+      return
+    }
+    next()
+  }
+}
+
+/** Helper for handlers that build their model allowlist dynamically. */
+export async function getEnabledModelsForProvider(provider: string): Promise<string[]> {
+  const all = await getSetting<Record<string, string[]>>('enabled_models', DEFAULT_ENABLED_MODELS)
+  return all[provider] ?? []
+}
 
 // Same skip pattern as the rate limiters in server/app.ts — bypass auth gating
 // inside Jest so the existing input/upstream/proxy tests don't all 401.
@@ -62,6 +96,12 @@ interface AnalysisFlywheelPayload {
   verdict?: string | null
   result: unknown
   priceAtAnalysis?: number | null
+  // Cost-tracking — populated by each LLM proxy handler.
+  provider?: string | null
+  model?: string | null
+  inputTokens?: number | null
+  outputTokens?: number | null
+  costUsdMicro?: number | null
 }
 
 export function recordAnalysis(
@@ -83,6 +123,11 @@ export function recordAnalysis(
         result: payload.result,
         price_at_analysis: payload.priceAtAnalysis ?? null,
         user_id: userId,
+        provider:       payload.provider       ?? null,
+        model:          payload.model          ?? null,
+        input_tokens:   payload.inputTokens    ?? null,
+        output_tokens:  payload.outputTokens   ?? null,
+        cost_usd_micro: payload.costUsdMicro   ?? null,
       })
 
       if (userId) {

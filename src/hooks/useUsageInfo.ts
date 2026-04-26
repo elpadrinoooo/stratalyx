@@ -6,6 +6,8 @@ export interface UsageInfo {
   analysesThisMonth: number
   limit: number | null
   limitReached: boolean
+  enabledProviders?: string[]
+  enabledModels?: Record<string, string[]>
 }
 
 /**
@@ -26,12 +28,20 @@ export function useUsageInfo(event?: unknown): { usage: UsageInfo | null; refetc
           headers: { 'Authorization': `Bearer ${session.access_token}` },
         })
         if (!res.ok) { setUsage(null); return }
-        const data = await res.json() as { tier: 'free' | 'pro'; analysesThisMonth: number; limit: number | null }
+        const data = await res.json() as {
+          tier: 'free' | 'pro'
+          analysesThisMonth: number
+          limit: number | null
+          enabledProviders?: string[]
+          enabledModels?: Record<string, string[]>
+        }
         setUsage({
           tier: data.tier,
           analysesThisMonth: data.analysesThisMonth,
           limit: data.limit,
           limitReached: data.limit !== null && data.analysesThisMonth >= data.limit,
+          enabledProviders: data.enabledProviders,
+          enabledModels: data.enabledModels,
         })
       } catch {
         setUsage(null)

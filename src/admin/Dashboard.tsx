@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useGetList, Title, useRedirect } from 'react-admin'
 import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent,
@@ -108,92 +108,127 @@ function topN<T extends string>(items: T[], n: number): Array<{ key: T; count: n
     .slice(0, n)
 }
 
-// ── API key status panel ────────────────────────────────────────────────────
-interface HealthResponse {
-  status?: string
-  claude?: boolean
-  gemini?: boolean
-  openai?: boolean
-  mistral?: boolean
-  fmp?: boolean
-  // finnhub and supabase aren't currently in /health output, but adding them is one PR
-  uptime?: number
-  time?: string
+// ── Cost dashboard ──────────────────────────────────────────────────────────
+interface AnalysisCostRow {
+  id: string
+  user_id: string | null
+  provider: string | null
+  model: string | null
+  input_tokens: number | null
+  output_tokens: number | null
+  cost_usd_micro: number | null
+  created_at: string
 }
 
-function ApiKeyStatusCard() {
-  const [health, setHealth] = useState<HealthResponse | null>(null)
-  const [error, setError]   = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 4 })
+function fmtUsd(microCents: number): string {
+  return USD.format(microCents / 100_000)
+}
 
-  useEffect(() => {
-    let cancelled = false
-    fetch('/api/health')
-      .then(r => r.ok ? r.json() as Promise<HealthResponse> : Promise.reject(`HTTP ${r.status}`))
-      .then(d => { if (!cancelled) { setHealth(d); setLoading(false) } })
-      .catch(e => { if (!cancelled) { setError(String(e)); setLoading(false) } })
-    return () => { cancelled = true }
-  }, [])
+function CostDashboard() {
+  // Pin "now" once at mount — date math should not re-run on every render.
+  const [now] = useState(() => Date.now())
+  const day = 86_400_000
 
-  const services: { label: string; key: keyof HealthResponse; required: boolean }[] = [
-    { label: 'Anthropic (Claude)', key: 'claude',  required: true  },
-    { label: 'Google (Gemini)',    key: 'gemini',  required: true  },
-    { label: 'OpenAI',             key: 'openai',  required: false },
-    { label: 'Mistral',            key: 'mistral', required: false },
-    { label: 'FMP',                key: 'fmp',     required: true  },
-  ]
+  // All-time pull, capped — for current scale (low thousands) this is fine.
+  // If/when this hits 100K+ rows, move to a server-side aggregate endpoint.
+  const { data: rows = [], isLoading } = useGetList<AnalysisCostRow>('analyses', {
+    pagination: { page: 1, perPage: 5000 },
+    sort: { field: 'created_at', order: 'DESC' },
+  })
+
+  if (isLoading) return <Card><CardContent><LinearProgress /></CardContent></Card>
+  const totalAll   = rows.reduce((s, r) => s + (r.cost_usd_micro ?? 0), 0)
+  const totalMonth = rows.filter(r => now - new Date(r.created_at).getTime() <= 30 * day).reduce((s, r) => s + (r.cost_usd_micro ?? 0), 0)
+  const totalWeek  = rows.filter(r => now - new Date(r.created_at).getTime() <= 7 * day).reduce((s, r) => s + (r.cost_usd_micro ?? 0), 0)
+  const totalToday = rows.filter(r => now - new Date(r.created_at).getTime() <= day).reduce((s, r) => s + (r.cost_usd_micro ?? 0), 0)
+
+  // Per-provider breakdown
+  const byProvider = new Map<string, { cost: number; count: number; inTok: number; outTok: number }>()
+  for (const r of rows) {
+    if (!r.provider) continue
+    if (!byProvider.has(r.provider)) byProvider.set(r.provider, { cost: 0, count: 0, inTok: 0, outTok: 0 })
+    const agg = byProvider.get(r.provider)!
+    agg.cost  += r.cost_usd_micro ?? 0
+    agg.count += 1
+    agg.inTok  += r.input_tokens  ?? 0
+    agg.outTok += r.output_tokens ?? 0
+  }
+  const providerRows = Array.from(byProvider.entries()).sort((a, b) => b[1].cost - a[1].cost)
+
+  // Top spenders (need user emails — not in this row, so show user-id-prefix)
+  const byUser = new Map<string, number>()
+  for (const r of rows) {
+    if (!r.user_id) continue
+    byUser.set(r.user_id, (byUser.get(r.user_id) ?? 0) + (r.cost_usd_micro ?? 0))
+  }
+  const topUsers = Array.from(byUser.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5)
 
   return (
-    <Card>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 1 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+        <KpiCard label="Cost — today"    value={fmtUsd(totalToday)} />
+        <KpiCard label="Cost — last 7d"  value={fmtUsd(totalWeek)} />
+        <KpiCard label="Cost — last 30d" value={fmtUsd(totalMonth)} />
+        <KpiCard label="Cost — all time" value={fmtUsd(totalAll)} accent={totalAll > 0 ? 'gain' : undefined} />
+      </Box>
+
+      <Card>
+        <CardContent>
           <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-            API key status (read-only)
+            Cost by provider
           </Typography>
-          {health?.uptime != null && (
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
-              uptime {Math.floor(health.uptime / 3600)}h
+          {providerRows.length === 0 ? (
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+              No cost data yet — runs before this build don&rsquo;t carry token counts. Cost capture is live now; numbers will populate as new analyses land.
             </Typography>
+          ) : (
+            <Box sx={{ overflowX: 'auto', mt: 1 }}>
+              <Box component="table" sx={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
+                <thead>
+                  <tr>
+                    <Cell head>Provider</Cell>
+                    <Cell head align="right">Analyses</Cell>
+                    <Cell head align="right">Input tokens</Cell>
+                    <Cell head align="right">Output tokens</Cell>
+                    <Cell head align="right">Cost</Cell>
+                  </tr>
+                </thead>
+                <tbody>
+                  {providerRows.map(([prov, agg]) => (
+                    <tr key={prov}>
+                      <Cell><Typography component="span" sx={{ textTransform: 'capitalize', fontWeight: 600 }}>{prov}</Typography></Cell>
+                      <Cell align="right">{NUM.format(agg.count)}</Cell>
+                      <Cell align="right" sx={{ fontFamily: 'monospace' }}>{NUM.format(agg.inTok)}</Cell>
+                      <Cell align="right" sx={{ fontFamily: 'monospace' }}>{NUM.format(agg.outTok)}</Cell>
+                      <Cell align="right" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>{fmtUsd(agg.cost)}</Cell>
+                    </tr>
+                  ))}
+                </tbody>
+              </Box>
+            </Box>
           )}
-        </Box>
-        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
-          Stored in Railway environment variables, not the database. To rotate or update, open the&nbsp;
-          <Box component="a" href="https://railway.com/dashboard" target="_blank" rel="noopener noreferrer" sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
-            Railway dashboard
-          </Box>
-          &nbsp;→ stratalyx-backend → Variables.
-        </Typography>
-        {loading && <Typography variant="body2" sx={{ color: 'text.secondary' }}>Checking…</Typography>}
-        {error && <Typography variant="body2" sx={{ color: 'error.main' }}>Health check failed: {error}</Typography>}
-        {health && (
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 1 }}>
-            {services.map(({ label, key, required }) => {
-              const ok = Boolean(health[key])
-              return (
-                <Box
-                  key={key}
-                  sx={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    p: 1.25, borderRadius: 1,
-                    background: 'action.hover',
-                    border: 1,
-                    borderColor: ok ? 'success.main' : (required ? 'error.main' : 'divider'),
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{label}</Typography>
-                  <Chip
-                    size="small"
-                    label={ok ? '✓ Configured' : (required ? '✗ Missing' : 'Not set')}
-                    color={ok ? 'success' : (required ? 'error' : 'default')}
-                    variant={ok ? 'filled' : 'outlined'}
-                  />
+        </CardContent>
+      </Card>
+
+      {topUsers.length > 0 && (
+        <Card>
+          <CardContent>
+            <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+              Top spenders (all time)
+            </Typography>
+            <Stack divider={<Divider />} sx={{ mt: 1 }}>
+              {topUsers.map(([uid, cost]) => (
+                <Box key={uid} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: 12 }}>{uid.slice(0, 13)}…</Typography>
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>{fmtUsd(cost)}</Typography>
                 </Box>
-              )
-            })}
-          </Box>
-        )}
-      </CardContent>
-    </Card>
+              ))}
+            </Stack>
+          </CardContent>
+        </Card>
+      )}
+    </Box>
   )
 }
 
@@ -573,7 +608,7 @@ export function Dashboard() {
       </Box>
 
       <Box sx={{ mb: 3 }}>
-        <ApiKeyStatusCard />
+        <CostDashboard />
       </Box>
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>

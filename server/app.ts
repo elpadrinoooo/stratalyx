@@ -6,7 +6,8 @@ import { rateLimit } from 'express-rate-limit'
 import fs from 'fs'
 import path from 'path'
 import { attachUser } from './authMiddleware.js'
-import { checkUsage, recordAnalysis, validatePromptSize } from './usageLimiter.js'
+import { checkUsage, recordAnalysis, validatePromptSize, gateProvider } from './usageLimiter.js'
+import { computeCostMicroCents } from './pricing.js'
 import { userRouter } from './routes/userRoutes.js'
 // Load affiliate map — mutable so admin routes can update it in memory.
 // Resolved from CWD (repo root for both `npm start` and `jest`) so the same
@@ -124,7 +125,7 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // ── Claude proxy ──────────────────────────────────────────────────────────────
  
-app.post('/claude', llmLimiter, validatePromptSize, checkUsage, async (req: Request, res: Response) => {
+app.post('/claude', llmLimiter, validatePromptSize, checkUsage, gateProvider('anthropic'), async (req: Request, res: Response) => {
   if (!ANTHROPIC_KEY) {
     res.status(503).json({ error: 'ANTHROPIC_API_KEY not configured on server' })
     return
@@ -163,10 +164,19 @@ app.post('/claude', llmLimiter, validatePromptSize, checkUsage, async (req: Requ
     }
 
     res.json(data)
+
+    const usage = (data as { usage?: { input_tokens?: number; output_tokens?: number } }).usage
+    const inTok  = usage?.input_tokens  ?? 0
+    const outTok = usage?.output_tokens ?? 0
     recordAnalysis(req.user?.id ?? null, {
       ticker: typeof ticker === 'string' ? ticker : 'UNKNOWN',
       investorId: typeof investorId === 'string' ? investorId : 'unknown',
       result: data,
+      provider: 'anthropic',
+      model: LOCKED_MODEL,
+      inputTokens: inTok,
+      outputTokens: outTok,
+      costUsdMicro: computeCostMicroCents(LOCKED_MODEL, inTok, outTok),
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
@@ -176,7 +186,7 @@ app.post('/claude', llmLimiter, validatePromptSize, checkUsage, async (req: Requ
 
 // ── Gemini proxy ──────────────────────────────────────────────────────────────
  
-app.post('/gemini', llmLimiter, validatePromptSize, checkUsage, async (req: Request, res: Response) => {
+app.post('/gemini', llmLimiter, validatePromptSize, checkUsage, gateProvider('google'), async (req: Request, res: Response) => {
   if (!GOOGLE_KEY) {
     res.status(503).json({ error: 'GOOGLE_API_KEY not configured on server' })
     return
@@ -218,16 +228,27 @@ app.post('/gemini', llmLimiter, validatePromptSize, checkUsage, async (req: Requ
     }
 
     // Normalise Gemini response to match Claude's { content: [{ type, text }] } shape
-    const gemini = data as { candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }> }
+    const gemini = data as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }>
+      usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number }
+    }
     const parts = gemini.candidates?.[0]?.content?.parts ?? []
     // Thinking models may prepend thought parts; grab the last non-thought text
     const textPart = [...parts].reverse().find(p => !p.thought && p.text) ?? parts[0]
     const text = textPart?.text ?? ''
     res.json({ content: [{ type: 'text', text }] })
+
+    const inTok  = gemini.usageMetadata?.promptTokenCount      ?? 0
+    const outTok = gemini.usageMetadata?.candidatesTokenCount  ?? 0
     recordAnalysis(req.user?.id ?? null, {
       ticker: typeof ticker === 'string' ? ticker : 'UNKNOWN',
       investorId: typeof investorId === 'string' ? investorId : 'unknown',
       result: { content: [{ type: 'text', text }] },
+      provider: 'google',
+      model: geminiModel,
+      inputTokens: inTok,
+      outputTokens: outTok,
+      costUsdMicro: computeCostMicroCents(geminiModel, inTok, outTok),
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
@@ -391,7 +412,7 @@ app.get('/history/:ticker', async (req: Request, res: Response) => {
 
 // ── OpenAI proxy ─────────────────────────────────────────────────────────────
  
-app.post('/openai', llmLimiter, validatePromptSize, checkUsage, async (req: Request, res: Response) => {
+app.post('/openai', llmLimiter, validatePromptSize, checkUsage, gateProvider('openai'), async (req: Request, res: Response) => {
   if (!OPENAI_KEY) {
     res.status(503).json({ error: 'OPENAI_API_KEY not configured on server' })
     return
@@ -434,13 +455,24 @@ app.post('/openai', llmLimiter, validatePromptSize, checkUsage, async (req: Requ
     }
 
     // Normalise to Claude's { content: [{ type, text }] } shape
-    const openai = data as { choices?: Array<{ message?: { content?: string } }> }
+    const openai = data as {
+      choices?: Array<{ message?: { content?: string } }>
+      usage?: { prompt_tokens?: number; completion_tokens?: number }
+    }
     const text = openai.choices?.[0]?.message?.content ?? ''
     res.json({ content: [{ type: 'text', text }] })
+
+    const inTok  = openai.usage?.prompt_tokens     ?? 0
+    const outTok = openai.usage?.completion_tokens ?? 0
     recordAnalysis(req.user?.id ?? null, {
       ticker: typeof ticker === 'string' ? ticker : 'UNKNOWN',
       investorId: typeof investorId === 'string' ? investorId : 'unknown',
       result: { content: [{ type: 'text', text }] },
+      provider: 'openai',
+      model: openaiModel,
+      inputTokens: inTok,
+      outputTokens: outTok,
+      costUsdMicro: computeCostMicroCents(openaiModel, inTok, outTok),
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
@@ -450,7 +482,7 @@ app.post('/openai', llmLimiter, validatePromptSize, checkUsage, async (req: Requ
 
 // ── Mistral proxy ─────────────────────────────────────────────────────────────
  
-app.post('/mistral', llmLimiter, validatePromptSize, checkUsage, async (req: Request, res: Response) => {
+app.post('/mistral', llmLimiter, validatePromptSize, checkUsage, gateProvider('mistral'), async (req: Request, res: Response) => {
   if (!MISTRAL_KEY) {
     res.status(503).json({ error: 'MISTRAL_API_KEY not configured on server' })
     return
@@ -493,13 +525,24 @@ app.post('/mistral', llmLimiter, validatePromptSize, checkUsage, async (req: Req
     }
 
     // Normalise to Claude's { content: [{ type, text }] } shape
-    const mistral = data as { choices?: Array<{ message?: { content?: string } }> }
+    const mistral = data as {
+      choices?: Array<{ message?: { content?: string } }>
+      usage?: { prompt_tokens?: number; completion_tokens?: number }
+    }
     const text = mistral.choices?.[0]?.message?.content ?? ''
     res.json({ content: [{ type: 'text', text }] })
+
+    const inTok  = mistral.usage?.prompt_tokens     ?? 0
+    const outTok = mistral.usage?.completion_tokens ?? 0
     recordAnalysis(req.user?.id ?? null, {
       ticker: typeof ticker === 'string' ? ticker : 'UNKNOWN',
       investorId: typeof investorId === 'string' ? investorId : 'unknown',
       result: { content: [{ type: 'text', text }] },
+      provider: 'mistral',
+      model: mistralModel,
+      inputTokens: inTok,
+      outputTokens: outTok,
+      costUsdMicro: computeCostMicroCents(mistralModel, inTok, outTok),
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'

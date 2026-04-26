@@ -7,19 +7,32 @@ export const userRouter = Router()
 
 const DEFAULT_FREE_LIMIT = 25
 
-// GET /user/me — returns current user's tier and usage
+const DEFAULT_ENABLED_PROVIDERS = ['anthropic', 'openai', 'google', 'mistral']
+const DEFAULT_ENABLED_MODELS: Record<string, string[]> = {
+  anthropic: ['claude-haiku-4-5-20251001', 'claude-sonnet-4-5', 'claude-opus-4-5'],
+  openai:    ['gpt-4o-mini', 'gpt-4o', 'o3-mini'],
+  google:    ['gemini-2.5-flash', 'gemini-2.5-pro'],
+  mistral:   ['mistral-small-3.1', 'mistral-large-2'],
+}
+
+// GET /user/me — returns current user's tier, usage, and the LLM provider/model
+// allowlist. Frontend uses these to hide disabled options.
 userRouter.get('/me', async (req: Request, res: Response): Promise<void> => {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' })
     return
   }
   const { tier, analysesThisMonth, isAdmin } = req.user
-  const cap = await getSetting('free_tier_limit', DEFAULT_FREE_LIMIT)
+  const cap              = await getSetting<number>('free_tier_limit', DEFAULT_FREE_LIMIT)
+  const enabledProviders = await getSetting<string[]>('enabled_providers', DEFAULT_ENABLED_PROVIDERS)
+  const enabledModels    = await getSetting<Record<string, string[]>>('enabled_models', DEFAULT_ENABLED_MODELS)
   res.json({
     tier,
     analysesThisMonth,
     limit: tier === 'pro' ? null : cap,
     isAdmin,
+    enabledProviders,
+    enabledModels,
   })
 })
 
