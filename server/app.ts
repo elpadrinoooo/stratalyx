@@ -237,7 +237,8 @@ app.post('/gemini', llmLimiter, checkUsage, async (req: Request, res: Response) 
 
 // ── Yahoo Finance price proxy (no API key required) ──────────────────────────
 app.get('/price/:ticker', async (req: Request, res: Response) => {
-  const ticker = (req.params['ticker'] ?? '').toUpperCase().replace(/[^A-Z0-9.]/g, '').slice(0, 10)
+  // Yahoo index symbols start with ^ (e.g. ^GSPC, ^DJI, ^IXIC, ^RUT) — keep them.
+  const ticker = (req.params['ticker'] ?? '').toUpperCase().replace(/[^A-Z0-9.^]/g, '').slice(0, 10)
   if (!ticker) {
     res.status(400).json({ error: 'ticker is required' })
     return
@@ -303,7 +304,8 @@ app.get('/price/:ticker', async (req: Request, res: Response) => {
 
 // ── Yahoo Finance historical chart data ──────────────────────────────────────
 app.get('/history/:ticker', async (req: Request, res: Response) => {
-  const ticker = (req.params['ticker'] ?? '').toUpperCase().replace(/[^A-Z0-9.]/g, '').slice(0, 10)
+  // Yahoo index symbols start with ^ (e.g. ^GSPC, ^DJI, ^IXIC, ^RUT) — keep them.
+  const ticker = (req.params['ticker'] ?? '').toUpperCase().replace(/[^A-Z0-9.^]/g, '').slice(0, 10)
   const range    = ['1d','5d','1mo','3mo','6mo','1y','2y','5y'].includes(req.query['range'] as string)
     ? req.query['range'] as string
     : '1y'

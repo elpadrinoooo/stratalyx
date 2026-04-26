@@ -42,11 +42,14 @@ interface Props {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
+// True index symbols (Yahoo Finance) — not ETF proxies. The S&P 500 is ~7,000,
+// not the SPY ETF's $710. Showing the actual index value matches what users see
+// on Bloomberg / Yahoo / CNBC.
 const INDEX_CARDS = [
-  { ticker: 'DIA', label: 'DOW',          subtitle: 'Dow Jones' },
-  { ticker: 'QQQ', label: 'NASDAQ',       subtitle: 'Nasdaq 100' },
-  { ticker: 'SPY', label: 'S&P 500',      subtitle: 'S&P 500' },
-  { ticker: 'IWM', label: 'Russell 2000', subtitle: 'Small Cap' },
+  { ticker: '^DJI',  label: 'DOW',          subtitle: 'Dow Jones' },
+  { ticker: '^IXIC', label: 'NASDAQ',       subtitle: 'Nasdaq Composite' },
+  { ticker: '^GSPC', label: 'S&P 500',      subtitle: 'S&P 500' },
+  { ticker: '^RUT',  label: 'Russell 2000', subtitle: 'Small Cap' },
 ]
 
 const fmtPct = (v: number) =>
@@ -134,7 +137,7 @@ function IndexMiniCard({ card }: { card: IndexCardData }) {
       {/* Label + ETF ticker */}
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <span style={{ color: C.t1, fontSize: 13, fontWeight: 700 }}>{card.label}</span>
-        <span style={{ color: C.t4, fontSize: 10, fontFamily: C.mono }}>{card.ticker}</span>
+        <span style={{ color: C.t4, fontSize: 10, fontFamily: C.mono }}>{card.ticker.replace(/^\^/, '')}</span>
       </div>
 
       {card.error ? (
@@ -339,7 +342,7 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
     })))
 
     INDEX_CARDS.forEach((card, i) => {
-      fetch(`/api/history/${card.ticker}?range=1d`)
+      fetch(`/api/history/${encodeURIComponent(card.ticker)}?range=1d`)
         .then(r => r.ok ? r.json() as Promise<{ points: { t: number; p: number }[]; previousClose: number }> : Promise.reject(r.status))
         .then(data => {
           const pts   = data.points
