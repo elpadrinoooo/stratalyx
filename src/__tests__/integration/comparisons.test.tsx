@@ -3,12 +3,11 @@
  * I-16 through I-20
  */
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from '@jest/globals'
 import { renderWithCtx } from '../helpers/renderWithCtx'
 import { ComparisonsScreen } from '../../screens/ComparisonsScreen'
 import type { AnalysisResult, AppState } from '../../types'
-import { INIT } from '../../state/initialState'
 
 // ── Shared fixtures ────────────────────────────────────────────────────────────
 

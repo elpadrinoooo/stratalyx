@@ -40,6 +40,8 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
   useEffect(() => {
     if (Object.keys(state.analyses).length > 0) {
       localStorage.setItem('stratalyx_welcomed', '1')
+      // One-time UI flag flip in response to external state — not a render loop.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWelcomeDismissed(true)
     }
   }, [state.analyses])
@@ -71,7 +73,8 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
       return 0
     })
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters change — derives pagination from filter state.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setPage(1) }, [search, sectorFilter, sortBy])
 
   const paginated = filtered.slice(0, page * PAGE_SIZE)

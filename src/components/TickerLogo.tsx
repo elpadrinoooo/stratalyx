@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { C, R } from '../constants/colors'
+import { C } from '../constants/colors'
 
 interface Props {
   ticker: string

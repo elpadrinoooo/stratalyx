@@ -3,12 +3,11 @@
  * I-21 through I-25
  */
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from '@jest/globals'
 import { renderWithCtx } from '../helpers/renderWithCtx'
 import { HistoryScreen } from '../../screens/HistoryScreen'
 import type { AnalysisResult, AppState } from '../../types'
-import { INIT } from '../../state/initialState'
 
 // ── Shared fixtures ────────────────────────────────────────────────────────────
 

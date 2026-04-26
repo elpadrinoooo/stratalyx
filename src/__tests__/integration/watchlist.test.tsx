@@ -78,7 +78,7 @@ describe('I-12: WLBtn toggles watchlist membership', () => {
 
     // Find the AAPL watchlist button (initially ☆ — not in watchlist)
     const aaplCell = screen.getByText('AAPL')
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     const row = aaplCell.closest('tr')!
     const starBtn = row.querySelector('button[title]') as HTMLButtonElement
 

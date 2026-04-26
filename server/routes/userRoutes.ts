@@ -70,7 +70,7 @@ userRouter.post('/migrate', async (req: Request, res: Response): Promise<void> =
     }
 
     res.json({ migratedAnalyses, migratedWatchlist })
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Migration failed' })
   }
 })

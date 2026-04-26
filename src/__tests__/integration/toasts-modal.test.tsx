@@ -3,7 +3,8 @@
  * I-32 through I-37
  */
 import React from 'react'
-import { render, screen, fireEvent, act } from '@testing-library/react'
+/* eslint-disable @typescript-eslint/no-require-imports -- late requires keep these tests below the module-mock setup boundary */
+import { screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals'
 import { renderWithCtx } from '../helpers/renderWithCtx'
 import { Toasts } from '../../components/Toasts'

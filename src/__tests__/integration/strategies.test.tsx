@@ -3,7 +3,7 @@
  * I-26 through I-31
  */
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from '@jest/globals'
 import { renderWithCtx } from '../helpers/renderWithCtx'
 import { StrategiesScreen } from '../../screens/StrategiesScreen'

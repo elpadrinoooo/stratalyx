@@ -100,7 +100,7 @@ describe('I-10: Clicking Analyze opens modal with correct ticker', () => {
   it('opens modal with AAPL when its Analyze button is clicked', async () => {
     await renderScreener()
     const aaplCell = screen.getByText('AAPL')
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     const row = aaplCell.closest('tr')!
     const analyzeBtn = within(row).getByRole('button', { name: /Analyze/i })
     fireEvent.click(analyzeBtn)

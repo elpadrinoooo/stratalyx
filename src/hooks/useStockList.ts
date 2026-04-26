@@ -58,6 +58,9 @@ export function useStockList(): { stocks: Stock[]; loading: boolean; total: numb
     // Try cache first
     const cached = loadCache()
     if (cached && cached.length > STOCKS.length) {
+      // Hydrate from cache once on mount — the seed value is the static list,
+      // and we replace it with the cached fuller list when available.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStocks(cached)
       return
     }
@@ -96,7 +99,7 @@ export function useStockList(): { stocks: Stock[]; loading: boolean; total: numb
         // Server has no FMP key or fetch failed — static list is fine
       })
       .finally(() => setLoading(false))
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+   
   }, [])
 
   return { stocks, loading, total: stocks.length }

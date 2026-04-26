@@ -90,6 +90,9 @@ export function PriceChart({ ticker, ivLow, ivHigh, currentPrice }: Props) {
 
   useEffect(() => {
     const controller = new AbortController()
+    // Reset loading/error when ticker or range changes — this is the canonical
+    // "show stale state while refetching" pattern; not a cascading-render bug.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     setError('')
     fetch(`/api/history/${encodeURIComponent(ticker)}?range=${range}`, {

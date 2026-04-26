@@ -466,7 +466,7 @@ function NewsCard({
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 'auto', paddingTop: 4 }}>
             {visibleTickers.map(t => (
               <button key={t}
-                onClick={e => { e.stopPropagation(); !placeholder && onTickerClick(t) }}
+                onClick={e => { e.stopPropagation(); if (!placeholder) onTickerClick(t) }}
                 style={{ background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r99, color: C.accent, cursor: placeholder ? 'default' : 'pointer', fontSize: 10, fontFamily: 'monospace', fontWeight: 700, padding: '2px 7px' }}>
                 {t}
               </button>
@@ -506,7 +506,7 @@ const SORT_OPTIONS: { id: SortMode; label: string }[] = [
 
 // ── main screen ───────────────────────────────────────────────────────────────
 
-export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
+export function NewsScreen() {
   const width    = useWindowWidth()
   const isMobile = width <= 640
   const isTablet = width <= 960
@@ -695,7 +695,7 @@ export function NewsScreen({ fmpKey: _fmpKey }: { fmpKey?: string }) {
             value={tickerInput}
             onChange={e => { setTickerInput(e.target.value.toUpperCase()); setShowSugg(true) }}
             onKeyDown={e => { if (e.key === 'Enter') handleSearch(); if (e.key === 'Escape') setShowSugg(false) }}
-            onFocus={e => { suggestions.length > 0 && setShowSugg(true); (e.target as HTMLInputElement).style.borderColor = C.accent }}
+            onFocus={e => { if (suggestions.length > 0) setShowSugg(true); (e.target as HTMLInputElement).style.borderColor = C.accent }}
             onBlur={e => { (e.target as HTMLInputElement).style.borderColor = C.border }}
             placeholder="Search by ticker or company name…"
             style={{ width: '100%', boxSizing: 'border-box', background: C.bg0, border: `1px solid ${C.border}`, borderRadius: R.r8, color: C.t1, fontSize: 14, padding: '8px 12px', outline: 'none', transition: 'border-color .15s' }}

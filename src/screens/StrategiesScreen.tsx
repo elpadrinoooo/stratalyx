@@ -102,7 +102,6 @@ function InvestorCard({
 export function StrategiesScreen() {
   const { state, dispatch } = useApp()
   const [tab, setTab]             = useState<StratTab>('Overview')
-  const [expanded, setExpanded]   = useState(false)
   const [search, setSearch]       = useState('')
   const [quickTicker, setQuickTicker] = useState('')
   const width   = useWindowWidth()

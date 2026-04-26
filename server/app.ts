@@ -77,7 +77,7 @@ app.use(cors({
 app.use(express.json({ limit: '1mb' }))
 
 // ── Auth middleware (global — attaches req.user if valid JWT present) ─────────
-// eslint-disable-next-line @typescript-eslint/no-misused-promises
+ 
 app.use(attachUser)
 
 // ── User routes ───────────────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ app.get('/health', (_req: Request, res: Response) => {
 })
 
 // ── Claude proxy ──────────────────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-misused-promises
+ 
 app.post('/claude', llmLimiter, checkUsage, async (req: Request, res: Response) => {
   if (!ANTHROPIC_KEY) {
     res.status(503).json({ error: 'ANTHROPIC_API_KEY not configured on server' })
@@ -175,7 +175,7 @@ app.post('/claude', llmLimiter, checkUsage, async (req: Request, res: Response) 
 })
 
 // ── Gemini proxy ──────────────────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-misused-promises
+ 
 app.post('/gemini', llmLimiter, checkUsage, async (req: Request, res: Response) => {
   if (!GOOGLE_KEY) {
     res.status(503).json({ error: 'GOOGLE_API_KEY not configured on server' })
@@ -379,7 +379,7 @@ app.get('/history/:ticker', async (req: Request, res: Response) => {
 })
 
 // ── OpenAI proxy ─────────────────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-misused-promises
+ 
 app.post('/openai', llmLimiter, checkUsage, async (req: Request, res: Response) => {
   if (!OPENAI_KEY) {
     res.status(503).json({ error: 'OPENAI_API_KEY not configured on server' })
@@ -438,7 +438,7 @@ app.post('/openai', llmLimiter, checkUsage, async (req: Request, res: Response) 
 })
 
 // ── Mistral proxy ─────────────────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-misused-promises
+ 
 app.post('/mistral', llmLimiter, checkUsage, async (req: Request, res: Response) => {
   if (!MISTRAL_KEY) {
     res.status(503).json({ error: 'MISTRAL_API_KEY not configured on server' })

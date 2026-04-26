@@ -77,7 +77,7 @@ export function AppProvider({ children, initialState }: Props) {
     })
 
     return () => { subscription.unsubscribe() }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])  
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

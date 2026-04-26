@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ResponsiveContainer, AreaChart, Area } from 'recharts'
 import { C, R } from '../constants/colors'
 import { useWindowWidth } from '../hooks/useWindowWidth'
@@ -328,8 +328,9 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
     return () => clearInterval(t)
   }, [])
 
-  // 4 parallel index sparkline fetches
+  // 4 parallel index sparkline fetches — reset to loading state when refresh fires.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIndexCards(INDEX_CARDS.map(c => ({
       ...c, subtitle: '', points: [], price: 0, previousClose: 0, changePct: 0, changeDollar: 0, loading: true, error: '',
     })))
@@ -353,11 +354,12 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
           ))
         )
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [refreshKey])
 
-  // Market movers
+  // Market movers — reset state on refresh, fetch, then settle.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMoversLoading(true)
     setNoFmpKey(false)
     setMoversError('')

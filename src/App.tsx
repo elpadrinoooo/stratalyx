@@ -186,7 +186,7 @@ function AppShell() {
         {screen === 'History'     && <ErrorBoundary><HistoryScreen /></ErrorBoundary>}
         {screen === 'Comparisons'  && <ErrorBoundary><ComparisonsScreen /></ErrorBoundary>}
         {screen === 'MarketEvents' && <ErrorBoundary><MarketEventsScreen /></ErrorBoundary>}
-        {screen === 'News'         && <ErrorBoundary><NewsScreen fmpKey={fmpKey} /></ErrorBoundary>}
+        {screen === 'News'         && <ErrorBoundary><NewsScreen /></ErrorBoundary>}
         {screen === 'Admin'        && <ErrorBoundary><AdminScreen /></ErrorBoundary>}
         {screen === 'Account'      && <ErrorBoundary><AccountScreen /></ErrorBoundary>}
       </main>
