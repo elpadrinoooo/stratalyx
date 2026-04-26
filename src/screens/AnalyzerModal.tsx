@@ -6,6 +6,7 @@ import { PROV } from '../constants/providers'
 import { useApp } from '../state/context'
 import { useAnalysis } from '../hooks/useAnalysis'
 import { useUsageInfo } from '../hooks/useUsageInfo'
+import { useWatchlist } from '../hooks/useWatchlist'
 import { Tag } from '../components/Tag'
 import { Kpi } from '../components/Kpi'
 import { ScoreBar } from '../components/ScoreBar'
@@ -538,7 +539,14 @@ function ResultSection({
 }: ResultSectionProps) {
   const [showLiveData, setShowLiveData] = useState(false)
   const [copied, setCopied] = useState(false)
+  const { inWatchlist, toggle: toggleWatchlist } = useWatchlist()
+  const compareSectionRef = useRef<HTMLDivElement>(null)
   const isAdmin = Boolean(state.user?.isAdmin)
+  const onWatchlist = inWatchlist(result.ticker)
+
+  const scrollToCompare = () => {
+    compareSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const copyShareLink = () => {
     const url = `${window.location.origin}/share/${result.ticker}/${result.investorId}`
@@ -756,6 +764,90 @@ Generated: ${new Date(r.timestamp).toLocaleDateString()}`
         </div>
       </div>
 
+      {/* NEXT-STEPS ACTION TRAY — surface the three highest-leverage post-analysis actions */}
+      <div
+        role="group"
+        aria-label="Next steps"
+        style={{
+          display: 'flex',
+          gap: 8,
+          marginBottom: 14,
+          flexWrap: 'wrap',
+          padding: '10px 12px',
+          background: C.bg1,
+          border: `1px solid ${C.border}`,
+          borderRadius: R.r12,
+        }}
+      >
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.t3, textTransform: 'uppercase', letterSpacing: '.06em', alignSelf: 'center', marginRight: 4 }}>
+          Next →
+        </span>
+        <button
+          onClick={() => toggleWatchlist(result.ticker)}
+          aria-label={onWatchlist ? `Remove ${result.ticker} from watchlist` : `Add ${result.ticker} to watchlist`}
+          aria-pressed={onWatchlist}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.85' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+          style={{
+            background: onWatchlist ? C.warnBg : C.bg2,
+            border: `1px solid ${onWatchlist ? C.warnB : C.border}`,
+            borderRadius: R.r8,
+            color: onWatchlist ? C.warn : C.t2,
+            fontSize: 13,
+            fontWeight: 600,
+            padding: '6px 12px',
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 6,
+            transition: 'opacity .15s',
+          }}
+        >
+          <span aria-hidden style={{ fontSize: 14 }}>{onWatchlist ? '★' : '☆'}</span>
+          {onWatchlist ? 'In Watchlist' : 'Save to Watchlist'}
+        </button>
+        <button
+          onClick={scrollToCompare}
+          aria-label="Compare with another investor strategy"
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.85' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+          style={{
+            background: C.accentM,
+            border: `1px solid ${C.accentB}`,
+            borderRadius: R.r8,
+            color: C.accent,
+            fontSize: 13,
+            fontWeight: 600,
+            padding: '6px 12px',
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 6,
+            transition: 'opacity .15s',
+          }}
+        >
+          <span aria-hidden style={{ fontSize: 14 }}>⇄</span>
+          Compare strategy
+        </button>
+        <button
+          onClick={copyShareLink}
+          aria-label="Copy shareable link"
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.85' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+          style={{
+            background: copied ? C.gainBg : C.bg2,
+            border: `1px solid ${copied ? C.gainB : C.border}`,
+            borderRadius: R.r8,
+            color: copied ? C.gain : C.t2,
+            fontSize: 13,
+            fontWeight: 600,
+            padding: '6px 12px',
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 6,
+            transition: 'opacity .15s',
+          }}
+        >
+          <span aria-hidden style={{ fontSize: 14 }}>{copied ? '✓' : '⬡'}</span>
+          {copied ? 'Link copied' : 'Share'}
+        </button>
+      </div>
+
       {/* IV STRIP */}
       {result.intrinsicValueLow > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 12 }}>
@@ -921,6 +1013,7 @@ Generated: ${new Date(r.timestamp).toLocaleDateString()}`
 
       {/* COMPARISON SECTION */}
       <div
+        ref={compareSectionRef}
         style={{
           background: C.bg1,
           border: `1px solid ${C.border}`,
