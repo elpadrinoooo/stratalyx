@@ -119,7 +119,7 @@ export function AuthModal({ onClose, recovery = false }: Props) {
 
         <p style={{ marginTop: 16, fontFamily: C.sans, fontSize: 11, color: C.t4, textAlign: 'center', lineHeight: 1.5 }}>
           By continuing you agree this tool provides AI-generated analysis for educational purposes only — not financial advice.
-          Free tier: 3 analyses/month. Pro: unlimited.
+          Free tier: 25 analyses/month. Pro: unlimited.
         </p>
       </div>
     </div>

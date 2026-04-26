@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import { supabaseAdmin, supabaseConfigured } from './supabaseAdmin.js'
 
-const FREE_LIMIT = 3
+const FREE_LIMIT = 25
 
 // Cap LLM prompt size to prevent token-blast abuse. Real analysis prompts run
 // ~10–20K chars (template + investor block + live FMP data). 32K leaves headroom

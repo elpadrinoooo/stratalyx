@@ -63,7 +63,7 @@ export function useAnalysis(): UseAnalysisReturn {
         // Surface a friendlier nudge and pop the auth modal so the user can
         // sign in without hunting for the navbar button.
         dispatch({ type: 'TOAST', payload: {
-          message: 'Sign in to run an analysis — your first 3 are free each month.',
+          message: 'Sign in to run an analysis — your first 25 are free each month.',
           type: 'info',
         } })
         window.dispatchEvent(new CustomEvent('stratalyx:request-auth'))

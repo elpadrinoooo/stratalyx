@@ -4,7 +4,7 @@ import type { AnalysisResult } from '../../src/types/index.js'
 
 export const userRouter = Router()
 
-const FREE_LIMIT = 3
+const FREE_LIMIT = 25
 
 // GET /user/me — returns current user's tier and usage
 userRouter.get('/me', (req: Request, res: Response): void => {

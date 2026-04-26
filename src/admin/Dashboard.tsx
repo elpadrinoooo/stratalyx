@@ -360,7 +360,7 @@ function BroadcastDialog({ open, onClose, candidates }: { open: boolean; onClose
       <DialogTitle>Upgrade candidates ({candidates.length})</DialogTitle>
       <DialogContent>
         <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-          Free users at 2+ analyses this month. Three ways to reach them:
+          Free users at 20+ analyses this month. Three ways to reach them:
         </Typography>
         <Box sx={{ background: 'action.hover', p: 1.5, borderRadius: 1, fontFamily: 'monospace', fontSize: 12, maxHeight: 180, overflowY: 'auto', mb: 2 }}>
           {emails.length === 0
@@ -414,7 +414,10 @@ export function Dashboard() {
   const totalUsers = users.length
   const proUsers = users.filter(u => u.tier === 'pro').length
   const proPct = totalUsers ? Math.round((proUsers / totalUsers) * 100) : 0
-  const nearLimit = users.filter(u => u.tier === 'free' && u.analyses_this_month >= 2)
+  // 80% of the free-tier monthly cap (25) — these are the high-intent users
+  // most likely to convert to Pro if pinged.
+  const NEAR_LIMIT_THRESHOLD = 20
+  const nearLimit = users.filter(u => u.tier === 'free' && u.analyses_this_month >= NEAR_LIMIT_THRESHOLD)
   const nearLimitCount = nearLimit.length
   const totalAnalyses30 = analyses30.length
 
@@ -452,7 +455,7 @@ export function Dashboard() {
                 size="small"
                 onClick={() => redirect('list', 'users', undefined, undefined, {
                   displayedFilters: { tier: true, 'analyses_this_month@gte': true },
-                  filter: { tier: 'free', 'analyses_this_month@gte': 2 },
+                  filter: { tier: 'free', 'analyses_this_month@gte': NEAR_LIMIT_THRESHOLD },
                 })}
               >
                 View list
@@ -460,7 +463,7 @@ export function Dashboard() {
             </Stack>
           }
         >
-          {nearLimitCount} free {nearLimitCount === 1 ? 'user is' : 'users are'} at 2+ analyses this month — prime upgrade candidates.
+          {nearLimitCount} free {nearLimitCount === 1 ? 'user is' : 'users are'} at 20+ analyses this month — prime upgrade candidates.
         </Alert>
       )}
 
