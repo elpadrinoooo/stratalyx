@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { C, R } from '../constants/colors'
 import { INV } from '../constants/investors'
 import { useApp } from '../state/context'
+import { useWindowWidth } from '../hooks/useWindowWidth'
 import { ScoreBar } from '../components/ScoreBar'
 import { Tag } from '../components/Tag'
 import { TickerLogo } from '../components/TickerLogo'
@@ -56,6 +57,8 @@ export function ComparisonsScreen() {
   const { comparisons, analyses } = state
   const [tab,    setTab]    = useState<Tab>('active')
   const [sortBy, setSortBy] = useState<SortBy>('date')
+  const width = useWindowWidth()
+  const isCompact = width <= 768  // tablet portrait + small viewports — collapse to single col
 
   // ── empty state (no comparisons at all) ──────────────────────────────────
   if (comparisons.length === 0) {
@@ -69,7 +72,7 @@ export function ComparisonsScreen() {
           <div style={{ color: C.t3, fontSize: 14 }}>See how different legendary investors rate the same stock — side by side</div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,480px) minmax(0,1fr)', gap: 32, alignItems: 'flex-start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : 'minmax(0,480px) minmax(0,1fr)', gap: 32, alignItems: 'flex-start' }}>
           <div>
             <div style={{ fontSize: 17, color: C.t1, fontWeight: 700, marginBottom: 10 }}>How it works</div>
             {[
@@ -112,7 +115,7 @@ export function ComparisonsScreen() {
                   <span key={m} style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r6, color: C.t3, fontSize: 11, padding: '2px 7px' }}>{m}</span>
                 ))}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: 10 }}>
                 {[mockA, mockB].map((m) => (
                   <div key={m.name} style={{ background: m.color + '18', border: `1px solid ${m.color}33`, borderRadius: R.r8, padding: 12 }}>
                     <div style={{ color: m.color, fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{m.name}</div>
@@ -307,7 +310,7 @@ export function ComparisonsScreen() {
               </div>
 
               {/* ── Investor columns ── */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: 0 }}>
                 {results.map((r, idx) => {
                   const inv = INV[r.investorId]
                   if (!inv) return null

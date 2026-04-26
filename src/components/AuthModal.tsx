@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react'
+import { X } from 'lucide-react'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { C, R } from '../constants/colors'
@@ -71,10 +72,10 @@ export function AuthModal({ onClose, recovery = false }: Props) {
           </span>
           <button
             onClick={onClose}
-            style={{ background: 'none', border: 'none', color: C.t3, cursor: 'pointer', fontSize: 20, lineHeight: 1 }}
+            style={{ background: 'none', border: 'none', color: C.t3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 6 }}
             aria-label="Close"
           >
-            ×
+            <X size={20} strokeWidth={2} aria-hidden />
           </button>
         </div>
 

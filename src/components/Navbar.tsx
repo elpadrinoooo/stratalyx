@@ -1,4 +1,5 @@
 import React from 'react'
+import { Sun, Moon, Monitor, KeyRound, Plus, Sparkles } from 'lucide-react'
 import { C, R } from '../constants/colors'
 import { INVESTORS, INV } from '../constants/investors'
 import { useApp } from '../state/context'
@@ -36,10 +37,10 @@ const SCREEN_GROUPS: ScreenLink[][] = [
   ],
 ]
 
-const THEME_OPTIONS: { mode: ThemeMode; icon: string; label: string }[] = [
-  { mode: 'light',  icon: '☀️', label: 'Light'  },
-  { mode: 'dark',   icon: '🌙', label: 'Dark'   },
-  { mode: 'system', icon: '💻', label: 'System' },
+const THEME_OPTIONS: { mode: ThemeMode; Icon: typeof Sun; label: string }[] = [
+  { mode: 'light',  Icon: Sun,     label: 'Light'  },
+  { mode: 'dark',   Icon: Moon,    label: 'Dark'   },
+  { mode: 'system', Icon: Monitor, label: 'System' },
 ]
 
 export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
@@ -123,13 +124,14 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
         gap: 1,
       }}
     >
-      {THEME_OPTIONS.map(({ mode, icon, label }) => {
+      {THEME_OPTIONS.map(({ mode, Icon, label }) => {
         const active = themeMode === mode
         return (
           <button
             key={mode}
             onClick={() => setTheme(mode)}
             aria-pressed={active}
+            aria-label={`${label} mode`}
             title={`${label} mode`}
             style={{
               background: active ? C.bg1 : 'transparent',
@@ -139,15 +141,15 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
               cursor: 'pointer',
               fontSize: isMobile ? 13 : 12,
               fontWeight: active ? 600 : 400,
-              padding: isMobile ? '4px 6px' : '3px 7px',
+              padding: isMobile ? '5px 7px' : '4px 8px',
               display: 'flex',
               alignItems: 'center',
-              gap: 3,
+              gap: 5,
               lineHeight: 1,
               transition: 'background 0.15s',
             }}
           >
-            <span style={{ fontSize: 12 }}>{icon}</span>
+            <Icon size={14} strokeWidth={2} aria-hidden />
             {!isMobile && <span>{label}</span>}
           </button>
         )
@@ -176,7 +178,7 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
       style={{ display: 'flex', alignItems: 'center', gap: 5, background: fmpKeySet ? C.gainBg : C.warnBg, border: `1px solid ${fmpKeySet ? C.gainB : C.warnB}`, borderRadius: R.r8, padding: '5px 9px', cursor: 'pointer', transition: 'opacity .15s' }}
     >
-      <div style={{ width: 6, height: 6, borderRadius: '50%', background: fmpKeySet ? C.gain : C.warn }} />
+      <KeyRound size={12} strokeWidth={2.2} color={fmpKeySet ? 'var(--c-gain)' : 'var(--c-warn)'} aria-hidden />
       <span style={{ fontSize: 12, fontWeight: 600, color: fmpKeySet ? C.gain : C.warn }}>
         {isMobile ? (fmpKeySet ? 'Live' : 'API Key') : (fmpKeySet ? 'Live Data' : 'Add API Key')}
       </span>
@@ -289,9 +291,9 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
       aria-label="Analyze stock"
       onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.85' }}
       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
-      style={{ background: C.accent, color: 'var(--c-fg-on-accent, #fff)', border: 'none', borderRadius: R.r8, padding: isMobile ? '6px 10px' : '6px 13px', fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'opacity .15s' }}
+      style={{ background: C.accent, color: 'var(--c-fg-on-accent, #fff)', border: 'none', borderRadius: R.r8, padding: isMobile ? '6px 9px' : '6px 13px', fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'opacity .15s', display: 'flex', alignItems: 'center', gap: 5 }}
     >
-      {isMobile ? '+' : 'Analyze Stock'}
+      {isMobile ? <Plus size={16} strokeWidth={2.5} aria-hidden /> : <><Sparkles size={14} strokeWidth={2} aria-hidden /> Analyze Stock</>}
     </button>
   )
 

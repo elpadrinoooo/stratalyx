@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { X } from 'lucide-react'
 import { C, R } from '../constants/colors'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
@@ -80,13 +81,13 @@ export function FmpKeyModal({ currentKey, onSave, onClose }: Props) {
               border: `1px solid ${C.border}`,
               borderRadius: R.r6,
               color: C.t2,
-              padding: '5px 9px',
+              padding: '6px',
               cursor: 'pointer',
-              fontSize: 14,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'background .12s, color .12s',
             }}
           >
-            ✕
+            <X size={16} strokeWidth={2} aria-hidden />
           </button>
         </div>
 

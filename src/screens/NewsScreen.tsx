@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { X, KeyRound } from 'lucide-react'
 import { C, R } from '../constants/colors'
 import { sanitizeTicker } from '../engine/utils'
 import { useWindowWidth } from '../hooks/useWindowWidth'
@@ -246,10 +247,11 @@ Source: ${article.site}`,
             )}
             <button
               onClick={onClose}
+              aria-label="Close article"
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg3; (e.currentTarget as HTMLButtonElement).style.color = C.t1 }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.bg2; (e.currentTarget as HTMLButtonElement).style.color = C.t3 }}
-              style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r6, color: C.t3, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '4px 10px', transition: 'background .12s, color .12s' }}>
-              ×
+              style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r6, color: C.t3, cursor: 'pointer', padding: '6px 8px', display: 'flex', alignItems: 'center', transition: 'background .12s, color .12s' }}>
+              <X size={16} strokeWidth={2} aria-hidden />
             </button>
           </div>
         </div>
@@ -742,7 +744,7 @@ export function NewsScreen() {
         {activeTicker && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: C.accentM, border: `1px solid ${C.accentB}`, borderRadius: R.r99, padding: '4px 10px', marginTop: 2 }}>
             <span style={{ color: C.accent, fontSize: 12, fontWeight: 700, fontFamily: 'monospace' }}>{activeTicker}</span>
-            <button onClick={handleClear} style={{ background: 'none', border: 'none', color: C.accent, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
+            <button onClick={handleClear} aria-label="Clear ticker filter" style={{ background: 'none', border: 'none', color: C.accent, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}><X size={14} strokeWidth={2} aria-hidden /></button>
           </div>
         )}
       </div>
@@ -750,7 +752,7 @@ export function NewsScreen() {
       {/* Status banners */}
       {(noKey || (isPlaceholder && !error)) && (
         <div style={{ background: C.warnBg, border: `1px solid ${C.warnB}`, borderRadius: R.r8, padding: '10px 14px', marginBottom: 14, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 15 }}>🔑</span>
+          <KeyRound size={16} strokeWidth={2} color="var(--c-warn)" aria-hidden style={{ flexShrink: 0 }} />
           <span style={{ color: C.t2, fontSize: 12, lineHeight: 1.5, flex: 1, minWidth: 240 }}>
             {noKey
               ? <><strong style={{ color: C.warn }}>Demo mode</strong> — these are sample articles, not live news. Add a <code>FINNHUB_API_KEY</code> to your <code>.env</code> to see real headlines.</>

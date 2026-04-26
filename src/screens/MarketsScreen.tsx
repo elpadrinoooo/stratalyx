@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react'
+import { RotateCw, ArrowRight } from 'lucide-react'
 import { ResponsiveContainer, AreaChart, Area } from 'recharts'
 import { C, R } from '../constants/colors'
 import { useWindowWidth } from '../hooks/useWindowWidth'
 import { useApp } from '../state/context'
 import { FirstAnalysisCTA } from '../components/FirstAnalysisCTA'
+import { Button } from '../components/Button'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -419,44 +421,25 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
 
         {/* Header actions */}
         <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => dispatch({ type: 'OPEN_MODAL', payload: '' })}
             aria-label="Analyze a stock"
-            style={{
-              background: C.accent,
-              border: 'none',
-              borderRadius: R.r8,
-              color: 'var(--c-fg-on-accent, #fff)',
-              fontSize: 12, fontWeight: 600,
-              padding: '7px 14px',
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6,
-              transition: 'opacity .15s',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.9' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+            icon={<ArrowRight size={14} strokeWidth={2.2} aria-hidden />}
+            iconPosition="right"
           >
-            Analyze a stock <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>→</span>
-          </button>
-          <button
+            Analyze a stock
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setRefreshKey(k => k + 1)}
             disabled={!allCardsLoaded}
-            style={{
-              background: C.bg2,
-              border: `1px solid ${C.border}`,
-              borderRadius: R.r8,
-              color: allCardsLoaded ? C.t2 : C.t4,
-              fontSize: 12, fontWeight: 600,
-              padding: '7px 13px',
-              cursor: allCardsLoaded ? 'pointer' : 'not-allowed',
-              display: 'flex', alignItems: 'center', gap: 5,
-              transition: 'border-color .15s, color .15s',
-            }}
-            onMouseEnter={e => { if (allCardsLoaded) (e.currentTarget as HTMLButtonElement).style.borderColor = C.accentB }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.border }}
+            icon={<RotateCw size={14} strokeWidth={2} aria-hidden />}
           >
-            <span style={{ fontSize: 14 }}>↻</span> Refresh
-          </button>
+            Refresh
+          </Button>
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { Star, ArrowLeftRight, Share2, Check, X } from 'lucide-react'
 import { C, R } from '../constants/colors'
 import { useWindowWidth } from '../hooks/useWindowWidth'
 import { INVESTORS, INV } from '../constants/investors'
@@ -231,10 +232,11 @@ export function AnalyzerModal({ fmpKey }: Props) {
               padding: '5px 10px',
               fontSize: 14,
               cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 5,
               transition: 'background .12s, color .12s',
             }}
           >
-            ✕ Close
+            <X size={14} strokeWidth={2} aria-hidden /> Close
           </button>
         </div>
 
@@ -719,7 +721,7 @@ Generated: ${new Date(r.timestamp).toLocaleDateString()}`
               title="Copy shareable link"
               style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: R.r6, color: copied ? C.gain : C.t3, fontSize: 12, fontWeight: 600, padding: '5px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
             >
-              {copied ? '✓ Copied!' : '⬡ Share'}
+              {copied ? <><Check size={12} strokeWidth={2.4} aria-hidden /> Copied!</> : <><Share2 size={12} strokeWidth={2} aria-hidden /> Share</>}
             </button>
             {isAdmin && (
               <button
@@ -801,7 +803,7 @@ Generated: ${new Date(r.timestamp).toLocaleDateString()}`
             transition: 'opacity .15s',
           }}
         >
-          <span aria-hidden style={{ fontSize: 14 }}>{onWatchlist ? '★' : '☆'}</span>
+          <Star size={14} strokeWidth={2} fill={onWatchlist ? 'currentColor' : 'none'} aria-hidden />
           {onWatchlist ? 'In Watchlist' : 'Save to Watchlist'}
         </button>
         <button
@@ -822,7 +824,7 @@ Generated: ${new Date(r.timestamp).toLocaleDateString()}`
             transition: 'opacity .15s',
           }}
         >
-          <span aria-hidden style={{ fontSize: 14 }}>⇄</span>
+          <ArrowLeftRight size={14} strokeWidth={2} aria-hidden />
           Compare strategy
         </button>
         <button
@@ -843,7 +845,7 @@ Generated: ${new Date(r.timestamp).toLocaleDateString()}`
             transition: 'opacity .15s',
           }}
         >
-          <span aria-hidden style={{ fontSize: 14 }}>{copied ? '✓' : '⬡'}</span>
+          {copied ? <Check size={14} strokeWidth={2.4} aria-hidden /> : <Share2 size={14} strokeWidth={2} aria-hidden />}
           {copied ? 'Link copied' : 'Share'}
         </button>
       </div>

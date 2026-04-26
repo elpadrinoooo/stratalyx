@@ -76,24 +76,24 @@ describe('I-12: WLBtn toggles watchlist membership', () => {
       )
     })
 
-    // Find the AAPL watchlist button (initially ☆ — not in watchlist)
+    // Find the AAPL watchlist button (initially not in watchlist)
     const aaplCell = screen.getByText('AAPL')
-     
+
     const row = aaplCell.closest('tr')!
     const starBtn = row.querySelector('button[title]') as HTMLButtonElement
 
     expect(starBtn).toHaveAttribute('title', 'Add to watchlist')
-    expect(starBtn).toHaveTextContent('☆')
+    expect(starBtn).toHaveAttribute('aria-pressed', 'false')
 
     // Click → add to watchlist
     fireEvent.click(starBtn)
     expect(starBtn).toHaveAttribute('title', 'Remove from watchlist')
-    expect(starBtn).toHaveTextContent('★')
+    expect(starBtn).toHaveAttribute('aria-pressed', 'true')
 
     // Click again → remove from watchlist
     fireEvent.click(starBtn)
     expect(starBtn).toHaveAttribute('title', 'Add to watchlist')
-    expect(starBtn).toHaveTextContent('☆')
+    expect(starBtn).toHaveAttribute('aria-pressed', 'false')
   })
 })
 

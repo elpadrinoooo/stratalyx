@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import { X } from 'lucide-react'
 import { C, R } from '../constants/colors'
 import type { Toast as ToastType } from '../types'
 
@@ -75,13 +76,13 @@ export function Toast({ toast, onDismiss }: Props) {
           background: 'none',
           border: 'none',
           color: C.t3,
-          fontSize: 14,
           cursor: 'pointer',
           padding: 0,
           flexShrink: 0,
+          display: 'flex', alignItems: 'center',
         }}
       >
-        ✕
+        <X size={14} strokeWidth={2} aria-hidden />
       </button>
     </div>
   )

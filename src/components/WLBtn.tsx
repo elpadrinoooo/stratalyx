@@ -1,4 +1,5 @@
 import React from 'react'
+import { Star } from 'lucide-react'
 import { C } from '../constants/colors'
 
 interface Props {
@@ -21,13 +22,13 @@ export function WLBtn({ ticker, inWatchlist, onToggle }: Props) {
         background: 'none',
         border: 'none',
         cursor: 'pointer',
-        fontSize: 16,
         color: inWatchlist ? C.warn : C.t3,
-        padding: '2px 4px',
+        padding: '4px 6px',
         lineHeight: 1,
+        display: 'flex', alignItems: 'center',
       }}
     >
-      {inWatchlist ? '★' : '☆'}
+      <Star size={16} strokeWidth={2} fill={inWatchlist ? 'currentColor' : 'none'} aria-hidden />
     </button>
   )
 }

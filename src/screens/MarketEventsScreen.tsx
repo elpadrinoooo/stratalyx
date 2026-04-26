@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { Search } from 'lucide-react'
 import {
   ResponsiveContainer,
   AreaChart,
@@ -1845,9 +1846,7 @@ export function MarketEventsScreen() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Search */}
           <div style={{ position: 'relative' }}>
-            <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: C.t4, fontSize: 12, pointerEvents: 'none' }}>
-              🔍
-            </span>
+            <Search size={14} strokeWidth={2} color="var(--c-t4)" style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} aria-hidden />
             <input
               value={search}
               onChange={(e) => { setSearch(e.target.value); setFilter('all') }}

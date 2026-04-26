@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { X } from 'lucide-react'
 import { AppProvider } from './context/AppContext'
 import { useApp } from './state/context'
 import { C } from './constants/colors'
@@ -215,9 +216,9 @@ function AppShell() {
           <button
             onClick={() => setShareBanner(false)}
             aria-label="Dismiss disclaimer"
-            style={{ background: 'none', border: 'none', color: C.t3, fontSize: 16, cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}
+            style={{ background: 'none', border: 'none', color: C.t3, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center' }}
           >
-            ✕
+            <X size={16} strokeWidth={2} aria-hidden />
           </button>
         </div>
       )}

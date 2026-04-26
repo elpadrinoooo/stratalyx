@@ -3,6 +3,7 @@ import { C, R } from '../constants/colors'
 import { useApp } from '../state/context'
 import { useUsageInfo } from '../hooks/useUsageInfo'
 import { supabase } from '../lib/supabase'
+import { Button } from '../components/Button'
 
 export function AccountScreen() {
   const { state, dispatch } = useApp()
@@ -115,12 +116,11 @@ export function AccountScreen() {
 
       <Card>
         <SectionLabel>Session</SectionLabel>
-        <button
-          onClick={() => { void handleSignOut() }}
-          style={btnSecondary}
-        >
-          Sign Out
-        </button>
+        <div>
+          <Button variant="ghost" onClick={() => { void handleSignOut() }}>
+            Sign Out
+          </Button>
+        </div>
       </Card>
     </div>
   )
@@ -183,9 +183,11 @@ function ChangeEmailCard({ currentEmail }: { currentEmail: string }) {
           required
           style={inputStyle}
         />
-        <button type="submit" disabled={loading || !email} style={{ ...btnPrimary, opacity: (loading || !email) ? 0.6 : 1 }}>
-          {loading ? 'Sending…' : 'Send confirmation email'}
-        </button>
+        <div>
+          <Button type="submit" variant="primary" disabled={loading || !email} loading={loading}>
+            {loading ? 'Sending…' : 'Send confirmation email'}
+          </Button>
+        </div>
         {msg && <Banner type={msg.type}>{msg.text}</Banner>}
       </form>
     </Card>
@@ -237,9 +239,11 @@ function ChangePasswordCard() {
           required
           style={inputStyle}
         />
-        <button type="submit" disabled={loading} style={{ ...btnPrimary, opacity: loading ? 0.6 : 1 }}>
-          {loading ? 'Updating…' : 'Update password'}
-        </button>
+        <div>
+          <Button type="submit" variant="primary" disabled={loading} loading={loading}>
+            {loading ? 'Updating…' : 'Update password'}
+          </Button>
+        </div>
         {msg && <Banner type={msg.type}>{msg.text}</Banner>}
       </form>
     </Card>
@@ -276,27 +280,3 @@ const inputStyle: React.CSSProperties = {
   boxSizing: 'border-box',
 }
 
-const btnPrimary: React.CSSProperties = {
-  padding: '10px 16px',
-  background: C.accent,
-  color: '#fff',
-  border: 'none',
-  borderRadius: R.r8,
-  fontFamily: C.sans,
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: 'pointer',
-  alignSelf: 'flex-start',
-}
-
-const btnSecondary: React.CSSProperties = {
-  padding: '9px 16px',
-  background: C.bg3,
-  border: `1px solid ${C.border}`,
-  borderRadius: R.r8,
-  color: C.t2,
-  fontFamily: C.sans,
-  fontSize: 14,
-  cursor: 'pointer',
-  alignSelf: 'flex-start',
-}
