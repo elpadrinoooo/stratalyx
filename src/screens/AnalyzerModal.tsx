@@ -138,12 +138,15 @@ export function AnalyzerModal({ fmpKey }: Props) {
     try {
       // Import dynamically to avoid circular deps in test
       const { runAnalysis } = await import('../engine/analyze')
+      const { supabase } = await import('../lib/supabase')
+      const { data: { session } } = await supabase.auth.getSession()
       const altResult = await runAnalysis({
         ticker: sym,
         investor: altInv,
         provider: state.provider,
         model: state.model,
         fmpKey: fmpKey || null,
+        authToken: session?.access_token ?? null,
       })
       dispatch({ type: 'SET_ANALYSIS', payload: altResult })
 
