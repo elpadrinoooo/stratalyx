@@ -22,7 +22,7 @@ const DEFAULT_ENABLED_MODELS: Record<string, string[]> = {
  * fall back to a default when the user supplies something unknown.
  */
 export function gateProvider(provider: string) {
-  return async function (req: Request, res: Response, next: NextFunction): Promise<void> {
+  return async function (_req: Request, res: Response, next: NextFunction): Promise<void> {
     if (IS_TEST) { next(); return }
     const enabled = await getSetting<string[]>('enabled_providers', DEFAULT_ENABLED_PROVIDERS)
     if (!enabled.includes(provider)) {
