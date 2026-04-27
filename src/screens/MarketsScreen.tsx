@@ -6,6 +6,7 @@ import { useWindowWidth } from '../hooks/useWindowWidth'
 import { useApp } from '../state/context'
 import { FirstAnalysisCTA } from '../components/FirstAnalysisCTA'
 import { Button } from '../components/Button'
+import { supabase } from '../lib/supabase'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -337,7 +338,6 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
 
   // 4 parallel index sparkline fetches — reset to loading state when refresh fires.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIndexCards(INDEX_CARDS.map(c => ({
       ...c, subtitle: '', points: [], price: 0, previousClose: 0, changePct: 0, changeDollar: 0, loading: true, error: '',
     })))
@@ -373,21 +373,24 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
 
   // Market movers — reset state on refresh, fetch, then settle.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMoversLoading(true)
     setNoFmpKey(false)
     setMoversError('')
-    const headers: HeadersInit = fmpKey ? { 'x-fmp-key': fmpKey } : {}
-    fetch('/api/market-movers', { headers })
-      .then(r => {
-        if (r.status === 503) { setNoFmpKey(true); setMoversLoading(false); return null }
+    void (async () => {
+      const headers: Record<string, string> = {}
+      if (fmpKey) headers['x-fmp-key'] = fmpKey
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+      try {
+        const r = await fetch('/api/market-movers', { headers })
+        if (r.status === 503) { setNoFmpKey(true); setMoversLoading(false); return }
         if (!r.ok) throw new Error(`Failed to load market movers (${r.status})`)
-        return r.json() as Promise<MarketMoversPayload>
-      })
-      .then(data => {
-        if (data) { setMovers(data); setMoversLoading(false); setLastUpdated(new Date()) }
-      })
-      .catch(e => { setMoversError(e instanceof Error ? e.message : String(e)); setMoversLoading(false) })
+        const data = await r.json() as MarketMoversPayload
+        setMovers(data); setMoversLoading(false); setLastUpdated(new Date())
+      } catch (e) {
+        setMoversError(e instanceof Error ? e.message : String(e)); setMoversLoading(false)
+      }
+    })()
   }, [fmpKey, refreshKey])
 
   const openAnalyzer = (ticker: string) => dispatch({ type: 'OPEN_MODAL', payload: ticker })

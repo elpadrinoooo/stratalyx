@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { STOCKS } from '../constants/stocks'
+import { supabase } from '../lib/supabase'
 import type { Stock } from '../types'
 
 const CACHE_KEY = 'stratalyx_stock_list'
@@ -60,28 +61,27 @@ export function useStockList(): { stocks: Stock[]; loading: boolean; total: numb
     if (cached && cached.length > STOCKS.length) {
       // Hydrate from cache once on mount — the seed value is the static list,
       // and we replace it with the cached fuller list when available.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStocks(cached)
       return
     }
 
-    // Fetch full list from FMP via proxy
+    // Fetch full list from FMP via proxy.
+    // Once Phase 2 auth-gates /api/fmp/*, anonymous users get 401 and fall back
+    // to the static STOCKS list (the catch block). Signed-in users send their token.
     setLoading(true)
-    fetch('/api/fmp/stock/list')
-      .then((r) => {
+    void (async () => {
+      const headers: Record<string, string> = {}
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+      try {
+        const r = await fetch('/api/fmp/stock/list', { headers })
         if (!r.ok) throw new Error('FMP stock list unavailable')
-        return r.json() as Promise<FMPListItem[]>
-      })
-      .then((items) => {
-        // Filter to US common stocks only
+        const items = await r.json() as FMPListItem[]
+
         const usStocks = items.filter(
           (i) => i.type === 'stock' && US_EXCHANGES.has(i.exchangeShortName) && i.symbol && i.name
         )
-
-        // Build a map of existing tickers for O(1) lookup
         const staticMap = new Map(STOCKS.map((s) => [s.ticker, s]))
-
-        // Build merged list: static stocks first (with full metadata), then dynamic additions
         const dynamicAdditions: Stock[] = usStocks
           .filter((i) => !staticMap.has(i.symbol))
           .map((i) => ({
@@ -94,12 +94,12 @@ export function useStockList(): { stocks: Stock[]; loading: boolean; total: numb
         const merged = [...STOCKS, ...dynamicAdditions]
         saveCache(merged)
         setStocks(merged)
-      })
-      .catch(() => {
-        // Server has no FMP key or fetch failed — static list is fine
-      })
-      .finally(() => setLoading(false))
-   
+      } catch {
+        // Server has no FMP key, user is anonymous, or fetch failed — static list is fine
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [])
 
   return { stocks, loading, total: stocks.length }

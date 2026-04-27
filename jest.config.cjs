@@ -19,6 +19,9 @@ module.exports = {
     '^@mswjs/interceptors/XMLHttpRequest$': '<rootDir>/node_modules/@mswjs/interceptors/lib/node/interceptors/XMLHttpRequest/index.cjs',
     '\\.(css|less|scss|sass)$': '<rootDir>/src/__mocks__/styleMock.ts',
     '\\.(jpg|jpeg|png|gif|svg|webp)$': '<rootDir>/src/__mocks__/fileMock.ts',
+    // Real lib/supabase.ts uses import.meta.env which ts-jest (CJS) can't parse.
+    // Tests get a no-op mock that returns null sessions; production code is unaffected.
+    '^.*/lib/supabase$': '<rootDir>/src/__mocks__/supabaseMock.ts',
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   testMatch: ['<rootDir>/src/__tests__/**/*.test.{ts,tsx}', '<rootDir>/server/__tests__/**/*.test.ts'],

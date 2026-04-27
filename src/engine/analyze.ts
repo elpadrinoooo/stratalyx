@@ -69,7 +69,7 @@ export async function runAnalysis(opts: AnalyzeOptions): Promise<AnalysisResult>
   let liveData: LiveData | null = null
   if (fmpKey) {
     try {
-      const fetched = await fetchLiveData(ticker, fmpKey)
+      const fetched = await fetchLiveData(ticker, { fmpKey, authToken: opts.authToken })
       // Only treat as live if at least one key field came back
       const hasData = fetched.profile !== null || fetched.ratios !== null ||
         fetched.quote !== null || fetched.income.length > 0 || fetched.cashFlow.length > 0

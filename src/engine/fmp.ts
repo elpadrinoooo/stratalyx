@@ -4,11 +4,20 @@ import { fmtN, fmtPct, fmtB } from './utils'
 /** Base URL prefix — empty in browser (Vite proxy handles it), set to 'http://localhost' in Node tests. */
 const API_ORIGIN = typeof window === 'undefined' ? (process.env?.['API_BASE'] ?? '') : ''
 
+export interface FetchLiveDataOptions {
+  /** @deprecated Client-supplied FMP key — Phase 3.1 removes this. Pass authToken instead. */
+  fmpKey?: string
+  /** Supabase access token; required once /api/fmp/* is auth-gated in Phase 2.1. */
+  authToken?: string | null
+}
+
 /** Fetch all 5 FMP endpoints concurrently via the Express proxy. */
-export async function fetchLiveData(ticker: string, fmpKey?: string): Promise<LiveData> {
+export async function fetchLiveData(ticker: string, opts: FetchLiveDataOptions = {}): Promise<LiveData> {
   const t = encodeURIComponent(ticker.toUpperCase())
   const base = `${API_ORIGIN}/api/fmp`
-  const headers: HeadersInit = fmpKey ? { 'x-fmp-key': fmpKey } : {}
+  const headers: Record<string, string> = {}
+  if (opts.fmpKey) headers['x-fmp-key'] = opts.fmpKey
+  if (opts.authToken) headers['Authorization'] = `Bearer ${opts.authToken}`
 
   const [profile, ratios, income, cashFlow, quote] = await Promise.allSettled([
     fetch(`${base}/profile/${t}`, { headers }).then((r) => r.json() as Promise<FMPProfile[]>),
