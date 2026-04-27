@@ -5,7 +5,7 @@ import crypto from 'crypto'
 import { rateLimit } from 'express-rate-limit'
 import fs from 'fs'
 import path from 'path'
-import { attachUser } from './authMiddleware.js'
+import { attachUser, requireAuth } from './authMiddleware.js'
 import { checkUsage, recordAnalysis, validatePromptSize, gateProvider } from './usageLimiter.js'
 import { computeCostMicroCents } from './pricing.js'
 import { userRouter } from './routes/userRoutes.js'
@@ -72,7 +72,7 @@ const CORS_ORIGIN = process.env['CORS_ORIGIN'] ?? 'http://localhost:5173'
 app.use(cors({
   origin: CORS_ORIGIN,
   methods: ['GET', 'POST', 'PUT'],
-  allowedHeaders: ['Content-Type', 'x-fmp-key', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }))
 
 app.use(express.json({ limit: '1mb' }))
@@ -679,10 +679,9 @@ interface Mover {
   exchange:          string
 }
 
-app.get('/market-movers', fmpLimiter, async (req: Request, res: Response) => {
-  const clientKey = typeof req.headers['x-fmp-key'] === 'string' ? req.headers['x-fmp-key'] : ''
-  const key = FMP_KEY || clientKey
-  if (!key) { res.status(503).json({ error: 'No FMP API key available — enter your key via the Live Data button' }); return }
+app.get('/market-movers', requireAuth, fmpLimiter, async (_req: Request, res: Response) => {
+  if (!FMP_KEY) { res.status(503).json({ error: 'Service temporarily unavailable', code: 'FMP_NOT_CONFIGURED' }); return }
+  const key = FMP_KEY
 
   const cacheKey = 'market-movers'
   const cached = getCached(cacheKey)
@@ -792,13 +791,12 @@ const ALLOWED_FMP_PATHS = new Set([
   'cash-flow-statement', 'quote', 'stock/list',
 ])
 
-app.get('/fmp/*', fmpLimiter, async (req: Request, res: Response) => {
-  const clientKey = typeof req.headers['x-fmp-key'] === 'string' ? req.headers['x-fmp-key'] : ''
-  const effectiveFmpKey = FMP_KEY || clientKey
-  if (!effectiveFmpKey) {
-    res.status(503).json({ error: 'No FMP API key available — enter your key via the Live Data button' })
+app.get('/fmp/*', requireAuth, fmpLimiter, async (req: Request, res: Response) => {
+  if (!FMP_KEY) {
+    res.status(503).json({ error: 'Service temporarily unavailable', code: 'FMP_NOT_CONFIGURED' })
     return
   }
+  const effectiveFmpKey = FMP_KEY
 
   const fmpPath = req.params[0] as string
   // Path shape: <endpoint>/<ticker>  OR  stock/list

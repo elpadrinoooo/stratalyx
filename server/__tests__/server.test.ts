@@ -37,6 +37,17 @@ function mockResponse(body: unknown, status = 200): Response {
   } as unknown as Response
 }
 
+/**
+ * Bearer token honored by attachUser when JEST_WORKER_ID is set. Format:
+ * "test-user:<id>:<email>:<tier>:<isAdmin>". Production never sees this.
+ */
+const TEST_AUTH = 'Bearer test-user:test-uid:test@example.com:free:user'
+
+/** Shorthand: GET path with the test bearer token attached. */
+function authedGet(path: string) {
+  return request(app).get(path).set('Authorization', TEST_AUTH)
+}
+
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>
 
 beforeEach(() => {
@@ -252,7 +263,7 @@ describe('S-07: GET /fmp/* — proxy and cache', () => {
   it('returns data and X-Cache: MISS on first request', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse([{ symbol: 'AAPL', price: 185 }]))
 
-    const res = await request(app).get('/fmp/profile/AAPL')
+    const res = await authedGet('/fmp/profile/AAPL')
 
     expect(res.status).toBe(200)
     expect(res.headers['x-cache']).toBe('MISS')
@@ -262,10 +273,10 @@ describe('S-07: GET /fmp/* — proxy and cache', () => {
   it('returns X-Cache: HIT on second identical request', async () => {
     // First request — populates cache
     mockFetch.mockResolvedValueOnce(mockResponse([{ symbol: 'AAPL', price: 185 }]))
-    await request(app).get('/fmp/profile/AAPL')
+    await authedGet('/fmp/profile/AAPL')
 
     // Second request — should hit cache without calling fetch again
-    const res = await request(app).get('/fmp/profile/AAPL')
+    const res = await authedGet('/fmp/profile/AAPL')
 
     expect(res.status).toBe(200)
     expect(res.headers['x-cache']).toBe('HIT')
@@ -276,7 +287,7 @@ describe('S-07: GET /fmp/* — proxy and cache', () => {
   it('returns 502 when FMP fetch throws a network error', async () => {
     mockFetch.mockRejectedValueOnce(new Error('DNS lookup failed'))
 
-    const res = await request(app).get('/fmp/profile/BADTICKER')
+    const res = await authedGet('/fmp/profile/BADTICKER')
 
     expect(res.status).toBe(502)
     expect(res.body.error).toMatch(/failed to reach fmp/i)
@@ -285,7 +296,7 @@ describe('S-07: GET /fmp/* — proxy and cache', () => {
   it('propagates non-2xx FMP status to client', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ error: 'Not found' }, 404))
 
-    const res = await request(app).get('/fmp/profile/XXXX')
+    const res = await authedGet('/fmp/profile/XXXX')
 
     expect(res.status).toBe(404)
     expect(res.body.error).toMatch(/fmp api error/i)
@@ -297,24 +308,24 @@ describe('S-07: GET /fmp/* — proxy and cache', () => {
 describe('S-08: GET /fmp/* — path allowlist', () => {
   it('allows valid path: profile', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse([{ symbol: 'AAPL' }]))
-    const res = await request(app).get('/fmp/profile/AAPL')
+    const res = await authedGet('/fmp/profile/AAPL')
     expect(res.status).toBe(200)
   })
 
   it('allows valid path: quote', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse([{ symbol: 'MSFT', price: 400 }]))
-    const res = await request(app).get('/fmp/quote/MSFT')
+    const res = await authedGet('/fmp/quote/MSFT')
     expect(res.status).toBe(200)
   })
 
   it('allows valid path: stock/list', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse([]))
-    const res = await request(app).get('/fmp/stock/list')
+    const res = await authedGet('/fmp/stock/list')
     expect(res.status).toBe(200)
   })
 
   it('rejects unknown path with 400', async () => {
-    const res = await request(app).get('/fmp/unknown-endpoint/AAPL')
+    const res = await authedGet('/fmp/unknown-endpoint/AAPL')
     expect(res.status).toBe(400)
     expect(res.body.error).toMatch(/invalid fmp endpoint/i)
     expect(mockFetch).not.toHaveBeenCalled()
@@ -329,21 +340,58 @@ describe('S-08: GET /fmp/* — path allowlist', () => {
   })
 })
 
-// ── S-09: GET /fmp/* — client key fallback ───────────────────────────────────
+// ── S-09: GET /fmp/* — auth required ─────────────────────────────────────────
 
-describe('S-09: GET /fmp/* — client-supplied key fallback', () => {
-  it('uses x-fmp-key header when server FMP_KEY is missing', async () => {
-    // This test relies on the fact that in test env FMP_KEY IS set,
-    // so we just verify the header is forwarded in the URL when provided.
+describe('S-09: GET /fmp/* — auth required', () => {
+  it('returns 401 with no Authorization header', async () => {
+    const res = await request(app).get('/fmp/profile/AAPL')
+    expect(res.status).toBe(401)
+    expect(res.body.error).toBe('AUTH_REQUIRED')
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it('returns 401 with malformed Bearer token', async () => {
+    // 'Bearer garbage' falls past the test-mode prefix into the real
+    // supabaseAdmin.auth.getUser path, which fails (invalid JWT) → req.user
+    // stays undefined → requireAuth returns 401. mockFetch may register one
+    // upstream Supabase call before the rejection; what matters is that no
+    // FMP call is made.
+    const res = await request(app)
+      .get('/fmp/profile/AAPL')
+      .set('Authorization', 'Bearer garbage')
+    expect(res.status).toBe(401)
+    const fmpCalls = mockFetch.mock.calls.filter(([u]) =>
+      typeof u === 'string' && u.includes('financialmodelingprep.com')
+    )
+    expect(fmpCalls).toHaveLength(0)
+  })
+
+  it('proceeds to FMP fetch when authenticated', async () => {
     mockFetch.mockResolvedValueOnce(mockResponse([{ symbol: 'TSLA' }]))
-
-    await request(app)
-      .get('/fmp/profile/TSLA')
-      .set('x-fmp-key', 'client-test-key')
-
-    // Server prefers its own FMP_KEY over client key — both end up in URL
+    const res = await authedGet('/fmp/profile/TSLA')
+    expect(res.status).toBe(200)
     const url = mockFetch.mock.calls[0][0] as string
     expect(url).toContain('apikey=')
+  })
+})
+
+// ── S-09b: GET /market-movers — auth required ────────────────────────────────
+
+describe('S-09b: GET /market-movers — auth required', () => {
+  it('returns 401 with no Authorization header', async () => {
+    const res = await request(app).get('/market-movers')
+    expect(res.status).toBe(401)
+    expect(res.body.error).toBe('AUTH_REQUIRED')
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it('proceeds to FMP fetch when authenticated', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse([{ symbol: 'NVDA', changesPercentage: 5 }]))
+    mockFetch.mockResolvedValueOnce(mockResponse([{ symbol: 'TSLA', changesPercentage: -3 }]))
+    const res = await authedGet('/market-movers')
+    expect(res.status).toBe(200)
+    expect(res.body.gainers).toBeDefined()
+    expect(res.body.losers).toBeDefined()
   })
 })
 
