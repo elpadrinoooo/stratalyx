@@ -18,29 +18,28 @@ const OPTS = {
   investor: buffett,
   provider: 'anthropic',
   model: 'claude-haiku-4-5-20251001',
-  fmpKey: null,
   authToken: null,
 }
 
-describe('I-01: runAnalysis() — AI-only mode (no fmpKey)', () => {
-  it('calls /api/claude and returns a valid AnalysisResult', async () => {
+// I-01 was "AI-only mode (no fmpKey)" — fmpKey is gone after Phase 3.1 client
+// cleanup; the server holds the FMP key and live data is attempted on every
+// run. The test now exercises the happy path: MSW returns FMP data + Claude
+// JSON, we expect a valid result with live data.
+
+describe('I-01: runAnalysis() — happy path (live data + Claude)', () => {
+  it('calls /api/claude and returns a valid AnalysisResult with isLive=true', async () => {
     const result = await runAnalysis(OPTS)
     expect(result.ticker).toBe('AAPL')
     expect(result.investorId).toBe('buffett')
-    expect(result.isLive).toBe(false)
+    expect(result.isLive).toBe(true)
+    expect(result.dataSource).toContain('FMP')
     expect(result.strategyScore).toBeGreaterThanOrEqual(0)
     expect(result.strategyScore).toBeLessThanOrEqual(10)
     expect(['BUY', 'HOLD', 'AVOID']).toContain(result.verdict)
   })
 })
 
-describe('I-02: runAnalysis() — live data mode (with fmpKey)', () => {
-  it('returns isLive=true when fmpKey is provided', async () => {
-    const result = await runAnalysis({ ...OPTS, fmpKey: 'test-key' })
-    expect(result.isLive).toBe(true)
-    expect(result.dataSource).toContain('FMP')
-  })
-})
+// I-02 (live data mode) merged into I-01 above — now redundant.
 
 describe('I-03: runAnalysis() — FMP failure is non-fatal', () => {
   it('falls back to AI-only when FMP endpoints fail', async () => {
@@ -62,7 +61,7 @@ describe('I-03: runAnalysis() — FMP failure is non-fatal', () => {
       })
     )
     // Should not throw — FMP failure is non-fatal
-    const result = await runAnalysis({ ...OPTS, fmpKey: 'test-key' })
+    const result = await runAnalysis(OPTS)
     expect(result.ticker).toBe('AAPL')
     // liveData may be null since all FMP calls failed
     expect(result.isLive).toBe(false)

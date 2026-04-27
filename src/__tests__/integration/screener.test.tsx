@@ -35,12 +35,12 @@ function StateDisplay() {
 
 // Wraps in act() to flush the async useStockList fetch (fails → setLoading(false))
 // so React state updates are not reported as out-of-act warnings.
-async function renderScreener(fmpKeySet = false) {
+async function renderScreener() {
   let utils!: ReturnType<typeof render>
   await act(async () => {
     utils = render(
       <TestWrapper>
-        <ScreenerScreen fmpKeySet={fmpKeySet} onOpenFmpModal={() => {}} />
+        <ScreenerScreen />
         <StateDisplay />
       </TestWrapper>
     )

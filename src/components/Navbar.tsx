@@ -1,5 +1,5 @@
 import React from 'react'
-import { KeyRound, Plus, Sparkles } from 'lucide-react'
+import { Plus, Sparkles } from 'lucide-react'
 import { C, R } from '../constants/colors'
 import { INVESTORS, INV } from '../constants/investors'
 import { useApp } from '../state/context'
@@ -8,8 +8,6 @@ import { useUsageInfo } from '../hooks/useUsageInfo'
 import type { Screen } from '../types'
 
 interface Props {
-  fmpKeySet: boolean
-  onOpenFmpModal: () => void
   onOpenAuthModal: () => void
 }
 
@@ -37,7 +35,7 @@ const SCREEN_GROUPS: ScreenLink[][] = [
   ],
 ]
 
-export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
+export function Navbar({ onOpenAuthModal }: Props) {
   const { state, dispatch } = useApp()
   const inv = INV[state.investor] ?? INVESTORS[0]
   const width = useWindowWidth()
@@ -113,21 +111,6 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
         S
       </div>
       <div style={{ fontWeight: 700, fontSize: 15, color: C.t1 }}>Stratalyx.ai</div>
-    </button>
-  )
-
-  const fmpBtn = (
-    <button
-      onClick={onOpenFmpModal}
-      aria-label={fmpKeySet ? 'Live data enabled — manage FMP key' : 'Add FMP API key for live data'}
-      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.8' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
-      style={{ display: 'flex', alignItems: 'center', gap: 5, background: fmpKeySet ? C.gainBg : C.warnBg, border: `1px solid ${fmpKeySet ? C.gainB : C.warnB}`, borderRadius: R.r8, padding: '5px 9px', cursor: 'pointer', transition: 'opacity .15s' }}
-    >
-      <KeyRound size={12} strokeWidth={2.2} color={fmpKeySet ? 'var(--c-gain)' : 'var(--c-warn)'} aria-hidden />
-      <span style={{ fontSize: 12, fontWeight: 600, color: fmpKeySet ? C.gain : C.warn }}>
-        {isMobile ? (fmpKeySet ? 'Live' : 'API Key') : (fmpKeySet ? 'Live Data' : 'Add API Key')}
-      </span>
     </button>
   )
 
@@ -250,7 +233,6 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
         <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {logoBtn}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {fmpBtn}
             {usagePill}
             {authBtn}
             {analyzeBtn}
@@ -318,8 +300,6 @@ export function Navbar({ fmpKeySet, onOpenFmpModal, onOpenAuthModal }: Props) {
 
       {/* RIGHT */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        {fmpBtn}
-
         {/* Active investor pill */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: inv.color + '18', border: `1px solid ${inv.color}33`, borderRadius: R.r8, padding: '4px 9px' }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: inv.color }} />

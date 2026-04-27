@@ -5,9 +5,7 @@ import { fmtN, fmtPct, fmtB } from './utils'
 const API_ORIGIN = typeof window === 'undefined' ? (process.env?.['API_BASE'] ?? '') : ''
 
 export interface FetchLiveDataOptions {
-  /** @deprecated Client-supplied FMP key — Phase 3.1 removes this. Pass authToken instead. */
-  fmpKey?: string
-  /** Supabase access token; required once /api/fmp/* is auth-gated in Phase 2.1. */
+  /** Supabase access token. The /api/fmp/* proxy is auth-gated; without it, every sub-fetch returns 401. */
   authToken?: string | null
 }
 
@@ -16,7 +14,6 @@ export async function fetchLiveData(ticker: string, opts: FetchLiveDataOptions =
   const t = encodeURIComponent(ticker.toUpperCase())
   const base = `${API_ORIGIN}/api/fmp`
   const headers: Record<string, string> = {}
-  if (opts.fmpKey) headers['x-fmp-key'] = opts.fmpKey
   if (opts.authToken) headers['Authorization'] = `Bearer ${opts.authToken}`
 
   const [profile, ratios, income, cashFlow, quote] = await Promise.allSettled([

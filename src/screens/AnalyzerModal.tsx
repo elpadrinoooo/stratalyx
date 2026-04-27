@@ -19,11 +19,7 @@ import { scColor, vColor, vBg, verdictLabel, pegColor, fmtPct, fmtN } from '../e
 import { PriceChart } from '../components/PriceChart'
 import type { AnalysisResult, Investor } from '../types'
 
-interface Props {
-  fmpKey: string
-}
-
-export function AnalyzerModal({ fmpKey }: Props) {
+export function AnalyzerModal() {
   const { state, dispatch } = useApp()
   const { phase, error, run } = useAnalysis()
   const { usage } = useUsageInfo(phase)
@@ -52,7 +48,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
   useEffect(() => {
     if (state.modalTicker && !result) {
       // Small delay to let modal render fully, then auto-run
-      const t = setTimeout(() => run(state.modalTicker, fmpKey), 120)
+      const t = setTimeout(() => run(state.modalTicker), 120)
       return () => clearTimeout(t)
     }
     inputRef.current?.focus()
@@ -100,8 +96,8 @@ export function AnalyzerModal({ fmpKey }: Props) {
 
   const handleAnalyze = useCallback(() => {
     if (!ticker.trim()) return
-    run(ticker.trim(), fmpKey)
-  }, [ticker, fmpKey, run])
+    run(ticker.trim())
+  }, [ticker, run])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleAnalyze()
@@ -145,7 +141,6 @@ export function AnalyzerModal({ fmpKey }: Props) {
         investor: altInv,
         provider: state.provider,
         model: state.model,
-        fmpKey: fmpKey || null,
         authToken: session?.access_token ?? null,
       })
       dispatch({ type: 'SET_ANALYSIS', payload: altResult })

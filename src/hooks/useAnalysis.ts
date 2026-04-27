@@ -9,7 +9,7 @@ export type AnalysisPhase = 'idle' | 'running' | 'done' | 'error'
 interface UseAnalysisReturn {
   phase: AnalysisPhase
   error: string
-  run: (ticker: string, fmpKey: string) => Promise<void>
+  run: (ticker: string) => Promise<void>
 }
 
 export function useAnalysis(): UseAnalysisReturn {
@@ -17,7 +17,7 @@ export function useAnalysis(): UseAnalysisReturn {
   const [phase, setPhase]   = useState<AnalysisPhase>('idle')
   const [error, setError]   = useState('')
 
-  const run = useCallback(async (ticker: string, fmpKey: string) => {
+  const run = useCallback(async (ticker: string) => {
     const sym = ticker.trim().toUpperCase()
     if (!sym) return
 
@@ -40,7 +40,6 @@ export function useAnalysis(): UseAnalysisReturn {
         investor,
         provider: state.provider,
         model: state.model,
-        fmpKey: fmpKey || null,
         authToken,
       })
 

@@ -22,7 +22,6 @@ interface AnalyzeOptions {
   investor: Investor
   provider: string
   model: string
-  fmpKey: string | null
   authToken: string | null
 }
 
@@ -54,29 +53,30 @@ function llmEndpoint(provider: string): string {
 
 /**
  * Main analysis orchestrator.
- * 1. Fetch live FMP data (if fmpKey is set)
+ * 1. Fetch live FMP data via the auth-gated proxy (server holds the key)
  * 2. Build prompt
  * 3. Call Claude via /api/claude proxy
  * 4. Extract + sanitise LLM output
  * 5. Return typed AnalysisResult
+ *
+ * Anonymous users get isLive=false because /api/fmp/* returns 401 → all
+ * sub-fetches fail → liveData stays null. Authenticated users get isLive=true.
  */
 export async function runAnalysis(opts: AnalyzeOptions): Promise<AnalysisResult> {
   const ticker = sanitizeTicker(opts.ticker)
   if (!ticker) throw new Error('Invalid ticker symbol')
-  const { investor, fmpKey } = opts
+  const { investor } = opts
 
-  // Step 1 — Fetch live data
+  // Step 1 — Fetch live data (auth-gated; falls back to AI-only on any failure)
   let liveData: LiveData | null = null
-  if (fmpKey) {
-    try {
-      const fetched = await fetchLiveData(ticker, { fmpKey, authToken: opts.authToken })
-      // Only treat as live if at least one key field came back
-      const hasData = fetched.profile !== null || fetched.ratios !== null ||
-        fetched.quote !== null || fetched.income.length > 0 || fetched.cashFlow.length > 0
-      liveData = hasData ? fetched : null
-    } catch {
-      // Non-fatal — fall back to AI-estimated data
-    }
+  try {
+    const fetched = await fetchLiveData(ticker, { authToken: opts.authToken })
+    // Only treat as live if at least one key field came back
+    const hasData = fetched.profile !== null || fetched.ratios !== null ||
+      fetched.quote !== null || fetched.income.length > 0 || fetched.cashFlow.length > 0
+    liveData = hasData ? fetched : null
+  } catch {
+    // Non-fatal — fall back to AI-estimated data
   }
 
   // Step 2 — Build prompt
