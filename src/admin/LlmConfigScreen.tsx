@@ -9,6 +9,9 @@ import { supabase } from '../lib/supabase'
 
 type ModelMap = Record<string, string[]>
 
+interface UsageStats { count: number; inputTokens: number; outputTokens: number; costMicro: number }
+const EMPTY_STATS: UsageStats = { count: 0, inputTokens: 0, outputTokens: 0, costMicro: 0 }
+
 /**
  * Direct read/write against `app_settings` via the Supabase client. We bypass
  * react-admin's data provider here because that table uses `key` as its
@@ -32,6 +35,40 @@ async function loadConfig(): Promise<{ providers: string[]; models: ModelMap }> 
   }
 }
 
+/** Aggregate analyses → per-provider + per-model token/cost totals (all-time). */
+async function loadUsage(): Promise<{ byProvider: Record<string, UsageStats>; byModel: Record<string, UsageStats> }> {
+  const { data, error } = await supabase
+    .from('analyses')
+    .select('provider, model, input_tokens, output_tokens, cost_usd_micro')
+    .not('provider', 'is', null)
+    .limit(20_000)
+  if (error) throw new Error(error.message)
+
+  const byProvider: Record<string, UsageStats> = {}
+  const byModel:    Record<string, UsageStats> = {}
+  for (const r of (data ?? []) as Array<{ provider: string | null; model: string | null; input_tokens: number | null; output_tokens: number | null; cost_usd_micro: number | null }>) {
+    if (!r.provider || !r.model) continue
+    const ip = byProvider[r.provider] ?? { ...EMPTY_STATS }
+    const im = byModel[r.model]       ?? { ...EMPTY_STATS }
+    const inT  = r.input_tokens   ?? 0
+    const outT = r.output_tokens  ?? 0
+    const cost = r.cost_usd_micro ?? 0
+    ip.count += 1; ip.inputTokens += inT; ip.outputTokens += outT; ip.costMicro += cost
+    im.count += 1; im.inputTokens += inT; im.outputTokens += outT; im.costMicro += cost
+    byProvider[r.provider] = ip
+    byModel[r.model]       = im
+  }
+  return { byProvider, byModel }
+}
+
+const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 4 })
+function fmtUsd(microCents: number): string { return USD.format(microCents / 100_000) }
+function fmtTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`
+  return String(n)
+}
+
 async function saveConfig(providers: string[], models: ModelMap): Promise<void> {
   const a = await supabase.from('app_settings').update({ value: providers, updated_at: new Date().toISOString() }).eq('key', 'enabled_providers')
   if (a.error) throw new Error(a.error.message)
@@ -43,14 +80,21 @@ export function LlmConfigScreen() {
   const notify = useNotify()
   const [providers, setProviders] = useState<string[] | null>(null)
   const [models, setModels]       = useState<ModelMap | null>(null)
+  const [usage,  setUsage]        = useState<{ byProvider: Record<string, UsageStats>; byModel: Record<string, UsageStats> } | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
   const [dirty,   setDirty]   = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    void loadConfig()
-      .then(cfg => { if (!cancelled) { setProviders(cfg.providers); setModels(cfg.models); setLoading(false) } })
+    Promise.all([loadConfig(), loadUsage()])
+      .then(([cfg, u]) => {
+        if (cancelled) return
+        setProviders(cfg.providers)
+        setModels(cfg.models)
+        setUsage(u)
+        setLoading(false)
+      })
       .catch(err => { if (!cancelled) { notify(`Load failed: ${String(err)}`, { type: 'error' }); setLoading(false) } })
     return () => { cancelled = true }
   }, [notify])
@@ -118,6 +162,7 @@ export function LlmConfigScreen() {
           const provEnabled    = providers.includes(prov.id)
           const allowedModels  = models[prov.id] ?? []
           const enabledCount   = prov.models.filter(m => allowedModels.includes(m.id)).length
+          const provStats      = usage?.byProvider[prov.id] ?? EMPTY_STATS
           return (
             <Card key={prov.id} sx={{ opacity: provEnabled ? 1 : 0.55, transition: 'opacity .15s' }}>
               <CardContent>
@@ -133,16 +178,28 @@ export function LlmConfigScreen() {
                       </Typography>
                     </Box>
                   </Box>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={provEnabled}
-                        onChange={e => toggleProvider(prov.id, e.target.checked)}
-                      />
-                    }
-                    label={provEnabled ? 'Enabled' : 'Disabled'}
-                    labelPlacement="start"
-                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                    {provStats.count > 0 && (
+                      <Box sx={{ textAlign: 'right' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5, display: 'block', lineHeight: 1.2 }}>
+                          All-time usage
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.primary', fontWeight: 600 }}>
+                          {provStats.count} runs · {fmtTokens(provStats.inputTokens + provStats.outputTokens)} tokens · {fmtUsd(provStats.costMicro)}
+                        </Typography>
+                      </Box>
+                    )}
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={provEnabled}
+                          onChange={e => toggleProvider(prov.id, e.target.checked)}
+                        />
+                      }
+                      label={provEnabled ? 'Enabled' : 'Disabled'}
+                      labelPlacement="start"
+                    />
+                  </Box>
                 </Box>
 
                 {provEnabled && (
@@ -152,6 +209,7 @@ export function LlmConfigScreen() {
                       {prov.models.map(m => {
                         const checked = allowedModels.includes(m.id)
                         const cost = `$${m.inputCost.toFixed(2)} in / $${m.outputCost.toFixed(2)} out per 1M tokens`
+                        const mStats = usage?.byModel[m.id] ?? EMPTY_STATS
                         return (
                           <Box
                             key={m.id}
@@ -164,7 +222,7 @@ export function LlmConfigScreen() {
                             }}
                           >
                             <FormControlLabel
-                              sx={{ width: '100%', m: 0 }}
+                              sx={{ width: '100%', m: 0, alignItems: 'flex-start' }}
                               control={
                                 <Checkbox
                                   size="small"
@@ -173,14 +231,31 @@ export function LlmConfigScreen() {
                                 />
                               }
                               label={
-                                <Box>
-                                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{m.label}</Typography>
+                                <Box sx={{ width: '100%' }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{m.label}</Typography>
+                                    {mStats.count > 0 && (
+                                      <Chip
+                                        size="small"
+                                        label={`${mStats.count} · ${fmtUsd(mStats.costMicro)}`}
+                                        title={`${mStats.count} runs · ${fmtTokens(mStats.inputTokens)} in / ${fmtTokens(mStats.outputTokens)} out · ${fmtUsd(mStats.costMicro)}`}
+                                        sx={{ fontFamily: 'monospace', fontSize: 10, height: 20 }}
+                                        variant="outlined"
+                                        color={mStats.costMicro > 0 ? 'primary' : 'default'}
+                                      />
+                                    )}
+                                  </Box>
                                   <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
                                     {m.id}
                                   </Typography>
                                   <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
                                     {cost} · tier: {m.tier}
                                   </Typography>
+                                  {mStats.count > 0 && (
+                                    <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontFamily: 'monospace', mt: 0.25 }}>
+                                      Used: {fmtTokens(mStats.inputTokens)} in / {fmtTokens(mStats.outputTokens)} out
+                                    </Typography>
+                                  )}
                                 </Box>
                               }
                             />
