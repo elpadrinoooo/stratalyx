@@ -27,4 +27,16 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/main.tsx',
   ],
+  // Phase 1.3 ratchet — initial floor is the Phase 0 baseline (re-measured
+  // post-fixes with all 14 suites green), lightly rounded down to absorb
+  // single-test-file noise. Each later phase ratchets these up.
+  // To enforce, run with --coverage; CI is wired in .github/workflows/ci.yml.
+  coverageThreshold: {
+    global: {
+      statements: 30,
+      branches: 30,
+      functions: 26,
+      lines: 32,
+    },
+  },
 }
