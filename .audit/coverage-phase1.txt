@@ -1,0 +1,26 @@
+Phase 1 coverage snapshot — 2026-04-26
+
+After commits e07d816, 523e62f, 31b7a4b, 6644989.
+
+=============================== Coverage summary ===============================
+Statements   : 30.48% ( 925/3034 )
+Branches     : 30.66% ( 720/2348 )
+Functions    : 26.52% ( 239/901 )
+Lines        : 32.79% ( 828/2525 )
+================================================================================
+
+Test Suites: 14 passed, 14 total
+Tests:       205 passed, 205 total
+Time:        ~65 s
+
+Threshold floor enforced in jest.config.cjs:
+  statements: 30
+  branches:   30
+  functions:  26
+  lines:      32
+
+Note: numbers are LOWER than the Phase 0 baseline's 32.58 / 33.97 / 28.62 /
+35.09. The Phase 0 measurement was taken during a flaky failure that
+excluded ~195 statements from the denominator. With all 14 suites green
+the true baseline is the 30.48% above. Phase 1's threshold matches
+reality, not the optimistic Phase 0 capture.
