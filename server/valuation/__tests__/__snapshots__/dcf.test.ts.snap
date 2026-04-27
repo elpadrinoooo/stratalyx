@@ -1,0 +1,66 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`twoStageDCF B. KO 1988 historical fixture matches snapshot (regression detector for the formula) 1`] = `
+{
+  "high": 83.43,
+  "inputsUsed": {
+    "currentFCF": 800000000,
+    "discountRate": 0.1,
+    "highGrowthRate": 0.15,
+    "highGrowthYears": 5,
+    "netDebt": 0,
+    "sharesOutstanding": 360000000,
+    "terminalGrowthRate": 0.03,
+  },
+  "intrinsicValuePerShare": 53.56,
+  "low": 39.4,
+  "sensitivityTable": [
+    {
+      "discountRate": 0.08,
+      "intrinsicValue": 70.16,
+      "terminalGrowth": 0.025,
+    },
+    {
+      "discountRate": 0.08,
+      "intrinsicValue": 76.13,
+      "terminalGrowth": 0.03,
+    },
+    {
+      "discountRate": 0.08,
+      "intrinsicValue": 83.43,
+      "terminalGrowth": 0.035,
+    },
+    {
+      "discountRate": 0.1,
+      "intrinsicValue": 50.65,
+      "terminalGrowth": 0.025,
+    },
+    {
+      "discountRate": 0.1,
+      "intrinsicValue": 53.56,
+      "terminalGrowth": 0.03,
+    },
+    {
+      "discountRate": 0.1,
+      "intrinsicValue": 56.91,
+      "terminalGrowth": 0.035,
+    },
+    {
+      "discountRate": 0.12,
+      "intrinsicValue": 39.4,
+      "terminalGrowth": 0.025,
+    },
+    {
+      "discountRate": 0.12,
+      "intrinsicValue": 41.06,
+      "terminalGrowth": 0.03,
+    },
+    {
+      "discountRate": 0.12,
+      "intrinsicValue": 42.92,
+      "terminalGrowth": 0.035,
+    },
+  ],
+  "warnings": [],
+}
+`;
