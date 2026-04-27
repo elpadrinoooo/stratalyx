@@ -71,7 +71,7 @@ describe('I-12: WLBtn toggles watchlist membership', () => {
     await act(async () => {
       render(
         <TestWrapper>
-          <ScreenerScreen fmpKeySet={false} onOpenFmpModal={() => {}} />
+          <ScreenerScreen />
         </TestWrapper>
       )
     })

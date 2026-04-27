@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Star, ArrowLeftRight, Share2, Check, X } from 'lucide-react'
 import { C, R } from '../constants/colors'
 import { useWindowWidth } from '../hooks/useWindowWidth'
@@ -17,13 +17,9 @@ import { LiveBadge } from '../components/LiveBadge'
 import { ProviderModelBar } from '../components/ProviderModelBar'
 import { scColor, vColor, vBg, verdictLabel, pegColor, fmtPct, fmtN } from '../engine/utils'
 import { PriceChart } from '../components/PriceChart'
-import type { AnalysisResult } from '../types'
+import type { AnalysisResult, Investor } from '../types'
 
-interface Props {
-  fmpKey: string
-}
-
-export function AnalyzerModal({ fmpKey }: Props) {
+export function AnalyzerModal() {
   const { state, dispatch } = useApp()
   const { phase, error, run } = useAnalysis()
   const { usage } = useUsageInfo(phase)
@@ -52,7 +48,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
   useEffect(() => {
     if (state.modalTicker && !result) {
       // Small delay to let modal render fully, then auto-run
-      const t = setTimeout(() => run(state.modalTicker, fmpKey), 120)
+      const t = setTimeout(() => run(state.modalTicker), 120)
       return () => clearTimeout(t)
     }
     inputRef.current?.focus()
@@ -100,8 +96,8 @@ export function AnalyzerModal({ fmpKey }: Props) {
 
   const handleAnalyze = useCallback(() => {
     if (!ticker.trim()) return
-    run(ticker.trim(), fmpKey)
-  }, [ticker, fmpKey, run])
+    run(ticker.trim())
+  }, [ticker, run])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleAnalyze()
@@ -145,7 +141,6 @@ export function AnalyzerModal({ fmpKey }: Props) {
         investor: altInv,
         provider: state.provider,
         model: state.model,
-        fmpKey: fmpKey || null,
         authToken: session?.access_token ?? null,
       })
       dispatch({ type: 'SET_ANALYSIS', payload: altResult })
@@ -511,6 +506,7 @@ export function AnalyzerModal({ fmpKey }: Props) {
               compInvId={compInvId}
               compError={compError}
               onRunComparison={runComparison}
+              onResetComparison={() => { setCompPhase('idle'); setCompInvId(null) }}
             />
           )}
         </div>
@@ -523,13 +519,14 @@ export function AnalyzerModal({ fmpKey }: Props) {
 
 interface ResultSectionProps {
   result: AnalysisResult
-  inv: ReturnType<typeof INV[string]>
+  inv: Investor
   state: ReturnType<typeof useApp>['state']
   dispatch: ReturnType<typeof useApp>['dispatch']
   compPhase: 'idle' | 'running' | 'done'
   compInvId: string | null
   compError: string
   onRunComparison: (id: string) => void
+  onResetComparison: () => void
 }
 
 function ResultSection({
@@ -541,6 +538,7 @@ function ResultSection({
   compInvId,
   compError,
   onRunComparison,
+  onResetComparison,
 }: ResultSectionProps) {
   const [showLiveData, setShowLiveData] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -1105,7 +1103,7 @@ Generated: ${new Date(r.timestamp).toLocaleDateString()}`
             {/* Run another */}
             <div style={{ marginTop: 10 }}>
               <button
-                onClick={() => { setCompPhase('idle'); setCompInvId(null) }}
+                onClick={onResetComparison}
                 style={{
                   background: 'none',
                   border: 'none',

@@ -11,12 +11,7 @@ import { Skeleton } from '../components/Skeleton'
 import { pegColor, scColor } from '../engine/utils'
 import type { Stock } from '../types'
 
-interface Props {
-  fmpKeySet: boolean
-  onOpenFmpModal: () => void
-}
-
-export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
+export function ScreenerScreen() {
   const { state, dispatch } = useApp()
   const { inWatchlist, toggle } = useWatchlist()
   const { stocks: allStocks, loading: stocksLoading, total: stocksTotal } = useStockList()
@@ -164,7 +159,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
 
       {/* Live data status strip — compact, shown after welcome is dismissed */}
       {welcomeDismissed && (
-        fmpKeySet ? (
+        state.user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: C.gainBg, border: `1px solid ${C.gainB}`, borderRadius: R.r8, padding: '7px 12px', marginBottom: 12 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.gain, flexShrink: 0 }} />
             <span style={{ color: C.gain, fontWeight: 700, fontSize: 13 }}>Live data active</span>
@@ -173,7 +168,7 @@ export function ScreenerScreen({ fmpKeySet, onOpenFmpModal }: Props) {
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: C.bg1, border: `1px solid ${C.border}`, borderRadius: R.r8, padding: '7px 12px', marginBottom: 12, flexWrap: 'wrap' }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.t4, flexShrink: 0 }} />
-            <span style={{ color: C.t3, fontSize: 13, flex: 1 }}>AI-estimated data mode · <button onClick={onOpenFmpModal} style={{ background: 'none', border: 'none', color: C.accent, fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0 }}>Add FMP key for live financials</button></span>
+            <span style={{ color: C.t3, fontSize: 13, flex: 1 }}>AI-estimated data mode · <button onClick={() => window.dispatchEvent(new CustomEvent('stratalyx:request-auth'))} style={{ background: 'none', border: 'none', color: C.accent, fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0 }}>Sign in for live financials</button></span>
           </div>
         )
       )}

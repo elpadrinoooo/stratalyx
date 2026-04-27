@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { AppProvider } from './context/AppContext'
 import { useApp } from './state/context'
 import { C } from './constants/colors'
 import { Navbar } from './components/Navbar'
 import { Toasts } from './components/Toasts'
-import { FmpKeyModal } from './components/FmpKeyModal'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { AnalyzerModal } from './screens/AnalyzerModal'
 import { ScreenerScreen } from './screens/ScreenerScreen'
@@ -20,8 +19,6 @@ import { AdminScreen } from './screens/AdminScreen'
 import { AccountScreen } from './screens/AccountScreen'
 import { AuthModal } from './components/AuthModal'
 import { supabase } from './lib/supabase'
-
-const SESSION_KEY = 'stratalyx_fmp_key'
 
 /** Detect analysis share from server-injected globals, query params, or legacy hash */
 function parseShareSource(): { ticker: string; investorId: string } | null {
@@ -66,10 +63,6 @@ function parseComparisonShare(): { ticker: string; investorIds: string[] } | nul
 
 function AppShell() {
   const { state, dispatch } = useApp()
-  const [fmpKey, setFmpKey] = useState<string>(
-    () => sessionStorage.getItem(SESSION_KEY) ?? ''
-  )
-  const [fmpModalOpen, setFmpModalOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authRecoveryMode, setAuthRecoveryMode] = useState(false)
   const [shareBanner, setShareBanner] = useState<'analysis' | 'comparison' | false>(false)
@@ -150,23 +143,6 @@ function AppShell() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [state.modalOpen, dispatch])
 
-  function handleSaveFmpKey(key: string) {
-    setFmpKey(key)
-    if (key) {
-      sessionStorage.setItem(SESSION_KEY, key)
-    } else {
-      sessionStorage.removeItem(SESSION_KEY)
-    }
-    setFmpModalOpen(false)
-    dispatch({
-      type: 'TOAST',
-      payload: {
-        message: key ? 'FMP API key saved — live data enabled' : 'FMP API key cleared',
-        type: key ? 'success' : 'info',
-      },
-    })
-  }
-
   const screen = state.screen
 
   return (
@@ -202,7 +178,7 @@ function AppShell() {
         Skip to content
       </a>
 
-      <Navbar fmpKeySet={!!fmpKey} onOpenFmpModal={() => setFmpModalOpen(true)} onOpenAuthModal={() => setAuthModalOpen(true)} />
+      <Navbar onOpenAuthModal={() => setAuthModalOpen(true)} />
 
       {shareBanner && (
         <div
@@ -238,8 +214,8 @@ function AppShell() {
       )}
 
       <main id="main" tabIndex={-1}>
-        {screen === 'Markets'     && <ErrorBoundary><MarketsScreen fmpKey={fmpKey} onOpenFmpModal={() => setFmpModalOpen(true)} /></ErrorBoundary>}
-        {screen === 'Screener'    && <ErrorBoundary><ScreenerScreen    fmpKeySet={!!fmpKey} onOpenFmpModal={() => setFmpModalOpen(true)} /></ErrorBoundary>}
+        {screen === 'Markets'     && <ErrorBoundary><MarketsScreen /></ErrorBoundary>}
+        {screen === 'Screener'    && <ErrorBoundary><ScreenerScreen /></ErrorBoundary>}
         {screen === 'Strategies'  && <ErrorBoundary><StrategiesScreen /></ErrorBoundary>}
         {screen === 'Watchlist'   && <ErrorBoundary><WatchlistScreen /></ErrorBoundary>}
         {screen === 'History'     && <ErrorBoundary><HistoryScreen /></ErrorBoundary>}
@@ -252,16 +228,8 @@ function AppShell() {
 
       {state.modalOpen && (
         <ErrorBoundary>
-          <AnalyzerModal fmpKey={fmpKey} />
+          <AnalyzerModal />
         </ErrorBoundary>
-      )}
-
-      {fmpModalOpen && (
-        <FmpKeyModal
-          currentKey={fmpKey}
-          onSave={handleSaveFmpKey}
-          onClose={() => setFmpModalOpen(false)}
-        />
       )}
 
       {authModalOpen && (

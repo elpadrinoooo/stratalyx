@@ -7,7 +7,7 @@ import {
   SearchInput, FilterButton, FunctionField,
   TopToolbar, ExportButton,
   BulkUpdateButton, BulkDeleteButton,
-  useRecordContext, useGetManyReference,
+  useRecordContext, useGetManyReference, useGetList,
   Layout, Menu,
   type LayoutProps,
 } from 'react-admin'
@@ -96,7 +96,7 @@ function DailyVolumeChart() {
     filter: { 'created_at@gte': since },
   })
 
-  const buckets = bucketByDay(rows.map(r => r.created_at), 30, anchor)
+  const buckets = bucketByDay(rows.map((r: AnalysisRow) => r.created_at), 30, anchor)
   const total = buckets.reduce((s, n) => s + n, 0)
   const todayBucket = buckets[buckets.length - 1]
 

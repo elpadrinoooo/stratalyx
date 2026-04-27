@@ -1,5 +1,6 @@
 import type { MoatRating } from './stock'
 import type { FMPProfile, FMPRatiosTTM, FMPIncomeStatement, FMPCashFlow, FMPQuote } from './fmp'
+import type { ValuationOutput } from '../engine/valuation/types'
 
 export type Verdict = 'BUY' | 'HOLD' | 'AVOID'
 export type DebtLevel = 'Low' | 'Moderate' | 'High' | ''
@@ -50,6 +51,15 @@ export interface AnalysisResult {
   timestamp: number
   liveData: LiveData | null
   isLive: boolean
+  /**
+   * Phase 4.3: deterministic valuation result. When present, the
+   * intrinsicValueLow/intrinsicValueHigh/marginOfSafety fields above were
+   * overridden from this object — the LLM's claims for those three fields
+   * were discarded. `valuation` carries the additional context (sensitivity
+   * grid, method label, warnings, applicability) the UI surfaces in
+   * Phase 4.4.
+   */
+  valuation?: ValuationOutput
 }
 
 export interface RawLLMResult {

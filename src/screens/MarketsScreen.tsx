@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { RotateCw, ArrowRight } from 'lucide-react'
 import { ResponsiveContainer, AreaChart, Area } from 'recharts'
 import { C, R } from '../constants/colors'
@@ -6,6 +6,7 @@ import { useWindowWidth } from '../hooks/useWindowWidth'
 import { useApp } from '../state/context'
 import { FirstAnalysisCTA } from '../components/FirstAnalysisCTA'
 import { Button } from '../components/Button'
+import { supabase } from '../lib/supabase'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -35,10 +36,6 @@ interface IndexCardData {
   error:         string
 }
 
-interface Props {
-  fmpKey:         string
-  onOpenFmpModal: () => void
-}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -312,8 +309,8 @@ function MoversTable({ title, movers, isGainer, loading, onTickerClick }: {
 
 // ── Root component ────────────────────────────────────────────────────────────
 
-export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
-  const { dispatch }  = useApp()
+export function MarketsScreen() {
+  const { state, dispatch }  = useApp()
   const width         = useWindowWidth()
   const isMobile      = width <= 640
   const isTablet      = width <= 960
@@ -324,7 +321,8 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
   const [movers,        setMovers]        = useState<MarketMoversPayload | null>(null)
   const [moversLoading, setMoversLoading] = useState(true)
   const [moversError,   setMoversError]   = useState('')
-  const [noFmpKey,      setNoFmpKey]      = useState(false)
+  /** 'unauth' = anonymous user got 401; 'down' = server returned 503; null = ok. */
+  const [moversBlock,   setMoversBlock]   = useState<'unauth' | 'down' | null>(null)
   const [refreshKey,    setRefreshKey]    = useState(0)
   const [lastUpdated,   setLastUpdated]   = useState<Date | null>(null)
   const [, forceRender] = useState(0)
@@ -337,7 +335,6 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
 
   // 4 parallel index sparkline fetches — reset to loading state when refresh fires.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIndexCards(INDEX_CARDS.map(c => ({
       ...c, subtitle: '', points: [], price: 0, previousClose: 0, changePct: 0, changeDollar: 0, loading: true, error: '',
     })))
@@ -373,22 +370,25 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
 
   // Market movers — reset state on refresh, fetch, then settle.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMoversLoading(true)
-    setNoFmpKey(false)
+    setMoversBlock(null)
     setMoversError('')
-    const headers: HeadersInit = fmpKey ? { 'x-fmp-key': fmpKey } : {}
-    fetch('/api/market-movers', { headers })
-      .then(r => {
-        if (r.status === 503) { setNoFmpKey(true); setMoversLoading(false); return null }
+    void (async () => {
+      const headers: Record<string, string> = {}
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+      try {
+        const r = await fetch('/api/market-movers', { headers })
+        if (r.status === 401) { setMoversBlock('unauth'); setMoversLoading(false); return }
+        if (r.status === 503) { setMoversBlock('down');   setMoversLoading(false); return }
         if (!r.ok) throw new Error(`Failed to load market movers (${r.status})`)
-        return r.json() as Promise<MarketMoversPayload>
-      })
-      .then(data => {
-        if (data) { setMovers(data); setMoversLoading(false); setLastUpdated(new Date()) }
-      })
-      .catch(e => { setMoversError(e instanceof Error ? e.message : String(e)); setMoversLoading(false) })
-  }, [fmpKey, refreshKey])
+        const data = await r.json() as MarketMoversPayload
+        setMovers(data); setMoversLoading(false); setLastUpdated(new Date())
+      } catch (e) {
+        setMoversError(e instanceof Error ? e.message : String(e)); setMoversLoading(false)
+      }
+    })()
+  }, [refreshKey])
 
   const openAnalyzer = (ticker: string) => dispatch({ type: 'OPEN_MODAL', payload: ticker })
   const status       = getMarketStatus()
@@ -475,8 +475,8 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
         </div>
       )}
 
-      {/* ── No-key banner ────────────────────────────────────────────────── */}
-      {noFmpKey && (
+      {/* ── Blocked banner: anonymous (401) or backend down (503) ────────── */}
+      {moversBlock && (
         <div style={{
           background: C.warnBg, border: `1px solid ${C.warnB}`,
           borderRadius: R.r10, padding: '12px 16px', marginBottom: 16,
@@ -484,24 +484,28 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
           gap: 12, flexWrap: 'wrap',
         }}>
           <span style={{ color: C.warn, fontSize: 13 }}>
-            An FMP API key is required to load Top Gainers and Top Losers.
+            {moversBlock === 'unauth'
+              ? 'Sign in to view Top Gainers and Top Losers.'
+              : 'Live market movers are temporarily unavailable.'}
           </span>
-          <button
-            onClick={onOpenFmpModal}
-            style={{
-              background: C.accent, color: 'var(--c-fg-on-accent, #fff)',
-              border: 'none', borderRadius: R.r8,
-              padding: '6px 14px', fontSize: 13, fontWeight: 600,
-              cursor: 'pointer', flexShrink: 0,
-            }}
-          >
-            Add API Key
-          </button>
+          {moversBlock === 'unauth' && !state.user && (
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('stratalyx:request-auth'))}
+              style={{
+                background: C.accent, color: 'var(--c-fg-on-accent, #fff)',
+                border: 'none', borderRadius: R.r8,
+                padding: '6px 14px', fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', flexShrink: 0,
+              }}
+            >
+              Sign In
+            </button>
+          )}
         </div>
       )}
 
       {/* ── Error state ──────────────────────────────────────────────────── */}
-      {moversError && !noFmpKey && (
+      {moversError && !moversBlock && (
         <div style={{
           background: C.lossBg, border: `1px solid ${C.lossB}`,
           borderRadius: R.r8, padding: '10px 14px', marginBottom: 16,
@@ -519,14 +523,14 @@ export function MarketsScreen({ fmpKey, onOpenFmpModal }: Props) {
             title="Top Gainers"
             movers={movers?.gainers ?? []}
             isGainer={true}
-            loading={moversLoading && !noFmpKey}
+            loading={moversLoading && !moversBlock}
             onTickerClick={openAnalyzer}
           />
           <MoversTable
             title="Top Losers"
             movers={movers?.losers ?? []}
             isGainer={false}
-            loading={moversLoading && !noFmpKey}
+            loading={moversLoading && !moversBlock}
             onTickerClick={openAnalyzer}
           />
         </div>

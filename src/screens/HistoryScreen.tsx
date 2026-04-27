@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { C, R } from '../constants/colors'
 import { INV } from '../constants/investors'
 import { useApp } from '../state/context'

@@ -19,7 +19,6 @@ const OPTS = {
   investor: buffett,
   provider: 'anthropic',
   model: 'claude-haiku-4-5-20251001',
-  fmpKey: null,
   authToken: null,
 }
 
@@ -136,16 +135,23 @@ describe('L-07: ticker is always uppercase', () => {
   })
 })
 
-describe('L-08: isLive reflects fmpKey presence', () => {
-  it('isLive=false when no fmpKey', async () => {
+describe('L-08: isLive reflects live data availability', () => {
+  it('isLive=false when every FMP endpoint fails', async () => {
     mockClaude('{"strategyScore":7,"verdict":"BUY"}')
-    const result = await runAnalysis({ ...OPTS, fmpKey: null })
+    server.use(
+      http.get('http://localhost/api/fmp/profile/:ticker',           () => HttpResponse.json({ error: 'unauth' }, { status: 401 })),
+      http.get('http://localhost/api/fmp/ratios-ttm/:ticker',        () => HttpResponse.json({ error: 'unauth' }, { status: 401 })),
+      http.get('http://localhost/api/fmp/quote/:ticker',             () => HttpResponse.json({ error: 'unauth' }, { status: 401 })),
+      http.get('http://localhost/api/fmp/income-statement/:ticker',  () => HttpResponse.json({ error: 'unauth' }, { status: 401 })),
+      http.get('http://localhost/api/fmp/cash-flow-statement/:ticker', () => HttpResponse.json({ error: 'unauth' }, { status: 401 })),
+    )
+    const result = await runAnalysis(OPTS)
     expect(result.isLive).toBe(false)
   })
 
-  it('isLive=true when fmpKey is provided', async () => {
+  it('isLive=true when FMP endpoints return data (default MSW handlers)', async () => {
     mockClaude('{"strategyScore":7,"verdict":"BUY"}')
-    const result = await runAnalysis({ ...OPTS, fmpKey: 'test-fmp-key' })
+    const result = await runAnalysis(OPTS)
     expect(result.isLive).toBe(true)
   })
 })

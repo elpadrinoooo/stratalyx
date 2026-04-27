@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- startup banner; Phase 5 replaces with pino */
 import { app, ANTHROPIC_KEY, GOOGLE_KEY, FMP_KEY } from './app.js'
 
 const PORT = Number(process.env['PORT'] ?? 3001)

@@ -1,0 +1,55 @@
+Phase 4 coverage snapshot — 2026-04-26
+
+After Phase 4.1 (valuation primitives) + Phase 4.2 (per-investor strategies).
+Phases 4.3 (pipeline integration), 4.4 (UI), 4.5 (persistence) DEFERRED.
+
+================================ Global =======================================
+Statements   : 36.17% ( 1180/3262 )    [Phase 2: 30.95%]   Δ +5.22
+Branches     : 35.41% (  890/2513 )    [Phase 2: 30.97%]   Δ +4.44
+Functions    : 29.17% (  264/ 905 )    [Phase 2: 27.07%]   Δ +2.10
+Lines        : 38.69% ( 1054/2724 )    [Phase 2: 33.34%]   Δ +5.35
+
+Test Suites: 19 passed                 [Phase 2: 14]       Δ +5
+Tests:       360 passed                [Phase 2: 218]      Δ +142
+Snapshots:   3                         [Phase 2: 0]
+================================================================================
+
+============================ server/valuation/ =================================
+                       % Stmts  % Branch  % Funcs  % Lines
+ server/valuation        98.03    88.20    100.00   98.65
+  dcf.ts                 98.24    93.75    100.00   100.00
+  graham.ts             100.00   100.00    100.00   100.00
+  helpers.ts             96.77    94.87    100.00   100.00
+  lynch.ts              100.00   100.00    100.00   100.00
+  strategies.ts          96.11    80.55    100.00    96.11
+  types.ts                  —       —         —        —    (type-only, no runtime)
+================================================================================
+
+Per-module gate (jest.config.cjs):
+  './server/valuation/**/*.ts': statements 95, branches 80, functions 95, lines 95
+
+Global ratchet bumped: 30/30/26/32 → 35/34/28/37
+  (was the Phase 1 floor; valuation module gives us headroom to lift)
+
+The ~80% branch coverage on strategies.ts is dominated by `field ?? null`
+defensive branches for absent FMP fields (balance sheet items aren't yet
+fetched by the FMP service — strategies that need them gracefully degrade).
+Phase 3.2's FMP service expansion will exercise those paths via integration.
+Math primitives (dcf/graham/lynch/helpers) all sit at 93-100% branches.
+
+Test breakdown:
+  - dcf.test.ts:        20 tests   (happy path, KO 1988 snapshot, clamps,
+                                    null returns, sensitivity grid, defensive
+                                    NaN guards, 2x property tests @ 100 runs)
+  - graham.test.ts:     20 tests   (Graham number happy path + property,
+                                    NCAV happy/negative/inapplicable + property)
+  - lynch.test.ts:      17 tests   (DNKN fixture, 30-cap engagement, null
+                                    paths on negative/zero/NaN inputs, 2x
+                                    property tests @ 100 runs each)
+  - helpers.test.ts:    36 tests   (clamp, round, defaultDiscountRate, owner
+                                    earnings, netDebt, sensitivity grid,
+                                    margin of safety, impliedGrowthRate)
+  - strategies.test.ts: 42 tests   (every investor mapped + 9 strategy
+                                    variants exercised with happy path +
+                                    inapplicable paths)
+  Total Phase 4 net new: 142 tests

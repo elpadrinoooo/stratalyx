@@ -1,0 +1,25 @@
+Phase 2 coverage snapshot — 2026-04-26
+
+After Phase 2.1, 2.2, 2.3, 2.5 + Phase 3.1.
+
+=============================== Coverage summary ===============================
+Statements   : 30.95% ( 931/3008 )    [Phase 1: 30.48%]   Δ +0.47
+Branches     : 30.97% ( 718/2318 )    [Phase 1: 30.66%]   Δ +0.31
+Functions    : 27.07% ( 238/879  )    [Phase 1: 26.52%]   Δ +0.55
+Lines        : 33.34% ( 834/2501 )    [Phase 1: 32.79%]   Δ +0.55
+================================================================================
+
+Test Suites: 14 passed, 14 total
+Tests:       218 passed, 218 total           [Phase 1: 205]   Δ +13
+
+Threshold floor in jest.config.cjs not yet ratcheted — still at the Phase 1
+values (30/30/26/32). Will bump to (30/30/27/33) at the start of Phase 3 once
+the Phase 3 work itself isn't pushing them in either direction.
+
+The +13 tests came from:
+  - 4 new auth tests on /fmp/* + /market-movers (S-09 rewritten, S-09b new)
+  - 4 new CORS allowlist tests (S-13)
+  - 6 new security-header / CSP tests (S-14)
+  - 1 test removed when collapsing analysis I-01/I-02 (-1 net = +13)
+
+Phase 2.4 is parked (Upstash). Coverage will jump again once it lands.

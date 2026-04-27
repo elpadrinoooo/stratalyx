@@ -5,7 +5,7 @@ import crypto from 'crypto'
 import { rateLimit } from 'express-rate-limit'
 import fs from 'fs'
 import path from 'path'
-import { attachUser } from './authMiddleware.js'
+import { attachUser, requireAuth } from './authMiddleware.js'
 import { checkUsage, recordAnalysis, validatePromptSize, gateProvider } from './usageLimiter.js'
 import { computeCostMicroCents } from './pricing.js'
 import { userRouter } from './routes/userRoutes.js'
@@ -68,14 +68,72 @@ app.use((req, _res, next) => {
   next()
 })
 
-const CORS_ORIGIN = process.env['CORS_ORIGIN'] ?? 'http://localhost:5173'
+// CORS allowlist. Production reads CORS_ALLOWED_ORIGINS (comma-separated) or
+// falls back to the legacy single-origin CORS_ORIGIN var. Development (any
+// NODE_ENV that isn't 'production') always accepts localhost on any port so a
+// dev port change doesn't require an env edit. Phase 9/10 add /api/og/* and
+// /api/embed/* — those routes will need per-route Access-Control-Allow-Origin: *
+// since they're meant to be loaded cross-origin; this allowlist locks down
+// every other route.
+const IS_PROD = process.env['NODE_ENV'] === 'production'
+const CORS_ALLOWED_ORIGINS = (
+  process.env['CORS_ALLOWED_ORIGINS']
+  ?? process.env['CORS_ORIGIN']
+  ?? 'http://localhost:5173'
+).split(',').map(s => s.trim()).filter(Boolean)
+
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return true                                  // same-origin / curl / server-to-server
+  if (CORS_ALLOWED_ORIGINS.includes(origin)) return true
+  if (!IS_PROD && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true
+  return false
+}
+
 app.use(cors({
-  origin: CORS_ORIGIN,
+  origin: (origin, cb) => {
+    if (isAllowedOrigin(origin)) { cb(null, true); return }
+    // Phase 5 will replace with structured pino logging.
+    console.warn(JSON.stringify({ event: 'cors_rejected', origin, ts: new Date().toISOString() }))
+    cb(new Error(`Origin '${origin ?? ''}' not in CORS allowlist`))
+  },
   methods: ['GET', 'POST', 'PUT'],
-  allowedHeaders: ['Content-Type', 'x-fmp-key', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }))
 
 app.use(express.json({ limit: '1mb' }))
+
+// ── Security headers ─────────────────────────────────────────────────────────
+// Plain Express middleware (helmet would add a dep for rules we tune anyway).
+// CSP ships in REPORT-ONLY mode for the first deploy — violations POST to
+// /csp-report and we observe for ~7 days before flipping to enforcing. The
+// rollout decision is tracked in .audit/FOLLOWUPS.md item #7.
+const CSP_DIRECTIVES = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://*.supabase.co https://js.stripe.com",
+  "connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com https://api.mistral.ai https://*.financialmodelingprep.com https://finnhub.io https://query1.finance.yahoo.com https://api.stripe.com https://*.posthog.com https://*.sentry.io",
+  "img-src 'self' data: https://financialmodelingprep.com",
+  "style-src 'self' 'unsafe-inline'",
+  "frame-src https://js.stripe.com",
+  "report-uri /csp-report",
+].join('; ')
+
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+  // Frame-ancestors locked except on /embed/* (Phase 10), which will set its own.
+  if (!req.path.startsWith('/embed/')) {
+    res.setHeader('X-Frame-Options', 'DENY')
+  }
+  res.setHeader('Content-Security-Policy-Report-Only', CSP_DIRECTIVES)
+  next()
+})
+
+// CSP violation reports — log only for now; Phase 5 routes them to Sentry.
+app.post('/csp-report', express.json({ type: ['application/json', 'application/csp-report'], limit: '64kb' }), (req, res) => {
+  console.warn(JSON.stringify({ event: 'csp_violation', report: req.body, ts: new Date().toISOString() }))
+  res.status(204).end()
+})
 
 // ── Auth middleware (global — attaches req.user if valid JWT present) ─────────
  
@@ -679,10 +737,9 @@ interface Mover {
   exchange:          string
 }
 
-app.get('/market-movers', fmpLimiter, async (req: Request, res: Response) => {
-  const clientKey = typeof req.headers['x-fmp-key'] === 'string' ? req.headers['x-fmp-key'] : ''
-  const key = FMP_KEY || clientKey
-  if (!key) { res.status(503).json({ error: 'No FMP API key available — enter your key via the Live Data button' }); return }
+app.get('/market-movers', requireAuth, fmpLimiter, async (_req: Request, res: Response) => {
+  if (!FMP_KEY) { res.status(503).json({ error: 'Service temporarily unavailable', code: 'FMP_NOT_CONFIGURED' }); return }
+  const key = FMP_KEY
 
   const cacheKey = 'market-movers'
   const cached = getCached(cacheKey)
@@ -792,13 +849,12 @@ const ALLOWED_FMP_PATHS = new Set([
   'cash-flow-statement', 'quote', 'stock/list',
 ])
 
-app.get('/fmp/*', fmpLimiter, async (req: Request, res: Response) => {
-  const clientKey = typeof req.headers['x-fmp-key'] === 'string' ? req.headers['x-fmp-key'] : ''
-  const effectiveFmpKey = FMP_KEY || clientKey
-  if (!effectiveFmpKey) {
-    res.status(503).json({ error: 'No FMP API key available — enter your key via the Live Data button' })
+app.get('/fmp/*', requireAuth, fmpLimiter, async (req: Request, res: Response) => {
+  if (!FMP_KEY) {
+    res.status(503).json({ error: 'Service temporarily unavailable', code: 'FMP_NOT_CONFIGURED' })
     return
   }
+  const effectiveFmpKey = FMP_KEY
 
   const fmpPath = req.params[0] as string
   // Path shape: <endpoint>/<ticker>  OR  stock/list
