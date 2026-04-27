@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { RotateCw, ArrowRight } from 'lucide-react'
 import { ResponsiveContainer, AreaChart, Area } from 'recharts'
 import { C, R } from '../constants/colors'

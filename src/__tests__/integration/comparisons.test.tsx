@@ -2,7 +2,6 @@
  * Integration tests — ComparisonsScreen
  * I-16 through I-20
  */
-import React from 'react'
 import { screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from '@jest/globals'
 import { renderWithCtx } from '../helpers/renderWithCtx'

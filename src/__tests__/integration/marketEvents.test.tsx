@@ -2,7 +2,6 @@
  * Integration tests — MarketEventsScreen
  * I-32 through I-36
  */
-import React from 'react'
 import { screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from '@jest/globals'
 import { renderWithCtx } from '../helpers/renderWithCtx'

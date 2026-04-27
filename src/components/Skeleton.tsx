@@ -1,4 +1,3 @@
-import React from 'react'
 import { C, R } from '../constants/colors'
 
 interface Props {
