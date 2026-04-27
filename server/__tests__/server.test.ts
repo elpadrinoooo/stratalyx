@@ -548,3 +548,73 @@ describe('S-13: POST /mistral — response normalization', () => {
     expect(res.body.error).toMatch(/failed to reach mistral/i)
   })
 })
+
+// ── S-13: CORS allowlist (Phase 2.2) ─────────────────────────────────────────
+
+describe('S-13: CORS allowlist', () => {
+  it('allows requests with no Origin header (server-to-server / curl)', async () => {
+    const res = await request(app).get('/health')
+    expect(res.status).toBe(200)
+  })
+
+  it('allows localhost in non-prod (default test env)', async () => {
+    const res = await request(app).get('/health').set('Origin', 'http://localhost:5173')
+    expect(res.status).toBe(200)
+    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:5173')
+  })
+
+  it('allows a different localhost port in non-prod', async () => {
+    const res = await request(app).get('/health').set('Origin', 'http://localhost:4321')
+    expect(res.status).toBe(200)
+  })
+
+  it('rejects an unknown origin', async () => {
+    const res = await request(app).get('/health').set('Origin', 'https://evil.example.com')
+    // express-cors invokes the cb error → request continues without ACAO header.
+    // The response body still serves (CORS doesn't block server-side), but the
+    // browser would refuse to expose it. Verify no ACAO header was set.
+    expect(res.headers['access-control-allow-origin']).toBeUndefined()
+  })
+})
+
+// ── S-14: Security headers (Phase 2.3) ───────────────────────────────────────
+
+describe('S-14: security headers', () => {
+  it('sets X-Content-Type-Options on every response', async () => {
+    const res = await request(app).get('/health')
+    expect(res.headers['x-content-type-options']).toBe('nosniff')
+  })
+
+  it('sets X-Frame-Options: DENY on app routes', async () => {
+    const res = await request(app).get('/health')
+    expect(res.headers['x-frame-options']).toBe('DENY')
+  })
+
+  it('omits X-Frame-Options on /embed/* routes (Phase 10 will iframe-render those)', async () => {
+    // /embed/* doesn't exist as a route yet so we expect 404, but the headers
+    // middleware runs before the 404 — the assertion is about absence on this path.
+    const res = await request(app).get('/embed/whatever')
+    expect(res.headers['x-frame-options']).toBeUndefined()
+  })
+
+  it('sets Referrer-Policy and Permissions-Policy', async () => {
+    const res = await request(app).get('/health')
+    expect(res.headers['referrer-policy']).toBe('strict-origin-when-cross-origin')
+    expect(res.headers['permissions-policy']).toBe('geolocation=(), microphone=(), camera=()')
+  })
+
+  it('ships CSP in Report-Only mode (the enforcing variant is absent)', async () => {
+    const res = await request(app).get('/health')
+    expect(res.headers['content-security-policy-report-only']).toContain("default-src 'self'")
+    expect(res.headers['content-security-policy-report-only']).toContain('report-uri /csp-report')
+    expect(res.headers['content-security-policy']).toBeUndefined()
+  })
+
+  it('CSP report endpoint returns 204 and accepts the report payload', async () => {
+    const res = await request(app)
+      .post('/csp-report')
+      .set('Content-Type', 'application/csp-report')
+      .send(JSON.stringify({ 'csp-report': { 'document-uri': 'https://x', 'violated-directive': 'script-src' } }))
+    expect(res.status).toBe(204)
+  })
+})
