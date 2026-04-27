@@ -4,6 +4,8 @@ import { fetchLiveData, buildLiveDataBlock } from './fmp'
 import { buildPrompt } from './prompt'
 import { extractJson, sanitizeTicker } from './utils'
 import { sanitiseResult } from './sanitise'
+import { valuationFor } from './valuation'
+import { liveDataToStrategyInput } from './valuation/from-live-data'
 
 /** Fetch current market price from Yahoo Finance (free, no key required). */
 async function fetchYahooPrice(ticker: string, apiOrigin: string): Promise<number> {
@@ -151,6 +153,31 @@ export async function runAnalysis(opts: AnalyzeOptions): Promise<AnalysisResult>
   }
   if (liveData && liveData.cashFlow.length > 0 && liveData.cashFlow[0].freeCashFlow) {
     result.fcf = liveData.cashFlow[0].freeCashFlow / 1e9
+  }
+
+  // Step 6 — Phase 4.3: deterministic valuation OVERRIDES the LLM's claims.
+  //
+  // When live data is available, run the per-investor strategy. Whatever
+  // intrinsicValueLow/High/marginOfSafety the LLM produced is discarded
+  // and replaced by deterministic numbers. This is the trust-prerequisite
+  // for Phase 9 public share pages. When live data is missing (anonymous
+  // user, FMP outage), fall back to the LLM's numbers — labeled
+  // (estimated) in dataSource.
+  if (liveData && result.marketPrice > 0) {
+    const strategyInput = liveDataToStrategyInput(ticker, liveData, {
+      marketPrice: result.marketPrice,
+    })
+    const valuation = valuationFor(investor.id, strategyInput)
+    result.valuation = valuation
+    if (valuation.applicable) {
+      if (valuation.intrinsicValueLow  !== null) result.intrinsicValueLow  = valuation.intrinsicValueLow
+      if (valuation.intrinsicValueHigh !== null) result.intrinsicValueHigh = valuation.intrinsicValueHigh
+      if (valuation.marginOfSafety     !== null) {
+        // marginOfSafety in AnalysisResult is a percentage (0-100); engine returns decimal.
+        result.marginOfSafety = Math.round(valuation.marginOfSafety * 1000) / 10
+        result.moSUp = valuation.marginOfSafety > 0
+      }
+    }
   }
 
   return result

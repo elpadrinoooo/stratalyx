@@ -23,7 +23,7 @@ import {
   noPerStockValuation,
 } from '../strategies'
 import type { StrategyInput, ValuationOutput } from '../types'
-import { INVESTORS } from '../../../src/constants/investors'
+import { INVESTORS } from '../../../constants/investors'
 
 // ── Realistic happy-path StrategyInput, AAPL-shaped ──────────────────────────
 const AAPL: StrategyInput = {
