@@ -796,6 +796,59 @@ app.get('/market-movers', requireAuth, fmpLimiter, async (_req: Request, res: Re
   }
 })
 
+// ── Market snapshot — gainers, losers, most-active in one payload ────────────
+// Powers the screener's live sort modes. 60-second cache because the screener
+// auto-refreshes every minute and we don't want to hammer FMP if multiple
+// users are on the page at once. Returns more rows than /market-movers (which
+// is sized for the Markets page widget) so the screener has a fuller list to
+// scroll through. Same auth gate as /market-movers.
+app.get('/market-snapshot', requireAuth, fmpLimiter, async (_req: Request, res: Response) => {
+  if (!FMP_KEY) { res.status(503).json({ error: 'Service temporarily unavailable', code: 'FMP_NOT_CONFIGURED' }); return }
+  const key = FMP_KEY
+
+  const cacheKey = 'market-snapshot'
+  const cached = getCached(cacheKey)
+  if (cached !== null) { res.set('X-Cache', 'HIT').json(cached); return }
+
+  const base = 'https://financialmodelingprep.com/stable'
+  try {
+    const [gr, lr, ar] = await Promise.allSettled([
+      fetch(`${base}/biggest-gainers?apikey=${key}`),
+      fetch(`${base}/biggest-losers?apikey=${key}`),
+      fetch(`${base}/most-actives?apikey=${key}`),
+    ])
+    type FetchResult = PromiseSettledResult<Awaited<ReturnType<typeof fetch>>>
+    const parse = async (r: FetchResult): Promise<FMPMoverRaw[]> => {
+      if (r.status === 'rejected' || !r.value.ok) return []
+      const d = await r.value.json() as unknown
+      if (Array.isArray(d)) return d as FMPMoverRaw[]
+      return []
+    }
+    const [rawG, rawL, rawA] = await Promise.all([parse(gr), parse(lr), parse(ar)])
+    const toMover = (r: FMPMoverRaw): Mover => ({
+      symbol:            r.symbol            ?? '',
+      name:              r.name              ?? '',
+      price:             r.price             ?? 0,
+      change:            r.change            ?? 0,
+      changesPercentage: r.changesPercentage ?? 0,
+      exchange:          r.exchange          ?? '',
+    })
+    // FMP returns 50 in each list; pass them all through so the screener can
+    // show a meaningful page of live rows. The client already paginates.
+    const payload = {
+      gainers:    rawG.map(toMover).filter(m => m.symbol),
+      losers:     rawL.map(toMover).filter(m => m.symbol),
+      mostActive: rawA.map(toMover).filter(m => m.symbol),
+      asOf:       new Date().toISOString(),
+    }
+    setCache(cacheKey, payload, 60 * 1000)
+    res.set('X-Cache', 'MISS').json(payload)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    res.status(502).json({ error: 'Failed to fetch market snapshot', detail: message })
+  }
+})
+
 // ── FMP proxy ─────────────────────────────────────────────────────────────────
 // Migrated Aug 2025: v3 endpoints retired for keys issued after 2025-08-31.
 // Each endpoint maps to its stable/ equivalent and (where shape diverged) is

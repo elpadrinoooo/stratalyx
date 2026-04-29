@@ -395,6 +395,72 @@ describe('S-09b: GET /market-movers — auth required', () => {
   })
 })
 
+// ── S-09c: GET /market-snapshot — auth + shape + caching ─────────────────────
+// Powers the screener's live sort modes (gainers / losers / most-active)
+// with a 60-second cache so repeated screener auto-refreshes don't hammer FMP.
+
+describe('S-09c: GET /market-snapshot', () => {
+  it('returns 401 with no Authorization header', async () => {
+    const res = await request(app).get('/market-snapshot')
+    expect(res.status).toBe(401)
+    expect(res.body.error).toBe('AUTH_REQUIRED')
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it('returns gainers + losers + mostActive arrays + asOf timestamp', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse([
+      { symbol: 'NVDA', name: 'NVIDIA',     price: 900, change:  10, changesPercentage: 1.5, exchange: 'NASDAQ' },
+      { symbol: 'AMD',  name: 'AMD',        price: 200, change:   8, changesPercentage: 4.2, exchange: 'NASDAQ' },
+    ]))
+    mockFetch.mockResolvedValueOnce(mockResponse([
+      { symbol: 'TSLA', name: 'Tesla',      price: 180, change: -10, changesPercentage: -5.2, exchange: 'NASDAQ' },
+    ]))
+    mockFetch.mockResolvedValueOnce(mockResponse([
+      { symbol: 'AAPL', name: 'Apple',      price: 185, change:   2, changesPercentage: 1.1, exchange: 'NASDAQ' },
+      { symbol: 'MSFT', name: 'Microsoft',  price: 410, change:  -1, changesPercentage: -0.2, exchange: 'NASDAQ' },
+    ]))
+
+    const res = await authedGet('/market-snapshot')
+    expect(res.status).toBe(200)
+    expect(Array.isArray(res.body.gainers)).toBe(true)
+    expect(Array.isArray(res.body.losers)).toBe(true)
+    expect(Array.isArray(res.body.mostActive)).toBe(true)
+    expect(res.body.gainers).toHaveLength(2)
+    expect(res.body.gainers[0]).toMatchObject({ symbol: 'NVDA', changesPercentage: 1.5 })
+    expect(res.body.mostActive[0]).toMatchObject({ symbol: 'AAPL' })
+    expect(typeof res.body.asOf).toBe('string')
+  })
+
+  it('drops rows with no symbol so a single bad row never blanks the page', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse([
+      { symbol: '',     name: 'broken',  changesPercentage: 99 },
+      { symbol: 'GOOD', name: 'GoodCorp', changesPercentage:  3 },
+    ]))
+    mockFetch.mockResolvedValueOnce(mockResponse([]))
+    mockFetch.mockResolvedValueOnce(mockResponse([]))
+
+    const res = await authedGet('/market-snapshot')
+    expect(res.status).toBe(200)
+    expect(res.body.gainers).toHaveLength(1)
+    expect(res.body.gainers[0].symbol).toBe('GOOD')
+  })
+
+  it('serves second request from cache (X-Cache: HIT)', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse([{ symbol: 'NVDA', changesPercentage: 5 }]))
+    mockFetch.mockResolvedValueOnce(mockResponse([{ symbol: 'TSLA', changesPercentage: -3 }]))
+    mockFetch.mockResolvedValueOnce(mockResponse([{ symbol: 'AAPL', changesPercentage: 1 }]))
+
+    const r1 = await authedGet('/market-snapshot')
+    expect(r1.headers['x-cache']).toBe('MISS')
+
+    const r2 = await authedGet('/market-snapshot')
+    expect(r2.headers['x-cache']).toBe('HIT')
+    expect(r2.body.gainers[0].symbol).toBe('NVDA')
+    // Second call should NOT have hit FMP again — only the 3 from the first call.
+    expect(mockFetch.mock.calls).toHaveLength(3)
+  })
+})
+
 // ── S-10: POST /openai — input validation ────────────────────────────────────
 
 describe('S-10: POST /openai — input validation', () => {
