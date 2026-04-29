@@ -34,6 +34,23 @@ export function AppProvider({ children, initialState }: Props) {
       } catch { return null }
     }
 
+    // Pull the user's persisted analyses + watchlist from Supabase. Required
+    // because saveState() drops these slices from localStorage for signed-in
+    // users (Supabase is the authoritative store), so without this fetch the
+    // History/Watchlist screens render empty after every page reload.
+    const hydrateUserData = async (token: string): Promise<void> => {
+      try {
+        const res = await fetch(`${API_ORIGIN}/api/user/analyses`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        })
+        if (!res.ok) return
+        const body = await res.json() as { analyses?: Record<string, unknown>; watchlist?: unknown[] }
+        const analyses  = (body.analyses && typeof body.analyses === 'object') ? body.analyses as Record<string, import('../types').AnalysisResult> : {}
+        const watchlist = Array.isArray(body.watchlist) ? body.watchlist.filter((t): t is string => typeof t === 'string') : []
+        dispatch({ type: 'HYDRATE_USER_DATA', payload: { analyses, watchlist } })
+      } catch { /* offline or transient — user can retry by refreshing */ }
+    }
+
     // Hydrate session on mount (handles page refresh while logged in)
     void supabase.auth.getSession().then(async ({ data }) => {
       if (data.session) {
@@ -49,6 +66,7 @@ export function AppProvider({ children, initialState }: Props) {
             isAdmin: Boolean(profile?.isAdmin),
           },
         })
+        void hydrateUserData(token)
       } else {
         dispatch({ type: 'SET_AUTH_LOADING', payload: false })
       }
@@ -69,7 +87,8 @@ export function AppProvider({ children, initialState }: Props) {
               isAdmin: Boolean(profile?.isAdmin),
             },
           })
-          void migrateLocalStorageToSupabase(userId, token, API_ORIGIN)
+          await migrateLocalStorageToSupabase(userId, token, API_ORIGIN)
+          void hydrateUserData(token)
         })()
       } else if (event === 'SIGNED_OUT') {
         dispatch({ type: 'SET_USER', payload: null })

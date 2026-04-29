@@ -61,3 +61,4 @@ export type Action =
   | { type: 'DISMISS_TOAST'; payload: string }
   | { type: 'SET_USER'; payload: AppState['user'] }
   | { type: 'SET_AUTH_LOADING'; payload: boolean }
+  | { type: 'HYDRATE_USER_DATA'; payload: { analyses: Record<string, AnalysisResult>; watchlist: string[] } }

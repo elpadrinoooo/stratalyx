@@ -102,6 +102,16 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'SET_AUTH_LOADING':
       return { ...state, authLoading: action.payload }
 
+    case 'HYDRATE_USER_DATA': {
+      // Merge server-side analyses + watchlist over whatever is in memory.
+      // In-memory wins for keys present in both — this preserves analyses
+      // the user just ran (and the server already persisted) without
+      // clobbering them if the GET response races the SET_ANALYSIS dispatch.
+      const mergedAnalyses = { ...action.payload.analyses, ...state.analyses }
+      const mergedWatchlist = Array.from(new Set([...action.payload.watchlist, ...state.watchlist]))
+      return { ...state, analyses: mergedAnalyses, watchlist: mergedWatchlist }
+    }
+
     default:
       return state
   }
