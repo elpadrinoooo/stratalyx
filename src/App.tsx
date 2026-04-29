@@ -20,9 +20,13 @@ import { AccountScreen } from './screens/AccountScreen'
 import { AuthModal } from './components/AuthModal'
 import { supabase } from './lib/supabase'
 
-/** Detect analysis share from server-injected globals, query params, or legacy hash */
+/** Detect analysis share from path, server-injected globals, query params, or legacy hash */
 function parseShareSource(): { ticker: string; investorId: string } | null {
-  // Injected by Express /share/:ticker/:investorId route (production)
+  // Path-based share URL (Vercel rewrites /share/* → / so the SPA loads with the URL preserved)
+  const pm = window.location.pathname.match(/^\/share\/([A-Za-z0-9.]+)\/([A-Za-z]+)\/?$/)
+  if (pm) return { ticker: pm[1].toUpperCase(), investorId: pm[2].toLowerCase() }
+
+  // Injected by Express /share/:ticker/:investorId route (when serving dist/ directly from Railway)
   const wt = (window as { __SHARE_TICKER__?: string }).__SHARE_TICKER__
   const wi = (window as { __SHARE_INVESTOR__?: string }).__SHARE_INVESTOR__
   if (wt && wi) return { ticker: wt, investorId: wi }
@@ -41,9 +45,16 @@ function parseShareSource(): { ticker: string; investorId: string } | null {
   return null
 }
 
-/** Detect comparison share from server-injected global or query param */
+/** Detect comparison share from path, server-injected global, or query param */
 function parseComparisonShare(): { ticker: string; investorIds: string[] } | null {
-  // Injected by Express /share/comparison/:ticker/:investors route (production)
+  // Path-based: /share/comparison/AAPL/buffett,graham
+  const pm = window.location.pathname.match(/^\/share\/comparison\/([A-Za-z0-9.]+)\/([A-Za-z,]+)\/?$/)
+  if (pm) {
+    const ids = pm[2].toLowerCase().split(',').filter(Boolean)
+    if (ids.length >= 2) return { ticker: pm[1].toUpperCase(), investorIds: ids }
+  }
+
+  // Injected by Express /share/comparison/:ticker/:investors route (when serving dist/ from Railway)
   const wc = (window as { __SHARE_COMPARISON__?: { ticker: string; investors: string } }).__SHARE_COMPARISON__
   if (wc?.ticker && wc?.investors) {
     const ids = wc.investors.split(',').filter(Boolean)
