@@ -3,6 +3,8 @@ import { runAnalysis } from '../engine/analyze'
 import { useApp } from '../state/context'
 import { INV } from '../constants/investors'
 import { supabase } from '../lib/supabase'
+import { track } from '../lib/analytics'
+import { captureError } from '../lib/sentry'
 
 export type AnalysisPhase = 'idle' | 'running' | 'done' | 'error'
 
@@ -28,6 +30,7 @@ export function useAnalysis(): UseAnalysisReturn {
       return
     }
 
+    track('ticker_searched', { ticker: sym })
     setPhase('running')
     setError('')
 
@@ -48,6 +51,10 @@ export function useAnalysis(): UseAnalysisReturn {
         type: 'TOAST',
         payload: { message: `${sym} analyzed via ${investor.shortName} framework`, type: 'success' },
       })
+      track('analysis_run', {
+        ticker: sym, investor_id: investor.id,
+        provider: state.provider, model: state.model, success: true,
+      })
       setPhase('done')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Analysis failed'
@@ -57,6 +64,13 @@ export function useAnalysis(): UseAnalysisReturn {
       const lower = msg.toLowerCase()
       const isLimit    = lower.includes('monthly analysis limit')
       const needsAuth  = lower.includes('sign in required')
+      track('analysis_run', {
+        ticker: sym, investor_id: investor.id,
+        provider: state.provider, model: state.model, success: false,
+      })
+      // Only report to Sentry for unexpected failures — auth nudges and quota
+      // exhaustion are normal flow control, not errors worth waking anyone up.
+      if (!isLimit && !needsAuth) captureError(err, { ticker: sym, investor: investor.id })
 
       if (needsAuth) {
         // Surface a friendlier nudge and pop the auth modal so the user can

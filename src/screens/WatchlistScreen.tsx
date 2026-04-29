@@ -4,6 +4,7 @@ import { STOCKS } from '../constants/stocks'
 import { INV, INVESTORS } from '../constants/investors'
 import { useApp } from '../state/context'
 import { useWatchlist } from '../hooks/useWatchlist'
+import { track } from '../lib/analytics'
 import { useWindowWidth } from '../hooks/useWindowWidth'
 import { Tag } from '../components/Tag'
 import { WLBtn } from '../components/WLBtn'
@@ -127,7 +128,7 @@ export function WatchlistScreen() {
             return (
               <button
                 key={i.id}
-                onClick={() => dispatch({ type: 'SET_INVESTOR', payload: i.id })}
+                onClick={() => { track('framework_selected', { investor_id: i.id }); dispatch({ type: 'SET_INVESTOR', payload: i.id }) }}
                 style={{
                   background: active ? i.color + '18' : C.bg2,
                   color: active ? i.color : C.t2,
