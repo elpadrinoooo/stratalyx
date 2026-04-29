@@ -36,6 +36,53 @@ userRouter.get('/me', async (req: Request, res: Response): Promise<void> => {
   })
 })
 
+// GET /user/analyses — returns the signed-in user's analyses keyed by
+// `${ticker}:${investorId}`, matching the shape AppState.analyses uses on
+// the client. Most-recent run wins when a user has re-analyzed the same pair.
+userRouter.get('/analyses', async (req: Request, res: Response): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('analyses')
+      .select('ticker, investor_id, result, created_at')
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: true })
+      .limit(500)
+
+    if (error) {
+      res.status(500).json({ error: 'Failed to load analyses' })
+      return
+    }
+
+    const analyses: Record<string, AnalysisResult> = {}
+    const watchlistRows = await supabaseAdmin
+      .from('watchlist')
+      .select('ticker')
+      .eq('user_id', req.user.id)
+
+    for (const row of data ?? []) {
+      const ticker     = row.ticker as string
+      const investorId = row.investor_id as string
+      const result     = row.result as AnalysisResult | null
+      if (!ticker || !investorId || !result) continue
+      // Ascending order means later writes overwrite earlier — most-recent wins.
+      analyses[`${ticker}:${investorId}`] = result
+    }
+
+    const watchlist = (watchlistRows.data ?? [])
+      .map((r) => r.ticker as string)
+      .filter(Boolean)
+
+    res.json({ analyses, watchlist })
+  } catch {
+    res.status(500).json({ error: 'Failed to load analyses' })
+  }
+})
+
 // POST /user/migrate — one-shot migration of localStorage state to Supabase
 userRouter.post('/migrate', async (req: Request, res: Response): Promise<void> => {
   if (!req.user) {
