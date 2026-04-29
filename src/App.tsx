@@ -20,57 +20,10 @@ import { AccountScreen } from './screens/AccountScreen'
 import { AuthModal } from './components/AuthModal'
 import { supabase } from './lib/supabase'
 
-/** Detect analysis share from path, server-injected globals, query params, or legacy hash */
-function parseShareSource(): { ticker: string; investorId: string } | null {
-  // Path-based share URL (Vercel rewrites /share/* → / so the SPA loads with the URL preserved)
-  const pm = window.location.pathname.match(/^\/share\/([A-Za-z0-9.]+)\/([A-Za-z]+)\/?$/)
-  if (pm) return { ticker: pm[1].toUpperCase(), investorId: pm[2].toLowerCase() }
+import { parseShareSource as parseShareSourceImpl, parseComparisonShare as parseComparisonShareImpl } from './state/shareParser'
 
-  // Injected by Express /share/:ticker/:investorId route (when serving dist/ directly from Railway)
-  const wt = (window as { __SHARE_TICKER__?: string }).__SHARE_TICKER__
-  const wi = (window as { __SHARE_INVESTOR__?: string }).__SHARE_INVESTOR__
-  if (wt && wi) return { ticker: wt, investorId: wi }
-
-  // Dev fallback: ?share=AAPL/buffett
-  const sp = new URLSearchParams(window.location.search).get('share')
-  if (sp) {
-    const [t, i] = sp.split('/')
-    if (t && i) return { ticker: t.toUpperCase(), investorId: i.toLowerCase() }
-  }
-
-  // Legacy hash support (backward compat)
-  const m = window.location.hash.match(/^#\/analysis\/([A-Za-z0-9.]+)\/([A-Za-z]+)$/)
-  if (m) return { ticker: m[1].toUpperCase(), investorId: m[2].toLowerCase() }
-
-  return null
-}
-
-/** Detect comparison share from path, server-injected global, or query param */
-function parseComparisonShare(): { ticker: string; investorIds: string[] } | null {
-  // Path-based: /share/comparison/AAPL/buffett,graham
-  const pm = window.location.pathname.match(/^\/share\/comparison\/([A-Za-z0-9.]+)\/([A-Za-z,]+)\/?$/)
-  if (pm) {
-    const ids = pm[2].toLowerCase().split(',').filter(Boolean)
-    if (ids.length >= 2) return { ticker: pm[1].toUpperCase(), investorIds: ids }
-  }
-
-  // Injected by Express /share/comparison/:ticker/:investors route (when serving dist/ from Railway)
-  const wc = (window as { __SHARE_COMPARISON__?: { ticker: string; investors: string } }).__SHARE_COMPARISON__
-  if (wc?.ticker && wc?.investors) {
-    const ids = wc.investors.split(',').filter(Boolean)
-    if (ids.length >= 2) return { ticker: wc.ticker, investorIds: ids }
-  }
-
-  // Dev fallback: ?comparison=AAPL/buffett,graham
-  const cp = new URLSearchParams(window.location.search).get('comparison')
-  if (cp) {
-    const [t, inv] = cp.split('/')
-    const ids = (inv ?? '').split(',').filter(Boolean)
-    if (t && ids.length >= 2) return { ticker: t.toUpperCase(), investorIds: ids }
-  }
-
-  return null
-}
+const parseShareSource = () => parseShareSourceImpl(window.location, window as Parameters<typeof parseShareSourceImpl>[1])
+const parseComparisonShare = () => parseComparisonShareImpl(window.location, window as Parameters<typeof parseComparisonShareImpl>[1])
 
 function AppShell() {
   const { state, dispatch } = useApp()

@@ -169,3 +169,47 @@ describe('reducer — unknown action', () => {
     expect(state).toEqual(INIT)
   })
 })
+
+// HYDRATE_USER_DATA — used to repopulate state from Supabase on session load.
+// Critical: in-memory state must win over the server payload so an analysis
+// the user just ran (already in state) isn't clobbered by a slow GET response.
+describe('reducer — HYDRATE_USER_DATA', () => {
+  it('populates analyses + watchlist from server payload', () => {
+    const next = reducer(fresh(), {
+      type: 'HYDRATE_USER_DATA',
+      payload: {
+        analyses: { 'AAPL:buffett': MOCK_RESULT },
+        watchlist: ['AAPL', 'NVDA'],
+      },
+    })
+    expect(next.analyses).toEqual({ 'AAPL:buffett': MOCK_RESULT })
+    expect(next.watchlist).toEqual(['AAPL', 'NVDA'])
+  })
+
+  it('in-memory analyses win over server payload (race protection)', () => {
+    // User just ran AAPL:buffett with score 99 (in memory). The slow GET
+    // response carries the same key but with a stale score 50 — we must
+    // keep the in-memory copy.
+    const justRan: AnalysisResult = { ...MOCK_RESULT, strategyScore: 99 }
+    const stale:   AnalysisResult = { ...MOCK_RESULT, strategyScore: 50 }
+    const start: AppState = { ...fresh(), analyses: { 'AAPL:buffett': justRan } }
+    const next = reducer(start, {
+      type: 'HYDRATE_USER_DATA',
+      payload: {
+        analyses: { 'AAPL:buffett': stale, 'NVDA:lynch': MOCK_RESULT },
+        watchlist: [],
+      },
+    })
+    expect(next.analyses['AAPL:buffett'].strategyScore).toBe(99)
+    expect(next.analyses['NVDA:lynch']).toBeDefined()
+  })
+
+  it('deduplicates watchlist when server + memory overlap', () => {
+    const start: AppState = { ...fresh(), watchlist: ['AAPL', 'TSLA'] }
+    const next = reducer(start, {
+      type: 'HYDRATE_USER_DATA',
+      payload: { analyses: {}, watchlist: ['AAPL', 'NVDA'] },
+    })
+    expect(next.watchlist.sort()).toEqual(['AAPL', 'NVDA', 'TSLA'])
+  })
+})
