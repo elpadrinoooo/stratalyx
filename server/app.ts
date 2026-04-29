@@ -32,6 +32,22 @@ export const FINNHUB_KEY    = process.env['FINNHUB_API_KEY']    ?? ''
 const LOCKED_MODEL = 'claude-haiku-4-5-20251001'
 const MAX_TOKENS = 2000
 
+/**
+ * Sampling temperature for ALL LLM calls. Without this, providers default
+ * to ~1.0 (full randomness) and the same prompt produces wildly different
+ * outputs across runs — see the "two totally different results in seconds"
+ * bug. Stratalyx is an analysis tool; users expect consistent answers for
+ * consistent inputs. 0.1 is the sweet spot: deterministic enough that
+ * score/verdict/signals stabilize across runs, loose enough that prose
+ * doesn't get stuck on a single phrasing.
+ *
+ * Note: even at 0.1, Claude isn't bit-for-bit deterministic (Anthropic's
+ * infra has minor sampling variance). The deterministic valuation engine
+ * in src/engine/valuation/ already pins IV/MoS post-hoc; this constant
+ * pins everything else.
+ */
+const LLM_TEMPERATURE = 0.1
+
 // ── In-memory FMP cache (1 hour TTL) ─────────────────────────────────────────
 interface CacheEntry {
   data: unknown
@@ -206,6 +222,7 @@ app.post('/claude', llmLimiter, validatePromptSize, checkUsage, gateProvider('an
       body: JSON.stringify({
         model: LOCKED_MODEL,
         max_tokens: MAX_TOKENS,
+        temperature: LLM_TEMPERATURE,
         messages: [{ role: 'user', content: prompt }],
       }),
     })
@@ -269,7 +286,7 @@ app.post('/gemini', llmLimiter, validatePromptSize, checkUsage, gateProvider('go
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 16384 },
+          generationConfig: { maxOutputTokens: 16384, temperature: LLM_TEMPERATURE },
         }),
       },
     )
@@ -497,6 +514,7 @@ app.post('/openai', llmLimiter, validatePromptSize, checkUsage, gateProvider('op
       body: JSON.stringify({
         model: openaiModel,
         max_tokens: 2000,
+        temperature: LLM_TEMPERATURE,
         messages: [{ role: 'user', content: prompt }],
       }),
     })
@@ -567,6 +585,7 @@ app.post('/mistral', llmLimiter, validatePromptSize, checkUsage, gateProvider('m
       body: JSON.stringify({
         model: mistralModel,
         max_tokens: 2000,
+        temperature: LLM_TEMPERATURE,
         messages: [{ role: 'user', content: prompt }],
       }),
     })
