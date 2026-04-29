@@ -618,3 +618,47 @@ describe('S-14: security headers', () => {
     expect(res.status).toBe(204)
   })
 })
+
+// ── S-15: All providers pin temperature for output consistency ──────────────
+// Without an explicit temperature, providers default to ~1.0 and the same
+// prompt produces wildly different outputs run-to-run — the "two totally
+// different results in seconds" bug. Stratalyx is an analysis tool; users
+// expect consistent answers for consistent inputs. Pin to 0.1.
+
+describe('S-15: LLM temperature pinning', () => {
+  const expectedTemperature = 0.1
+
+  it('Anthropic /claude sets temperature on the upstream request', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({ content: [{ type: 'text', text: 'ok' }] }))
+    await request(app).post('/claude').send({ prompt: 'test' })
+    const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string) as { temperature: number }
+    expect(body.temperature).toBe(expectedTemperature)
+  })
+
+  it('Gemini /gemini sets temperature in generationConfig', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({
+      candidates: [{ content: { parts: [{ text: 'ok' }] } }],
+    }))
+    await request(app).post('/gemini').send({ prompt: 'test' })
+    const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string) as { generationConfig: { temperature: number } }
+    expect(body.generationConfig.temperature).toBe(expectedTemperature)
+  })
+
+  it('OpenAI /openai sets temperature on the upstream request', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({
+      choices: [{ message: { content: 'ok' } }],
+    }))
+    await request(app).post('/openai').send({ prompt: 'test' })
+    const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string) as { temperature: number }
+    expect(body.temperature).toBe(expectedTemperature)
+  })
+
+  it('Mistral /mistral sets temperature on the upstream request', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({
+      choices: [{ message: { content: 'ok' } }],
+    }))
+    await request(app).post('/mistral').send({ prompt: 'test' })
+    const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string) as { temperature: number }
+    expect(body.temperature).toBe(expectedTemperature)
+  })
+})
