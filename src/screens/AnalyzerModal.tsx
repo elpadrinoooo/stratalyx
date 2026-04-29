@@ -6,6 +6,7 @@ import { INVESTORS, INV } from '../constants/investors'
 import { PROV } from '../constants/providers'
 import { useApp } from '../state/context'
 import { useAnalysis } from '../hooks/useAnalysis'
+import { track } from '../lib/analytics'
 import { useUsageInfo } from '../hooks/useUsageInfo'
 import { useWatchlist } from '../hooks/useWatchlist'
 import { Tag } from '../components/Tag'
@@ -275,7 +276,7 @@ export function AnalyzerModal() {
                     return (
                       <button
                         key={i.id}
-                        onClick={() => dispatch({ type: 'SET_INVESTOR', payload: i.id })}
+                        onClick={() => { track('framework_selected', { investor_id: i.id }); dispatch({ type: 'SET_INVESTOR', payload: i.id }) }}
                         style={{
                           background: active ? i.color + '18' : C.bg2,
                           color: active ? i.color : C.t2,
@@ -554,7 +555,10 @@ function ResultSection({
   const copyShareLink = () => {
     const url = `${window.location.origin}/share/${result.ticker}/${result.investorId}`
     navigator.clipboard.writeText(url)
-      .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
+      .then(() => {
+        setCopied(true); setTimeout(() => setCopied(false), 2000)
+        track('share_link_copied', { kind: 'analysis', ticker: result.ticker })
+      })
       .catch(() => dispatch({ type: 'TOAST', payload: { message: 'Could not copy link — please copy manually', type: 'error' } }))
   }
 

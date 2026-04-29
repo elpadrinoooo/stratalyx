@@ -4,6 +4,8 @@ import { reducer } from '../state/reducer'
 import { loadState, saveState } from '../state/persist'
 import { supabase } from '../lib/supabase'
 import { migrateLocalStorageToSupabase } from '../lib/supabaseMigrate'
+import { identify, resetAnalytics, track } from '../lib/analytics'
+import { setSentryUser } from '../lib/sentry'
 
 interface Props {
   children: React.ReactNode
@@ -57,15 +59,20 @@ export function AppProvider({ children, initialState }: Props) {
         const token = data.session.access_token
         const userId = data.session.user.id
         const profile = await fetchProfile(token)
+        const tier = profile?.tier ?? 'free'
         dispatch({
           type: 'SET_USER',
           payload: {
             id: userId,
             email: data.session.user.email ?? '',
-            tier: profile?.tier ?? 'free',
+            tier,
             isAdmin: Boolean(profile?.isAdmin),
           },
         })
+        // Hydrate session — identify in PostHog and Sentry without firing a
+        // signed_in event (the user is already signed in from a prior session).
+        identify(userId, { tier, isAdmin: Boolean(profile?.isAdmin) })
+        setSentryUser({ id: userId, email: data.session.user.email ?? '' })
         void hydrateUserData(token)
       } else {
         dispatch({ type: 'SET_AUTH_LOADING', payload: false })
@@ -78,20 +85,27 @@ export function AppProvider({ children, initialState }: Props) {
         const userId = session.user.id
         void (async () => {
           const profile = await fetchProfile(token)
+          const tier = profile?.tier ?? 'free'
           dispatch({
             type: 'SET_USER',
             payload: {
               id: userId,
               email: session.user.email ?? '',
-              tier: profile?.tier ?? 'free',
+              tier,
               isAdmin: Boolean(profile?.isAdmin),
             },
           })
+          identify(userId, { tier, isAdmin: Boolean(profile?.isAdmin) })
+          setSentryUser({ id: userId, email: session.user.email ?? '' })
+          track('auth_signed_in', { tier })
           await migrateLocalStorageToSupabase(userId, token, API_ORIGIN)
           void hydrateUserData(token)
         })()
       } else if (event === 'SIGNED_OUT') {
         dispatch({ type: 'SET_USER', payload: null })
+        track('auth_signed_out', {})
+        resetAnalytics()
+        setSentryUser(null)
       }
     })
 

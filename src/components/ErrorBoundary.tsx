@@ -1,5 +1,6 @@
 import React from 'react'
 import { C, R } from '../constants/colors'
+import { captureError } from '../lib/sentry'
 
 interface Props {
   children: React.ReactNode
@@ -18,6 +19,13 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     return { error }
+  }
+
+  override componentDidCatch(error: Error, info: React.ErrorInfo) {
+    // Surface caught render errors to Sentry. This is the only place in the
+    // app that needs to know about the boundary — call sites just throw and
+    // let React find the nearest boundary.
+    captureError(error, { componentStack: info.componentStack })
   }
 
   override render() {

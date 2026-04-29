@@ -7,6 +7,7 @@ import { Tag } from '../components/Tag'
 import { Kpi } from '../components/Kpi'
 import { ScoreBar } from '../components/ScoreBar'
 import { sanitizeTicker, scColor, vColor, verdictLabel } from '../engine/utils'
+import { track } from '../lib/analytics'
 import { INVESTOR_SOURCES, SOURCE_TYPE_META } from '../constants/investorSources'
 import type { Investor } from '../types'
 
@@ -160,7 +161,7 @@ export function StrategiesScreen() {
               return (
                 <button
                   key={i.id}
-                  onClick={() => dispatch({ type: 'SET_INVESTOR', payload: i.id })}
+                  onClick={() => { track('framework_selected', { investor_id: i.id }); dispatch({ type: 'SET_INVESTOR', payload: i.id }) }}
                   style={{
                     background: active ? i.color + '18' : C.bg2,
                     color: active ? i.color : C.t2,
@@ -219,7 +220,7 @@ export function StrategiesScreen() {
                   inv={i}
                   active={i.id === state.investor}
                   count={countFor(i.id)}
-                  onClick={() => dispatch({ type: 'SET_INVESTOR', payload: i.id })}
+                  onClick={() => { track('framework_selected', { investor_id: i.id }); dispatch({ type: 'SET_INVESTOR', payload: i.id }) }}
                 />
               ))}
               {filteredInvestors.length === 0 && (
@@ -283,6 +284,7 @@ export function StrategiesScreen() {
               {/* CTA */}
               <button
                 onClick={() => {
+                  track('framework_selected', { investor_id: inv.id })
                   dispatch({ type: 'SET_INVESTOR', payload: inv.id })
                   dispatch({ type: 'SET_SCREEN', payload: 'Screener' })
                 }}

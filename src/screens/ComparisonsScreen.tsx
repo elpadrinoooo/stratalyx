@@ -7,6 +7,7 @@ import { ScoreBar } from '../components/ScoreBar'
 import { Tag } from '../components/Tag'
 import { TickerLogo } from '../components/TickerLogo'
 import { scColor, vColor, verdictLabel, fmtN, fmtB } from '../engine/utils'
+import { track } from '../lib/analytics'
 import type { AnalysisResult } from '../types'
 
 type Tab    = 'active' | 'archived'
@@ -394,6 +395,7 @@ function CompShareButton({ ticker, investorIds }: { ticker: string; investorIds:
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+      track('share_link_copied', { kind: 'comparison', ticker })
     })
   }
   return (

@@ -22,6 +22,11 @@ module.exports = {
     // Real lib/supabase.ts uses import.meta.env which ts-jest (CJS) can't parse.
     // Tests get a no-op mock that returns null sessions; production code is unaffected.
     '^.*/lib/supabase$': '<rootDir>/src/__mocks__/supabaseMock.ts',
+    // Same import.meta.env story for the observability env accessor — see
+    // src/lib/viteEnv.ts. Tests get a no-op env so analytics/sentry init
+    // returns silently, matching real behavior in unconfigured deploys.
+    // Loose match because callers inside lib/ import as './viteEnv'.
+    '^(\\.{1,2}/)+viteEnv$': '<rootDir>/src/__mocks__/viteEnvMock.ts',
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   testMatch: [
