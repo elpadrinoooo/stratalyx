@@ -14,12 +14,13 @@ import {
 import { HashRouter, Route } from 'react-router-dom'
 import { supabaseDataProvider, supabaseAuthProvider } from 'ra-supabase'
 import { Box, Card, CardContent, Chip, Typography } from '@mui/material'
-import { Sparkles, Settings as SettingsIcon } from 'lucide-react'
+import { Sparkles, Settings as SettingsIcon, ArrowLeft } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useTheme } from '../hooks/useTheme'
 import { stratalyxDarkTheme, stratalyxLightTheme } from './theme'
 import { Dashboard } from './Dashboard'
 import { LlmConfigScreen } from './LlmConfigScreen'
+import { useApp } from '../state/context'
 
 const SUPABASE_URL  = import.meta.env['VITE_SUPABASE_URL']      as string
 const SUPABASE_ANON = import.meta.env['VITE_SUPABASE_ANON_KEY'] as string
@@ -456,20 +457,34 @@ const SettingsEdit = () => (
 )
 
 // ── custom sidebar menu — auto-generated entries plus a link to /llm-config ─
-const AdminMenu = () => (
-  <Menu>
-    <Menu.DashboardItem />
-    <Menu.ResourceItem name="users" />
-    <Menu.ResourceItem name="analyses" />
-    <Menu.ResourceItem name="watchlist" />
-    <Menu.Item
-      to="/llm-config"
-      primaryText="LLM models"
-      leftIcon={<Sparkles size={18} />}
-    />
-    <Menu.ResourceItem name="app_settings" />
-  </Menu>
-)
+const AdminMenu = () => {
+  const { dispatch } = useApp()
+  const exitAdmin = () => {
+    dispatch({ type: 'SET_SCREEN', payload: 'Markets' })
+    // Strip the /admin path so a refresh lands the user back on the regular GUI
+    history.replaceState(null, '', '/')
+  }
+  return (
+    <Menu>
+      <Menu.DashboardItem />
+      <Menu.ResourceItem name="users" />
+      <Menu.ResourceItem name="analyses" />
+      <Menu.ResourceItem name="watchlist" />
+      <Menu.Item
+        to="/llm-config"
+        primaryText="LLM models"
+        leftIcon={<Sparkles size={18} />}
+      />
+      <Menu.ResourceItem name="app_settings" />
+      <Menu.Item
+        to="#"
+        primaryText="Exit admin"
+        leftIcon={<ArrowLeft size={18} />}
+        onClick={exitAdmin}
+      />
+    </Menu>
+  )
+}
 const AdminLayout = (props: LayoutProps) => <Layout {...props} menu={AdminMenu} />
 
 // ── shell ────────────────────────────────────────────────────────────────────
