@@ -6,6 +6,7 @@ import { useWatchlist } from '../hooks/useWatchlist'
 import { track } from '../lib/analytics'
 import { useWindowWidth } from '../hooks/useWindowWidth'
 import { useStockList } from '../hooks/useStockList'
+import { useMarketSnapshot, type SnapshotRow } from '../hooks/useMarketSnapshot'
 import { Tag } from '../components/Tag'
 import { WLBtn } from '../components/WLBtn'
 import { Skeleton } from '../components/Skeleton'
@@ -18,7 +19,12 @@ export function ScreenerScreen() {
   const { stocks: allStocks, loading: stocksLoading, total: stocksTotal } = useStockList()
   const [search, setSearch] = useState('')
   const [sectorFilter, setSectorFilter] = useState('All')
-  const [sortBy, setSortBy] = useState<'default' | 'score' | 'ticker'>('default')
+  // 'default' / 'score' / 'ticker' filter the cached static list. The three
+  // 'live-*' modes swap to /api/market-snapshot data refreshed every 60s.
+  type SortMode = 'default' | 'score' | 'ticker' | 'live-gainers' | 'live-losers' | 'live-active'
+  const [sortBy, setSortBy] = useState<SortMode>('default')
+  const isLiveMode = sortBy === 'live-gainers' || sortBy === 'live-losers' || sortBy === 'live-active'
+  const { state: snapshotState } = useMarketSnapshot(isLiveMode)
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 100
   const [welcomeDismissed, setWelcomeDismissed] = useState(() =>
@@ -44,9 +50,33 @@ export function ScreenerScreen() {
 
   const inv = INV[state.investor] ?? INVESTORS[0]
 
+  // Live-mode rows from /api/market-snapshot — picked by which sort mode is active.
+  // We track them as Stock[] so the existing render code stays unchanged; price
+  // and change% live in a parallel map keyed by ticker.
+  const liveRows: SnapshotRow[] = (() => {
+    if (snapshotState.kind !== 'ready' && snapshotState.kind !== 'error') return []
+    const data = snapshotState.kind === 'ready' ? snapshotState.data : snapshotState.data
+    if (!data) return []
+    if (sortBy === 'live-gainers') return data.gainers
+    if (sortBy === 'live-losers')  return data.losers
+    if (sortBy === 'live-active')  return data.mostActive
+    return []
+  })()
+  // Index live data by ticker for the price/change% column lookup.
+  const liveByTicker = new Map(liveRows.map((r) => [r.symbol, r]))
+  const liveAsStocks: Stock[] = liveRows.map((r) => ({
+    ticker: r.symbol,
+    name:   r.name,
+    sector: '',
+    description: '',
+  }))
+
+  // Sector filter only makes sense for the static catalog — live rows don't
+  // carry sector metadata. Hide the chips in live mode (handled in JSX below).
   const sectors = ['All', ...Array.from(new Set(allStocks.map((s) => s.sector).filter(Boolean))).sort()]
 
-  const filtered: Stock[] = allStocks
+  const baseList: Stock[] = isLiveMode ? liveAsStocks : allStocks
+  const filtered: Stock[] = baseList
     .filter((s) => {
       const q = search.toLowerCase()
       const matchesSearch = (
@@ -54,10 +84,14 @@ export function ScreenerScreen() {
         s.name.toLowerCase().includes(q) ||
         (s.sector && s.sector.toLowerCase().includes(q))
       )
-      const matchesSector = sectorFilter === 'All' || s.sector === sectorFilter
+      // Sector filter is a no-op for live rows (sector unknown).
+      const matchesSector = isLiveMode || sectorFilter === 'All' || s.sector === sectorFilter
       return matchesSearch && matchesSector
     })
     .sort((a, b) => {
+      // Live modes preserve the FMP-returned order (already ranked by % change
+      // / volume). Don't re-sort or you'd undo the ranking.
+      if (isLiveMode) return 0
       if (sortBy === 'ticker') return a.ticker.localeCompare(b.ticker)
       if (sortBy === 'score') {
         const ra = state.analyses[`${a.ticker}:${state.investor}`]
@@ -254,12 +288,19 @@ export function ScreenerScreen() {
         {/* Sort control */}
         <select
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+          onChange={(e) => setSortBy(e.target.value as SortMode)}
           style={{ background: C.bg2, color: C.t2, border: `1px solid ${C.border}`, borderRadius: R.r8, padding: '7px 10px', fontSize: 13, cursor: 'pointer', outline: 'none' }}
         >
-          <option value="default">Sort: Default</option>
-          <option value="score">Sort: Score ↓</option>
-          <option value="ticker">Sort: Ticker A–Z</option>
+          <optgroup label="Catalog">
+            <option value="default">Sort: Default</option>
+            <option value="score">Sort: Score ↓</option>
+            <option value="ticker">Sort: Ticker A–Z</option>
+          </optgroup>
+          <optgroup label="Live · 1-min refresh">
+            <option value="live-gainers">Top Gainers</option>
+            <option value="live-losers">Top Losers</option>
+            <option value="live-active">Most Active</option>
+          </optgroup>
         </select>
         <button
           onClick={() => openAnalyzer('')}
@@ -280,28 +321,73 @@ export function ScreenerScreen() {
         </button>
       </div>
 
-      {/* Sector filter chips */}
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12 }}>
-        {sectors.map((s) => (
-          <button
-            key={s}
-            onClick={() => setSectorFilter(s)}
-            style={{
-              background: sectorFilter === s ? C.accentM : C.bg2,
-              color: sectorFilter === s ? C.accent : C.t3,
-              border: `1px solid ${sectorFilter === s ? C.accentB : C.border}`,
-              borderRadius: R.r99,
-              padding: '3px 10px',
-              fontSize: 12,
-              fontWeight: sectorFilter === s ? 600 : 400,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+      {/* Sector filter chips — hidden in live mode (FMP movers don't carry sector) */}
+      {!isLiveMode && (
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12 }}>
+          {sectors.map((s) => (
+            <button
+              key={s}
+              onClick={() => setSectorFilter(s)}
+              style={{
+                background: sectorFilter === s ? C.accentM : C.bg2,
+                color: sectorFilter === s ? C.accent : C.t3,
+                border: `1px solid ${sectorFilter === s ? C.accentB : C.border}`,
+                borderRadius: R.r99,
+                padding: '3px 10px',
+                fontSize: 12,
+                fontWeight: sectorFilter === s ? 600 : 400,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Live-mode status strip — auto-refresh every 60s, surface unauth + errors */}
+      {isLiveMode && (
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+            background: snapshotState.kind === 'error'  ? C.lossBg
+                      : snapshotState.kind === 'unauth' ? C.bg1
+                      : C.gainBg,
+            border: `1px solid ${
+              snapshotState.kind === 'error'  ? C.lossB
+            : snapshotState.kind === 'unauth' ? C.border
+            : C.gainB}`,
+            borderRadius: R.r8, padding: '7px 12px', marginBottom: 12,
+          }}
+        >
+          {snapshotState.kind === 'unauth' ? (
+            <span style={{ color: C.t3, fontSize: 13 }}>
+              Sign in to unlock live market data —{' '}
+              <button onClick={() => window.dispatchEvent(new CustomEvent('stratalyx:request-auth'))}
+                style={{ background: 'none', border: 'none', color: C.accent, fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+                sign in
+              </button>
+            </span>
+          ) : snapshotState.kind === 'loading' ? (
+            <span style={{ color: C.accent, fontSize: 13, fontWeight: 600 }}>Loading live market data…</span>
+          ) : (
+            <>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: snapshotState.kind === 'error' ? C.loss : C.gain, flexShrink: 0 }} />
+              <span style={{ color: snapshotState.kind === 'error' ? C.loss : C.gain, fontSize: 13, fontWeight: 700 }}>
+                {snapshotState.kind === 'error' ? 'Live data error' : 'Live'}
+              </span>
+              <span style={{ color: C.t3, fontSize: 12 }}>
+                · refreshes every 60s
+                {('lastUpdated' in snapshotState && snapshotState.lastUpdated)
+                  ? ` · last update ${snapshotState.lastUpdated.toLocaleTimeString()}`
+                  : ''}
+                {snapshotState.kind === 'error' ? ` · ${snapshotState.message}` : ''}
+              </span>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Stock list */}
       <div
@@ -318,6 +404,7 @@ export function ScreenerScreen() {
             {paginated.map((stock) => {
               const key = `${stock.ticker}:${state.investor}`
               const result = state.analyses[key]
+              const live = liveByTicker.get(stock.ticker)
               return (
                 <div
                   key={stock.ticker}
@@ -330,6 +417,11 @@ export function ScreenerScreen() {
                       <span style={{ color: C.t2, fontSize: 13 }}>{stock.name}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {live && (
+                        <span style={{ fontSize: 12, fontFamily: C.mono, color: live.changesPercentage >= 0 ? C.gain : C.loss, fontWeight: 700 }}>
+                          {live.changesPercentage >= 0 ? '+' : ''}{live.changesPercentage.toFixed(2)}%
+                        </span>
+                      )}
                       {result && <Tag color={pegColor(result.peg)} small>{result.strategyScore}/10</Tag>}
                       <button
                         onClick={() => openAnalyzer(stock.ticker)}
@@ -340,8 +432,12 @@ export function ScreenerScreen() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Tag color={C.t2} small>{stock.sector}</Tag>
-                    <span style={{ color: C.t3, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.description}</span>
+                    {live ? (
+                      <span style={{ color: C.t2, fontSize: 12, fontFamily: C.mono }}>${live.price.toFixed(2)}</span>
+                    ) : (
+                      <Tag color={C.t2} small>{stock.sector}</Tag>
+                    )}
+                    {!live && <span style={{ color: C.t3, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.description}</span>}
                   </div>
                 </div>
               )
@@ -361,22 +457,33 @@ export function ScreenerScreen() {
             <table style={{ borderCollapse: 'collapse', width: '100%' }}>
               <thead>
                 <tr>
-                  {[
-                    { label: '', w: 40 },
-                    { label: 'Ticker', w: 90 },
-                    { label: 'Company', w: 180 },
-                    { label: 'Sector', w: 160 },
-                    { label: 'Description', w: undefined },
-                    { label: 'Score', w: 80 },
-                    { label: '', w: 110 },
-                  ].map(({ label, w }, i) => (
+                  {(isLiveMode
+                    ? [
+                        { label: '', w: 40 },
+                        { label: 'Ticker', w: 90 },
+                        { label: 'Company', w: 240 },
+                        { label: 'Price', w: 100 },
+                        { label: 'Change %', w: 110 },
+                        { label: 'Score', w: 80 },
+                        { label: '', w: 110 },
+                      ]
+                    : [
+                        { label: '', w: 40 },
+                        { label: 'Ticker', w: 90 },
+                        { label: 'Company', w: 180 },
+                        { label: 'Sector', w: 160 },
+                        { label: 'Description', w: undefined },
+                        { label: 'Score', w: 80 },
+                        { label: '', w: 110 },
+                      ]
+                  ).map(({ label, w }, i) => (
                     <th
                       key={i}
-                      onClick={label === 'Score' ? () => setSortBy(sortBy === 'score' ? 'default' : 'score') : undefined}
+                      onClick={label === 'Score' && !isLiveMode ? () => setSortBy(sortBy === 'score' ? 'default' : 'score') : undefined}
                       style={{
                         color: label === 'Score' && sortBy === 'score' ? C.accent : C.t3,
                         padding: '8px 10px',
-                        textAlign: label === 'Score' ? 'center' : 'left',
+                        textAlign: (label === 'Score' || label === 'Price' || label === 'Change %') ? 'center' : 'left',
                         fontWeight: 600,
                         fontSize: 11,
                         letterSpacing: '.08em',
@@ -385,7 +492,7 @@ export function ScreenerScreen() {
                         background: C.bg1,
                         whiteSpace: 'nowrap',
                         width: w,
-                        cursor: label === 'Score' ? 'pointer' : 'default',
+                        cursor: label === 'Score' && !isLiveMode ? 'pointer' : 'default',
                         userSelect: 'none',
                       }}
                     >
@@ -398,6 +505,7 @@ export function ScreenerScreen() {
                 {paginated.map((stock) => {
                   const key = `${stock.ticker}:${state.investor}`
                   const result = state.analyses[key]
+                  const live = liveByTicker.get(stock.ticker)
                   return (
                     <tr key={stock.ticker} style={{ borderBottom: `1px solid ${C.border}` }}>
                       <td style={{ padding: '8px 6px 8px 10px' }}>
@@ -409,12 +517,33 @@ export function ScreenerScreen() {
                       <td style={{ padding: '8px 10px' }}>
                         <span style={{ color: C.t1, fontSize: 13 }}>{stock.name}</span>
                       </td>
-                      <td style={{ padding: '8px 10px' }}>
-                        <Tag color={C.t2} small>{stock.sector}</Tag>
-                      </td>
-                      <td style={{ padding: '8px 10px', maxWidth: 260 }}>
-                        <span style={{ color: C.t3, fontSize: 13, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.description}</span>
-                      </td>
+                      {isLiveMode ? (
+                        <>
+                          <td style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            <span style={{ color: C.t1, fontSize: 13, fontFamily: C.mono }}>
+                              {live ? `$${live.price.toFixed(2)}` : '—'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            {live ? (
+                              <span style={{ color: live.changesPercentage >= 0 ? C.gain : C.loss, fontWeight: 700, fontSize: 13, fontFamily: C.mono }}>
+                                {live.changesPercentage >= 0 ? '+' : ''}{live.changesPercentage.toFixed(2)}%
+                              </span>
+                            ) : (
+                              <span style={{ color: C.t4, fontSize: 13 }}>—</span>
+                            )}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td style={{ padding: '8px 10px' }}>
+                            <Tag color={C.t2} small>{stock.sector}</Tag>
+                          </td>
+                          <td style={{ padding: '8px 10px', maxWidth: 260 }}>
+                            <span style={{ color: C.t3, fontSize: 13, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.description}</span>
+                          </td>
+                        </>
+                      )}
                       <td style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                         {result ? (
                           <span style={{ color: scColor(result.strategyScore), fontWeight: 700, fontSize: 14, fontFamily: C.mono }}>
