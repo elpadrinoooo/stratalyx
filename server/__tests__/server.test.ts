@@ -728,3 +728,17 @@ describe('S-15: LLM temperature pinning', () => {
     expect(body.temperature).toBe(expectedTemperature)
   })
 })
+
+// ── S-16: trust proxy is set ─────────────────────────────────────────────────
+// Railway terminates TLS at its edge and forwards X-Forwarded-For. Without
+// `app.set('trust proxy', 1)`, every request fires express-rate-limit's
+// ERR_ERL_UNEXPECTED_X_FORWARDED_FOR / ERR_ERL_FORWARDED_HEADER validators,
+// spamming logs and bucketing all users under one IP for rate limiting.
+// Pin the value at 1 (not `true`) so a client can't spoof their IP via
+// X-Forwarded-For.
+
+describe('S-16: trust proxy', () => {
+  it('app.set("trust proxy", 1) is configured', () => {
+    expect(app.get('trust proxy')).toBe(1)
+  })
+})
