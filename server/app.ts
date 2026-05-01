@@ -74,6 +74,18 @@ function setCache(key: string, data: unknown, ttl?: number): void {
 // ── App ───────────────────────────────────────────────────────────────────────
 export const app = express()
 
+// Trust the first proxy hop so req.ip resolves to the client IP (not the
+// proxy's). Required because Railway terminates TLS at its edge and forwards
+// X-Forwarded-For — without this, express-rate-limit warns on every request
+// (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR + ERR_ERL_FORWARDED_HEADER) and rate-
+// limits everyone under the same proxy IP. `1` is intentionally narrow —
+// `true` would let a client spoof their IP via X-Forwarded-For. Vercel's
+// rewrite to Railway adds a second hop (Vercel edge → Railway edge → app),
+// so requests via the SPA get the Vercel edge IP as their "client" — still
+// useful for rate limiting (one user, one Vercel POP), and not exploitable
+// because we trust only the immediate proxy.
+app.set('trust proxy', 1)
+
 // Strip /api prefix when present so the same routes serve every host:
 //   - Vercel:  the wrapper already strips before this fires (no-op here)
 //   - Vite dev proxy: rewrites /api → / (no-op here)
